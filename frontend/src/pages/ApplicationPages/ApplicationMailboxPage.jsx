@@ -63,61 +63,61 @@ const ApplicationMailboxPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-bg-secondary py-8 px-4 ">
-            <div className="max-w-4xl mx-auto space-y-6">
+        <div className="min-h-screen bg-[#FEF9ED] py-12 px-4 font-sans text-[#402E11]">
+            <div className="max-w-5xl mx-auto space-y-8">
 
                 {/* Header / Navigation */}
                 <button
                     onClick={() => navigate(-1)}
-                    className="flex items-center gap-2 text-text-secondary text-sm font-bold hover:text-text-primary transition-colors"
+                    className="flex items-center gap-2 text-[#402E11]/60 text-[10px] font-black uppercase tracking-[0.2em] hover:text-[#C48B28] transition-colors"
                 >
-                    <ArrowLeft size={16} /> Cancel Application
+                    <ArrowLeft size={16} strokeWidth={2.5} /> Cancel Application
                 </button>
 
                 {/* Mailbox Container */}
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[600px] border border-gray-200">
+                <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-[#402E11]/5 overflow-hidden flex flex-col md:flex-row min-h-[600px] border border-[#EBC176]/20">
 
-                    {/* Left Panel: Context (Like an email sidebar info) */}
-                    <div className="w-full md:w-80 bg-bg-secondary border-r border-border p-6 flex flex-col gap-6">
+                    {/* Left Panel: Context */}
+                    <div className="w-full md:w-80 bg-[#FAF3E0]/30 border-r border-[#EBC176]/20 p-8 flex flex-col gap-8">
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mb-3">Re: Adoption Inquiry</p>
-                            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-3">
-                                <div className="aspect-[4/3] rounded-lg overflow-hidden bg-gray-100">
-                                    <img src={pet.main_photo} alt={pet.name} className="w-full h-full object-cover" />
+                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#C48B28] mb-4">Re: Adoption Inquiry</p>
+                            <div className="bg-white p-4 rounded-[1.5rem] border border-[#EBC176]/20 shadow-sm space-y-4 group hover:shadow-md transition-all">
+                                <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100 relative">
+                                    <img src={pet.main_photo} alt={pet.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-black text-gray-900">{pet.name}</h3>
-                                    <p className="text-xs text-gray-500 font-medium">{pet.breed} • {pet.age_display}</p>
+                                    <h3 className="text-xl font-black text-[#402E11] tracking-tight">{pet.name}</h3>
+                                    <p className="text-[10px] text-[#402E11]/60 font-bold uppercase tracking-wider">{pet.breed} • {pet.age_display}</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary font-bold">
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-[#FEF9ED] border border-[#EBC176]/30 flex items-center justify-center text-[#C48B28] font-black text-lg shadow-sm">
                                     {owner.first_name[0]}
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">To Owner</p>
-                                    <p className="text-sm font-bold text-gray-900">{owner.first_name} {owner.last_name}</p>
+                                    <p className="text-[9px] font-bold text-[#402E11]/40 uppercase tracking-[0.2em] mb-0.5">To Owner</p>
+                                    <p className="text-sm font-black text-[#402E11] tracking-tight">{owner.first_name} {owner.last_name}</p>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold">
-                                    {user?.first_name?.[0] || 'Me'}
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-black text-lg shadow-sm">
+                                    {user?.first_name?.[0] || 'M'}
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">From Applicant</p>
-                                    <p className="text-sm font-bold text-gray-900">{user?.first_name} {user?.last_name}</p>
+                                    <p className="text-[9px] font-bold text-[#402E11]/40 uppercase tracking-[0.2em] mb-0.5">From Applicant</p>
+                                    <p className="text-sm font-black text-[#402E11] tracking-tight">{user?.first_name} {user?.last_name}</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="mt-auto bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-                            <div className="flex gap-2">
-                                <ShieldCheck size={16} className="text-blue-600 shrink-0 mt-0.5" />
-                                <p className="text-[10px] text-blue-800 leading-relaxed font-medium">
+                        <div className="mt-auto bg-blue-50/50 p-5 rounded-2xl border border-blue-100/50 backdrop-blur-sm">
+                            <div className="flex gap-3">
+                                <ShieldCheck size={18} className="text-blue-500 shrink-0 mt-0.5" />
+                                <p className="text-[10px] text-blue-900/70 leading-relaxed font-bold">
                                     This conversation is secure. Avoid sharing financial info or deposit requests until you verify the owner in person.
                                 </p>
                             </div>
@@ -127,15 +127,15 @@ const ApplicationMailboxPage = () => {
                     {/* Right Panel: Composition */}
                     <div className="flex-1 flex flex-col bg-white relative">
                         {/* Toolbar */}
-                        <div className="h-14 border-b border-gray-100 flex items-center px-6 gap-4 text-gray-400">
-                            <p className="text-xs font-bold text-gray-300 mr-auto uppercase tracking-widest">New Message</p>
-                            {/* Mock tools */}
-                            <button className="hover:text-gray-600 transition-colors"><Paperclip size={18} /></button>
-                            <button className="hover:text-gray-600 transition-colors"><ImageIcon size={18} /></button>
+                        <div className="h-16 border-b border-[#EBC176]/10 flex items-center px-8 gap-4">
+                            <p className="text-[10px] font-black text-[#402E11]/30 mr-auto uppercase tracking-[0.2em]">New Message</p>
+                            <p className="text-[10px] text-[#402E11]/30 font-black uppercase tracking-widest">
+                                {message.trim() === '' ? 0 : message.trim().split(/\s+/).length} words
+                            </p>
                         </div>
 
                         {/* Editor Area */}
-                        <div className="flex-1 p-6">
+                        <div className="flex-1 p-8">
                             <textarea
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
@@ -146,38 +146,36 @@ Living Situation(home type, ownership, members etc)
 Pet Experience & History
 Daily Care Plan
 etc"
-                                className="w-full h-full resize-none outline-none text-gray-700 placeholder:text-gray-300 leading-relaxed font-medium text-base"
+                                className="w-full h-full resize-none outline-none text-[#402E11] placeholder:text-[#402E11]/20 leading-relaxed font-bold text-base bg-transparent border-2 border-transparent focus:border-blue-500/10 rounded-xl p-4 transition-all"
                                 autoFocus
                             />
                         </div>
 
                         {/* Footer / Send Action */}
-                        <div className="p-6 border-t border-gray-100 bg-gray-50/30">
+                        <div className="p-8 border-t border-[#EBC176]/10 bg-[#FAF3E0]/10">
                             {/* Declaration */}
-                            <div className="mb-4 flex items-start gap-3">
-                                <input
-                                    type="checkbox"
-                                    id="declaration"
-                                    checked={accepted}
-                                    onChange={(e) => setAccepted(e.target.checked)}
-                                    className="mt-1 w-4 h-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
-                                />
-                                <label htmlFor="declaration" className="text-xs text-text-secondary leading-relaxed">
+                            <div className="mb-6 flex items-start gap-3 group cursor-pointer select-none" onClick={() => setAccepted(!accepted)}>
+                                <div className={`mt-0.5 w-6 h-6 rounded-lg border-[3px] flex items-center justify-center transition-all duration-200 ${accepted ? 'bg-[#C48B28] border-transparent' : 'bg-white border-[#EBC176] group-hover:border-[#C48B28]'}`}>
+                                    <div className={`w-2.5 h-2.5 rounded-[2px] bg-white shadow-sm transition-all duration-200 ${accepted ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} />
+                                </div>
+                                <label className="text-[11px] text-[#402E11]/60 leading-relaxed font-bold cursor-pointer">
                                     I confirm that all the information provided above is true and accurate to the best of my knowledge.
-                                    I also agree to the <a href="/terms" target="_blank" className="text-brand-primary font-bold hover:underline">Terms of Service</a> and <a href="/privacy" target="_blank" className="text-brand-primary font-bold hover:underline">Privacy Policy</a>.
+                                    I also agree to the <span className="text-[#C48B28] hover:underline">Terms of Service</span> and <span className="text-[#C48B28] hover:underline">Privacy Policy</span>.
                                 </label>
                             </div>
 
-                            <div className="flex items-center justify-between">
-                                <p className="text-xs text-gray-400 font-medium">
-                                    {message.length} chars
-                                </p>
+                            <div className="flex items-center justify-end">
                                 <Button
                                     onClick={handleSubmit}
                                     isLoading={submitMutation.isPending}
                                     isDisabled={message.length < 20 || !accepted}
-                                    className="bg-brand-primary text-white rounded-xl px-8 shadow-lg shadow-brand-primary/20 hover:shadow-brand-primary/30"
-                                    rightIcon={<Send size={16} />}
+                                    className={`
+                                        rounded-xl px-8 py-3 font-black text-[10px] uppercase tracking-[0.2em] shadow-lg transition-all flex items-center gap-2
+                                        ${message.length >= 20 && accepted
+                                            ? 'bg-[#98A886] hover:bg-[#869675] text-white shadow-[#98A886]/30 hover:-translate-y-0.5'
+                                            : 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'}
+                                    `}
+                                    rightIcon={<Send size={14} strokeWidth={3} />}
                                 >
                                     Send Application
                                 </Button>

@@ -7,39 +7,33 @@ import {
     User,
     Star,
     TrendingUp,
-    Settings,
-    PawPrint,
-    LogOut,
-    Home
+    LogOut
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import useAuth from '../../../../hooks/useAuth';
+import Logo from '../../../common/Logo';
 
-const Sidebar = ({ activeView, onViewChange, isMobileOpen, setIsMobileOpen }) => {
-    const { logout } = useAuth();
+const Sidebar = ({ isMobileOpen, setIsMobileOpen, provider }) => {
+    const { logout, user } = useAuth();
     const navigate = useNavigate();
 
     const menuItems = [
-        { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'calendar', label: 'Calendar', icon: CalendarDays },
-        { id: 'availability', label: 'Availability', icon: CalendarOff },
-        { id: 'bookings', label: 'Bookings', icon: Calendar, badge: 3 },
-        { id: 'profile', label: 'My Profile', icon: User },
-        { id: 'reviews', label: 'Reviews', icon: Star },
-        { id: 'analytics', label: 'Analytics', icon: TrendingUp },
+        { path: '/provider/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { path: '/provider/calendar', label: 'Calendar', icon: CalendarDays },
+        { path: '/provider/availability', label: 'Availability', icon: CalendarOff },
+        { path: '/provider/bookings', label: 'Bookings', icon: Calendar, badge: 3 }, // TODO: Dynamic badge
+        { path: '/provider/profile', label: 'My Profile', icon: User },
+        { path: '/provider/reviews', label: 'Reviews', icon: Star },
+        { path: '/provider/analytics', label: 'Analytics', icon: TrendingUp },
     ];
-
-    const handleNavigation = (viewId) => {
-        onViewChange(viewId);
-        if (window.innerWidth < 1024) {
-            setIsMobileOpen(false);
-        }
-    };
 
     const handleLogout = () => {
         logout();
         navigate('/');
     };
+
+    const businessName = provider?.business_name || user?.first_name || 'User';
+    const firstInitial = businessName.charAt(0).toUpperCase();
 
     return (
         <>
@@ -53,71 +47,69 @@ const Sidebar = ({ activeView, onViewChange, isMobileOpen, setIsMobileOpen }) =>
 
             {/* Sidebar Container */}
             <aside className={`
-                fixed top-0 left-0 bottom-0 z-40 w-64 bg-white border-r border-gray-200 
+                fixed top-0 left-0 bottom-0 z-40 w-72 bg-white border-r border-gray-100
                 transform transition-transform duration-300 ease-in-out lg:transform-none lg:relative
                 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col
             `}>
                 {/* Logo Area */}
-                <div className="px-6 py-6 flex items-center gap-2 border-b border-gray-100 lg:border-none">
-                    <div className="bg-teal-600 p-1.5 rounded-lg">
-                        <PawPrint className="text-white" size={20} />
-                    </div>
-                    <span className="text-xl font-bold text-gray-900 tracking-tight">PetConnect</span>
+                <div className="px-8 py-8 lg:py-10">
+                    <Logo />
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 px-4 space-y-1 overflow-y-auto mt-4">
+                <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
                     {menuItems.map((item) => {
-                        const isActive = activeView === item.id;
                         const Icon = item.icon;
                         return (
-                            <button
-                                key={item.id}
-                                onClick={() => handleNavigation(item.id)}
-                                className={`
-                                    w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors 
+                            <NavLink
+                                key={item.path}
+                                to={item.path}
+                                onClick={() => window.innerWidth < 1024 && setIsMobileOpen(false)}
+                                className={({ isActive }) => `
+                                    w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-as font-medium transition-all duration-200
                                     ${isActive
-                                        ? 'bg-blue-50 text-brand-primary'
+                                        ? 'bg-brand-primary/10 text-brand-primary'
                                         : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                                     }
                                 `}
                             >
-                                <div className="flex items-center gap-3">
-                                    <Icon size={20} className={isActive ? 'text-brand-primary' : 'text-gray-400'} />
+                                <div className="flex items-center gap-3.5">
+                                    <Icon size={22} className="opacity-80" />
                                     {item.label}
                                 </div>
                                 {item.badge && (
-                                    <span className="bg-teal-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                                    <span className="bg-gray-800 text-white text-[10px] font-bold min-w-5 h-5 flex items-center justify-center rounded-full shadow-sm">
                                         {item.badge}
                                     </span>
                                 )}
-                            </button>
+                            </NavLink>
                         );
                     })}
                 </nav>
 
                 {/* Footer Section */}
-                <div className="p-4 mt-auto space-y-2 border-t border-gray-100">
-                    <button
-                        onClick={() => handleNavigation('settings')}
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                    >
-                        <Settings size={20} className="text-gray-400" />
-                        Settings
-                    </button>
-
-                    <Link to="/" className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-500 hover:text-brand-primary transition">
-                        <Home size={20} className="text-gray-400" />
-                        Return to Home
-                    </Link>
-
+                <div className="p-6 mt-auto space-y-6">
+                    {/* Log Out Link */}
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                        className="w-full flex items-center gap-3 px-4 py-2 text-brand-primary font-bold text-base hover:opacity-80 transition-opacity"
                     >
-                        <LogOut size={16} />
+                        <LogOut size={20} />
                         Log Out
                     </button>
+
+                    {/* User Profile Card */}
+                    <div className="bg-gray-50 rounded-2xl p-4 flex items-center gap-4 border border-gray-100">
+                        <div className="w-10 h-10 rounded-full bg-brand-primary flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-sm">
+                            {firstInitial}
+                        </div>
+                        <div className="overflow-hidden">
+                            <div className="text-[10px] font-black text-brand-primary/60 uppercase tracking-wider mb-0.5">LOGGED IN AS</div>
+                            <div className="font-bold text-gray-900 text-base truncate">
+                                {businessName}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </aside>
         </>

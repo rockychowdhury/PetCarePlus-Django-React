@@ -110,37 +110,42 @@ const AuthForm = ({ initialMode = 'login', onSuccess }) => {
 
             {/* Header */}
             <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold text-text-primary mb-2">
+                <h1 className="text-4xl font-black text-[#402E11] tracking-tight mb-2">
                     {mode === 'login' ? 'Welcome Back' : 'Create Account'}
                 </h1>
-                <p className="text-text-secondary">
+                <p className="text-sm font-bold text-[#402E11]/40 leading-relaxed px-4">
                     {mode === 'login'
                         ? 'Enter your details to access your account'
                         : 'Join our community of pet lovers today'}
                 </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-                {mode === 'register' && (
-                    <div className="flex gap-4">
-                        <Input
-                            name="first_name"
-                            value={formData.first_name}
-                            onChange={handleChange}
-                            placeholder="First Name"
-                            error={fieldErrors.first_name}
-                            required
-                        />
-                        <Input
-                            name="last_name"
-                            value={formData.last_name}
-                            onChange={handleChange}
-                            placeholder="Last Name"
-                            error={fieldErrors.last_name}
-                            required
-                        />
+            <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Smooth Transition Wrapper for Name Fields */}
+                <div className={`grid transition-all duration-300 ease-in-out ${mode === 'register' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                    <div className="overflow-hidden">
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                            <Input
+                                name="first_name"
+                                value={formData.first_name}
+                                onChange={handleChange}
+                                placeholder="First Name"
+                                error={fieldErrors.first_name}
+                                className="bg-[#FAF3E0]/30 border-[#402E11]/10 rounded-2xl h-12 text-sm focus:border-[#C48B28] focus:ring-[#C48B28]/20"
+                                required={mode === 'register'}
+                            />
+                            <Input
+                                name="last_name"
+                                value={formData.last_name}
+                                onChange={handleChange}
+                                placeholder="Last Name"
+                                error={fieldErrors.last_name}
+                                className="bg-[#FAF3E0]/30 border-[#402E11]/10 rounded-2xl h-12 text-sm focus:border-[#C48B28] focus:ring-[#C48B28]/20"
+                                required={mode === 'register'}
+                            />
+                        </div>
                     </div>
-                )}
+                </div>
 
                 <Input
                     type="email"
@@ -148,64 +153,77 @@ const AuthForm = ({ initialMode = 'login', onSuccess }) => {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="Email Address"
-                    startIcon={<Mail size={20} />} // Input handles text color
+                    startIcon={<Mail size={18} className="text-[#C48B28]" />}
                     error={fieldErrors.email}
+                    className="bg-[#FAF3E0]/30 border-[#402E11]/10 rounded-2xl h-12 text-sm focus:border-[#C48B28] focus:ring-[#C48B28]/20"
                     required
                 />
 
-                <Input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder={mode === 'register' ? "Create Password" : "Password"}
-                    startIcon={<Lock size={20} />}
-                    endIcon={
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="hover:text-text-primary transition-colors focus:outline-none"
-                        >
-                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                        </button>
-                    }
-                    error={fieldErrors.password}
-                    required
-                />
+                <div className="relative">
+                    <Input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        placeholder={mode === 'register' ? "Create Password" : "Password"}
+                        startIcon={<Lock size={18} className="text-[#C48B28]" />}
+                        error={fieldErrors.password}
+                        className="bg-[#FAF3E0]/30 border-[#402E11]/10 rounded-2xl h-12 text-sm focus:border-[#C48B28] focus:ring-[#C48B28]/20"
+                        required
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-5 top-[14px] text-[#402E11]/40 hover:text-[#402E11] focus:outline-none"
+                    >
+                        {showPassword ? <EyeOff size={18} strokeWidth={2.5} /> : <Eye size={18} strokeWidth={2.5} />}
+                    </button>
+                </div>
 
                 {mode === 'login' && (
-                    <div className="flex justify-end">
-                        <Link to="/forgot-password" className="text-sm font-medium text-brand-primary hover:text-brand-secondary">
+                    <div className="flex justify-end animate-fade-in">
+                        <Link to="/forgot-password" title="Forgot Password?" className="text-[10px] font-black text-[#C48B28] uppercase tracking-wider hover:underline">
                             Forgot Password?
                         </Link>
                     </div>
                 )}
 
-                {mode === 'register' && (
-                    <label className="flex items-start gap-3 cursor-pointer group">
-                        <input
-                            type="checkbox"
-                            name="termsAccepted"
-                            checked={formData.termsAccepted}
-                            onChange={handleChange}
-                            className="mt-1 w-4 h-4 rounded border-border text-brand-primary focus:ring-brand-primary"
-                        />
-                        <span className="text-sm text-text-secondary">
-                            I agree to the <Link to="/terms" className="text-text-primary font-bold hover:underline">Terms</Link> and <Link to="/privacy" className="text-text-primary font-bold hover:underline">Privacy Policy</Link>
-                        </span>
-                    </label>
-                )}
-
-                <Button type="submit" isLoading={isLoading} className="w-full">
-                    {mode === 'login' ? 'Sign In' : 'Create Account'}
-                </Button>
-
-                <div className="relative my-6">
-                    <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-border"></div>
+                {/* Smooth Transition for Terms */}
+                <div className={`grid transition-all duration-300 ease-in-out ${mode === 'register' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                    <div className="overflow-hidden">
+                        <label className="flex items-start gap-3 cursor-pointer group py-1 mb-2">
+                            <input
+                                type="checkbox"
+                                name="termsAccepted"
+                                checked={formData.termsAccepted}
+                                onChange={handleChange}
+                                className="mt-1 w-4 h-4 rounded border-[#402E11]/20 text-[#C48B28] focus:ring-[#C48B28]"
+                            />
+                            <span className="text-[11px] font-bold text-[#402E11]/60 leading-tight">
+                                I agree to the <Link to="/terms" className="text-[#402E11] font-black hover:underline">Terms</Link> and <Link to="/privacy" className="text-[#402E11] font-black hover:underline">Privacy Policy</Link>
+                            </span>
+                        </label>
                     </div>
-                    <div className="relative flex justify-center text-sm">
-                        <span className="px-2 bg-bg-surface text-text-secondary">Or continue with</span>
+                </div>
+
+                <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-12 bg-[#402E11] hover:bg-[#5A421A] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-[#402E11]/20 transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-3 mt-4"
+                >
+                    {isLoading ? (
+                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                    ) : (
+                        mode === 'login' ? 'Sign In' : 'Create Account'
+                    )}
+                </button>
+
+                <div className="relative py-2">
+                    <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-[#402E11]/10"></div>
+                    </div>
+                    <div className="relative flex justify-center text-[9px] font-black uppercase tracking-[0.2em]">
+                        <span className="px-3 bg-white text-[#402E11]/40">Or continue with</span>
                     </div>
                 </div>
 

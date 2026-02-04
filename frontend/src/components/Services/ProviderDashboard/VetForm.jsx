@@ -77,8 +77,8 @@ const VetForm = ({ initialData, onSave, isLoading }) => {
         e.preventDefault();
         const payload = {
             ...formData,
-            species_treated: formData.species_treated_ids,
-            services_offered: formData.services_offered_ids
+            species_treated_ids: formData.species_treated_ids,
+            services_offered_ids: formData.services_offered_ids
         };
         onSave(payload);
     };

@@ -52,9 +52,7 @@ const PaymentCheckoutPage = () => {
             );
 
             // Update booking payment status
-            await api.patch(`/services/bookings/${bookingId}/`, {
-                payment_status: 'paid'
-            });
+            await api.post(`/services/bookings/${bookingId}/mark_paid/`);
 
             toast.success('Payment successful!');
             navigate(`/checkout/success/${bookingId}`, { state: { transaction: result } });

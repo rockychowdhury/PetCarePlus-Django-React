@@ -2,9 +2,9 @@ import React from 'react';
 import Input from '../../../../components/common/Form/Input';
 import Textarea from '../../../../components/common/Form/Textarea';
 import Button from '../../../../components/common/Buttons/Button';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Navigation } from 'lucide-react';
 
-const BasicInfoStep = ({ formData, handleChange, onNext, onBack, categories, isSaving }) => {
+const BasicInfoStep = ({ formData, handleChange, onNext, onBack, categories, isSaving, onGetLocation, locationLoading }) => {
 
     const selectedCatName = categories.find(c => c.id == formData.category)?.name || 'Service';
 
@@ -83,7 +83,20 @@ const BasicInfoStep = ({ formData, handleChange, onNext, onBack, categories, isS
 
                 {/* Location */}
                 <div>
-                    <h3 className="font-semibold text-lg mb-2 text-brand-primary">Location</h3>
+                    <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-lg text-brand-primary">Location</h3>
+                        {onGetLocation && (
+                            <button
+                                type="button"
+                                onClick={onGetLocation}
+                                disabled={locationLoading}
+                                className="text-xs font-bold text-brand-primary flex items-center gap-1 hover:underline disabled:opacity-50"
+                            >
+                                {locationLoading ? <Loader2 size={14} className="animate-spin" /> : <Navigation size={14} />}
+                                {locationLoading ? 'Locating...' : 'Use Current Location'}
+                            </button>
+                        )}
+                    </div>
                     <div className="grid md:grid-cols-2 gap-4 mb-4">
                         <Input
                             label="Address Line 1"

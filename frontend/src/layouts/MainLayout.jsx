@@ -5,7 +5,7 @@ import Footer from '../components/LandingPage/Footer';
 
 const MainLayout = ({ children }) => {
     return (
-        <div className="min-h-screen bg-bg-primary  flex flex-col">
+        <div className="min-h-screen bg-[#FEF9ED] flex flex-col">
             <Navbar />
             <main className="flex-1 pt-20">
                 {children || <Outlet />}

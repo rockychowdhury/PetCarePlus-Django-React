@@ -1,29 +1,28 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import useAPI from './useAPI';
+import { providerService, bookingService, referenceService, userService } from '../services';
 
 const useServices = () => {
-    const api = useAPI();
     const queryClient = useQueryClient();
 
     // --- Metadata Queries ---
     const useGetCategories = () => useQuery({
         queryKey: ['serviceCategories'],
-        queryFn: async () => (await api.get('/services/categories/')).data
+        queryFn: referenceService.getCategories
     });
 
     const useGetSpecies = () => useQuery({
         queryKey: ['species'],
-        queryFn: async () => (await api.get('/services/species/')).data
+        queryFn: referenceService.getSpecies
     });
 
     const useGetServiceOptions = () => useQuery({
         queryKey: ['serviceOptions'],
-        queryFn: async () => (await api.get('/services/options/')).data
+        queryFn: referenceService.getServiceOptions
     });
 
     const useGetSpecializations = () => useQuery({
         queryKey: ['specializations'],
-        queryFn: async () => (await api.get('/services/specializations/')).data
+        queryFn: referenceService.getSpecializations
     });
 
     // --- Provider Queries ---
@@ -31,26 +30,36 @@ const useServices = () => {
         return useQuery({
             queryKey: ['serviceProviders', filters],
             queryFn: async () => {
-                const params = new URLSearchParams();
-                if (filters.providerType) params.append('category', filters.providerType); // This should be handled by ServiceSearchPage mapping to 'category'
-                if (filters.category) params.append('category', filters.category);
+                const params = {};
+                // Map frontend filters to API params
+                if (filters.providerType) params.category = filters.providerType;
+                if (filters.category) params.category = filters.category;
 
-                if (filters.location) params.append('location_city', filters.location);
-                if (filters.search) params.append('search', filters.search);
-                if (filters.radius) params.append('radius', filters.radius);
+                // Location-based filtering (nearby takes precedence)
+                if (filters.nearby) {
+                    params.nearby = filters.nearby;
+                } else {
+                    if (filters.location) params.location_city = filters.location;
+                    if (filters.radius) params.radius = filters.radius;
+                }
 
-                // Handling for filters passed from ServiceFilterSidebar (min_price, max_price, species, services)
-                if (filters.species) params.append('species', filters.species);
-                if (filters.min_price) params.append('min_price', filters.min_price);
-                if (filters.max_price) params.append('max_price', filters.max_price);
-                if (filters.availability) params.append('availability', filters.availability);
-                if (filters.services) params.append('services', filters.services);
+                if (filters.search) params.search = filters.search;
+                if (filters.species) params.species = filters.species;
+                if (filters.min_rating) params.min_rating = filters.min_rating;
+                if (filters.availability) params.availability = filters.availability;
+                if (filters.services) params.services = filters.services;
 
-                if (filters.sort) params.append('ordering', filters.sort); // Use ordering for sort
-                if (filters.page) params.append('page', filters.page);
+                if (filters.ordering) params.ordering = filters.ordering;
+                if (filters.sort) params.ordering = filters.sort;
+                if (filters.page) params.page = filters.page;
 
-                const response = await api.get(`/services/providers/?${params.toString()}`);
-                return response.data;
+                // Additional filters
+                if (filters.verification_status) params.verification_status = filters.verification_status;
+                if (filters.min_rating) params.min_rating = filters.min_rating;
+
+                console.log('🚀 useGetProviders sending params to API:', params);
+
+                return await providerService.getAll(params);
             }
         });
     };
@@ -58,53 +67,40 @@ const useServices = () => {
     const useGetProvider = (id) => {
         return useQuery({
             queryKey: ['serviceProvider', id],
-            queryFn: async () => {
-                const response = await api.get(`/services/providers/${id}/`);
-                return response.data;
-            },
+            queryFn: () => providerService.getById(id),
             enabled: !!id
         });
     };
 
-    const useGetMyProviderProfile = () => {
+    const useGetMyProviderProfile = (options = {}) => {
         return useQuery({
             queryKey: ['myServiceProvider'],
-            queryFn: async () => {
-                try {
-                    const response = await api.get('/services/providers/me/');
-                    return response.data;
-                } catch (error) {
-                    if (error.response?.status === 404) return null;
-                    throw error;
-                }
-            },
-            retry: false
+            queryFn: providerService.getMe,
+            retry: false,
+            ...options
         });
     };
 
     const useGetDashboardStats = () => {
         return useQuery({
             queryKey: ['providerDashboardStats'],
-            queryFn: async () => {
-                const response = await api.get('/services/providers/dashboard_stats/');
-                return response.data;
-            }
+            queryFn: providerService.getDashboardStats
         });
     };
 
     const useCreateProviderProfile = () => {
         return useMutation({
-            mutationFn: async (data) => await api.post('/services/providers/', data),
+            mutationFn: providerService.create,
             onSuccess: () => {
                 queryClient.invalidateQueries(['serviceProviders']);
-                queryClient.invalidateQueries(['userProfile']); // To update role status in UI if needed
+                queryClient.invalidateQueries(['userProfile']);
             }
         });
     };
 
     const useUpdateProviderProfile = () => {
         return useMutation({
-            mutationFn: async ({ id, data }) => await api.patch(`/services/providers/${id}/`, data),
+            mutationFn: ({ id, data }) => providerService.update(id, data),
             onSuccess: (_, variables) => {
                 queryClient.invalidateQueries(['serviceProvider', variables.id]);
                 queryClient.invalidateQueries(['myServiceProvider']);
@@ -114,7 +110,7 @@ const useServices = () => {
 
     const useUpdateProviderHours = () => {
         return useMutation({
-            mutationFn: async ({ id, data }) => await api.post(`/services/providers/${id}/update_hours/`, data),
+            mutationFn: ({ id, data }) => providerService.updateHours(id, data),
             onSuccess: (_, variables) => {
                 queryClient.invalidateQueries(['serviceProvider', variables.id]);
                 queryClient.invalidateQueries(['myServiceProvider']);
@@ -123,8 +119,10 @@ const useServices = () => {
     };
 
     const useUpdateProviderMedia = () => {
+        // Now using uploadMedia (multipart) or traditional update if strictly JSON metadata needed
+        // Assuming we want to upload new media
         return useMutation({
-            mutationFn: async ({ id, data }) => await api.post(`/services/providers/${id}/update_media/`, data),
+            mutationFn: ({ id, data }) => providerService.uploadMedia(id, data),
             onSuccess: (_, variables) => {
                 queryClient.invalidateQueries(['serviceProvider', variables.id]);
                 queryClient.invalidateQueries(['myServiceProvider']);
@@ -134,7 +132,7 @@ const useServices = () => {
 
     const useSubmitProviderApplication = () => {
         return useMutation({
-            mutationFn: async (id) => await api.post(`/services/providers/${id}/submit_application/`),
+            mutationFn: (id) => providerService.submitApplication(id),
             onSuccess: () => {
                 queryClient.invalidateQueries(['myServiceProvider']);
                 queryClient.invalidateQueries(['userProfile']);
@@ -145,7 +143,7 @@ const useServices = () => {
     // --- Booking Queries ---
     const useCreateBooking = () => {
         return useMutation({
-            mutationFn: async (data) => await api.post('/services/bookings/', data),
+            mutationFn: bookingService.create,
             onSuccess: () => {
                 queryClient.invalidateQueries(['myBookings']);
             }
@@ -154,14 +152,45 @@ const useServices = () => {
 
     const useGetMyBookings = () => useQuery({
         queryKey: ['myBookings'],
-        queryFn: async () => (await api.get('/services/bookings/')).data
+        queryFn: () => bookingService.getAll({}) // Empty params for now, API filters on user
     });
 
     const useBookingAction = () => {
         return useMutation({
-            mutationFn: async ({ id, action, data }) => await api.post(`/services/bookings/${id}/${action}/`, data),
+            mutationFn: ({ id, action, data }) => {
+                return bookingService.performAction(id, action, data);
+            },
             onSuccess: () => {
                 queryClient.invalidateQueries(['myBookings']);
+            }
+        });
+    };
+
+    const useRespondToReview = () => {
+        return useMutation({
+            mutationFn: ({ providerId, reviewId, response }) =>
+                providerService.respondToReview(providerId, reviewId, response),
+            onSuccess: () => {
+                queryClient.invalidateQueries(['providerDashboardStats']);
+                queryClient.invalidateQueries(['myServiceProvider']);
+            }
+        });
+    };
+
+    const useGetProviderAnalytics = () => {
+        return useQuery({
+            queryKey: ['providerAnalytics'],
+            queryFn: providerService.getAnalytics
+        });
+    };
+
+    // --- Settings ---
+    const useUpdateProviderSettings = () => {
+        return useMutation({
+            mutationFn: ({ id, data }) => providerService.update(id, { settings: data }),
+            onSuccess: (_, variables) => {
+                queryClient.invalidateQueries(['serviceProvider', variables.id]);
+                queryClient.invalidateQueries(['myServiceProvider']);
             }
         });
     };
@@ -169,7 +198,7 @@ const useServices = () => {
     // --- Role Requests ---
     const useCreateRoleRequest = () => {
         return useMutation({
-            mutationFn: async (data) => await api.post('/user/role-requests/', data),
+            mutationFn: userService.createRoleRequest,
             onSuccess: () => {
                 queryClient.invalidateQueries(['myRoleRequests']);
             }
@@ -178,7 +207,7 @@ const useServices = () => {
 
     const useGetMyRoleRequests = () => useQuery({
         queryKey: ['myRoleRequests'],
-        queryFn: async () => (await api.get('/user/role-requests/')).data
+        queryFn: userService.getAllRoleRequests
     });
 
     return {
@@ -199,7 +228,10 @@ const useServices = () => {
         useBookingAction,
         useCreateRoleRequest,
         useGetMyRoleRequests,
-        useGetDashboardStats
+        useGetDashboardStats,
+        useGetProviderAnalytics,
+        useRespondToReview,
+        useUpdateProviderSettings
     };
 };
 

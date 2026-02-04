@@ -7,7 +7,9 @@ import useServices from '../../../../hooks/useServices';
 import useAPI from '../../../../hooks/useAPI';
 
 const ReviewsManager = ({ provider }) => {
-    const api = useAPI();
+    const { useRespondToReview } = useServices();
+    const respondMutation = useRespondToReview();
+
     const [replyModal, setReplyModal] = useState({ isOpen: false, review: null });
     const [replyText, setReplyText] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -32,13 +34,13 @@ const ReviewsManager = ({ provider }) => {
 
         setSubmitting(true);
         try {
-            await api.post(`/services/providers/${provider.id}/reviews/${replyModal.review.id}/respond/`, {
+            await respondMutation.mutateAsync({
+                providerId: provider.id,
+                reviewId: replyModal.review.id,
                 response: replyText
             });
             toast.success('Response posted successfully');
             handleCloseReply();
-            // Ideally refetch reviews here or update state
-            window.location.reload(); // Quick refresh for now
         } catch (error) {
             console.error(error);
             toast.error('Failed to post response');

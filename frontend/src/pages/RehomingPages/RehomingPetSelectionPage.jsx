@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import { PlusCircle, CheckCircle2, AlertCircle, Edit2, Search, ArrowLeft, ArrowRight } from 'lucide-react';
+import { PlusCircle, CheckCircle2, AlertCircle, Edit2, Search, ArrowLeft, ArrowRight, PawPrint } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import useAuth from '../../hooks/useAuth';
 import usePets from '../../hooks/usePets';
+import RehomingActionBar from './components/RehomingActionBar';
 
 const RehomingPetSelectionPage = () => {
     const { setPetId, markStepComplete } = useOutletContext();
@@ -16,7 +18,6 @@ const RehomingPetSelectionPage = () => {
 
     const petsList = Array.isArray(pets) ? pets : (pets?.results || []);
 
-    // Filter pets based on search
     const filteredPets = petsList.filter(pet =>
         pet.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (pet.breed && pet.breed.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -27,14 +28,12 @@ const RehomingPetSelectionPage = () => {
 
     const handlePetClick = (pet) => {
         if (!pet.profile_is_complete) {
-            // Direct redirect to Edit Page with returnTo context
             navigate(`/dashboard/pets/${pet.id}/edit`, {
-                state: { returnTo: '/rehoming/select-pet' } // Context for return
+                state: { returnTo: '/rehoming/select-pet' }
             });
             return;
         }
 
-        // Toggle selection
         if (selectedPetId === pet.id) {
             setSelectedPetId(null);
         } else {
@@ -50,156 +49,159 @@ const RehomingPetSelectionPage = () => {
         }
     };
 
-    if (isLoading) return <div className="text-center py-20 ">Loading pets...</div>;
+    if (isLoading) return (
+        <div className="flex flex-col items-center justify-center py-32 space-y-4">
+            <div className="w-12 h-12 border-4 border-[#C48B28]/20 border-t-[#C48B28] rounded-full animate-spin" />
+            <span className="text-[10px] font-black text-[#C48B28] uppercase tracking-[0.2em]">Finding your companions...</span>
+        </div>
+    );
 
     return (
-        <div className="w-full pb-24">
-            {/* Header */}
-            <div className="text-center mb-8 pt-0">
-                <h1 className="text-2xl md:text-3xl font-black text-text-primary mb-3 tracking-tight">
-                    Which pet do you need to rehome?
-                </h1>
-                <p className=" text-text-secondary text-sm max-w-xl mx-auto mb-8 leading-relaxed">
-                    Select the pet you're looking to find a new home for. We'll help you build a
-                    profile that attracts the right adopters.
-                </p>
+        <div className="w-full pb-32">
+            {/* Header Area */}
+            <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8 max-w-7xl mx-auto px-4">
+                <div className="text-left w-full md:w-auto">
+                    <h1 className="text-2xl md:text-3xl font-black text-[#402E11] tracking-tight">
+                        Which pet are you <span className="text-[#C48B28]">rehoming?</span>
+                    </h1>
+                </div>
 
-                {/* Search Bar */}
-                <div className="max-w-lg mx-auto relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand-primary transition-colors">
-                        <Search size={18} />
+                {/* Search Bar - Compact */}
+                <div className="w-full md:w-auto md:min-w-[320px] relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#C48B28] group-focus-within:text-[#402E11] transition-colors">
+                        <Search size={18} strokeWidth={2.5} />
                     </div>
                     <input
                         type="text"
                         placeholder="Search by name or breed..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-12 pr-5 py-3 rounded-full border border-border bg-bg-surface shadow-sm focus:shadow-lg focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20 outline-none text-sm text-text-primary transition-all duration-300 placeholder:text-text-tertiary"
+                        className="w-full pl-12 pr-6 py-3.5 rounded-[2rem] border border-[#EBC176]/20 bg-white shadow-lg shadow-[#402E11]/5 focus:shadow-xl focus:border-[#C48B28] focus:ring-4 focus:ring-[#C48B28]/5 outline-none text-sm font-bold text-[#402E11] transition-all placeholder:text-[#402E11]/30"
                     />
                 </div>
             </div>
 
-            {/* Empty State */}
-            {petsList.length === 0 && (
-                <div className="text-center py-16 bg-bg-secondary/40 rounded-[32px] border border-dashed border-border mb-8 max-w-2xl mx-auto">
-                    <div className="w-16 h-16 bg-bg-surface rounded-full flex items-center justify-center mx-auto mb-4 shadow-soft">
-                        <PlusCircle className="text-brand-primary" size={24} />
+            {/* Simple Empty State */}
+            {petsList.length === 0 ? (
+                <div className="max-w-2xl mx-auto py-10 px-6 text-center bg-white border-2 border-dashed border-[#EBC176]/30 rounded-[2.5rem] mb-8">
+                    <div className="w-14 h-14 bg-[#FAF3E0] rounded-full flex items-center justify-center mx-auto mb-4 text-[#C48B28]">
+                        <PlusCircle size={28} strokeWidth={2} />
                     </div>
-                    <p className="text-lg  font-medium text-text-primary mb-6">You don't have any pets available for rehoming.</p>
+                    <h3 className="text-xl font-black text-[#402E11] mb-2 tracking-tight">No pets available</h3>
+                    <p className="text-[#402E11]/60 font-medium text-sm mb-6 max-w-sm mx-auto leading-relaxed">
+                        You don't have any pets on your profile that are available for rehoming at the moment.
+                    </p>
                     <button
-                        onClick={() => navigate('/dashboard/pets/add')}
-                        className="bg-brand-primary text-text-inverted rounded-full px-6 py-2.5 h-auto text-base font-bold shadow-md hover:opacity-90 transition-all"
+                        onClick={() => navigate('/dashboard/pets/create')}
+                        className="bg-[#C48B28] text-white rounded-2xl px-8 py-3 font-black text-[12px] uppercase tracking-[0.2em] shadow-xl shadow-[#C48B28]/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
                     >
                         Add a Pet
                     </button>
                 </div>
+            ) : filteredPets.length === 0 ? (
+                <div className="text-center py-20">
+                    <div className="w-16 h-16 bg-[#FAF3E0] rounded-2xl flex items-center justify-center mx-auto mb-6 text-[#C48B28]">
+                        <Search size={24} strokeWidth={3} />
+                    </div>
+                    <h3 className="text-xl font-black text-[#402E11] mb-2">No matches found</h3>
+                    <p className="text-[#402E11]/60 text-xs font-bold">Try broadening your search criteria.</p>
+                </div>
+            ) : (
+                /* Pet Grid - Premium Cards */
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto px-4">
+                    <AnimatePresence mode='popLayout'>
+                        {filteredPets.map(pet => {
+                            const isSelected = selectedPetId === pet.id;
+                            const isComplete = pet.profile_is_complete;
+
+                            return (
+                                <motion.div
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    key={pet.id}
+                                    onClick={() => handlePetClick(pet)}
+                                    className={`
+                                        relative rounded-[2.5rem] overflow-hidden cursor-pointer transition-all duration-500 group bg-white
+                                        ${isSelected
+                                            ? 'ring-4 ring-[#C48B28] shadow-2xl scale-[1.03]'
+                                            : 'border border-[#EBC176]/10 hover:shadow-2xl hover:-translate-y-2'
+                                        }
+                                    `}
+                                >
+                                    {/* Selection Glow */}
+                                    {isSelected && (
+                                        <div className="absolute inset-0 bg-[#C48B28]/5 z-10" />
+                                    )}
+
+                                    {/* Selection Badge */}
+                                    {isSelected && (
+                                        <div className="absolute top-4 right-4 z-30 bg-[#C48B28] text-white rounded-full p-1.5 shadow-xl animate-in zoom-in-50 duration-300">
+                                            <CheckCircle2 size={16} strokeWidth={3} />
+                                        </div>
+                                    )}
+
+                                    {/* Incomplete Status */}
+                                    {!isComplete && (
+                                        <div className="absolute top-4 left-4 z-30 bg-white/90 backdrop-blur-md text-[#A66D00] border border-[#EBC176]/50 text-[9px] font-black px-3 py-1.5 rounded-full shadow-lg flex items-center gap-2 uppercase tracking-widest">
+                                            <AlertCircle size={12} strokeWidth={3} /> Incomplete
+                                        </div>
+                                    )}
+
+                                    {/* Pet Image Container */}
+                                    <div className="aspect-[4/3] bg-[#FAF3E0] relative overflow-hidden">
+                                        {pet.media && pet.media.length > 0 ? (
+                                            <img src={pet.media[0].url} alt={pet.name} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+                                        ) : (
+                                            <div className="w-full h-full flex flex-col items-center justify-center text-[#C48B28]">
+                                                <div className="w-12 h-12 rounded-2xl bg-white/50 flex items-center justify-center mb-2">
+                                                    <PawPrint size={20} strokeWidth={2.5} />
+                                                </div>
+                                                <span className="text-[10px] font-black uppercase tracking-widest">No Portrait</span>
+                                            </div>
+                                        )}
+
+                                        {/* Incomplete Actions Overlay */}
+                                        {!isComplete && (
+                                            <div className="absolute inset-0 bg-[#402E11]/40 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-sm z-20">
+                                                <div className="bg-white text-[#402E11] text-[10px] font-black px-5 py-2.5 rounded-full flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform shadow-2xl">
+                                                    <Edit2 size={12} strokeWidth={2.5} /> Update Profile
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Content Info */}
+                                    <div className={`p-6 text-center transition-all duration-500 ${isSelected ? 'bg-transparent' : 'bg-white'}`}>
+                                        <h3 className={`text-xl font-black mb-1 transition-colors duration-300 ${isSelected ? 'text-[#402E11]' : 'text-[#402E11]'}`}>
+                                            {pet.name}
+                                        </h3>
+                                        <div className="flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.1em] text-[#C48B28]">
+                                            <span>{pet.species || 'Companion'}</span>
+                                            {pet.breed && (
+                                                <>
+                                                    <span className="w-1 h-1 rounded-full bg-[#EBC176]/50" />
+                                                    <span className="text-[#402E11]/40">{pet.breed}</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </AnimatePresence>
+                </div>
             )}
 
-            {/* Pet Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto px-4">
-                {filteredPets.map(pet => {
-                    const isSelected = selectedPetId === pet.id;
-                    const isComplete = pet.profile_is_complete;
-
-                    return (
-                        <div
-                            key={pet.id}
-                            onClick={() => handlePetClick(pet)}
-                            className={`
-                                relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300 group bg-bg-surface
-                                ${isSelected
-                                    ? 'ring-2 ring-brand-primary shadow-xl scale-[1.02]'
-                                    : 'border border-border hover:shadow-lg hover:-translate-y-1'
-                                }
-                            `}
-                        >
-                            {/* Selection Checkmark */}
-                            {isSelected && (
-                                <div className="absolute top-2 right-2 z-20 bg-brand-primary text-text-inverted rounded-full p-1 shadow-lg animate-in zoom-in duration-200">
-                                    <CheckCircle2 size={14} className="text-current" />
-                                </div>
-                            )}
-
-                            {/* Incomplete Badge */}
-                            {!isComplete && (
-                                <div className="absolute top-2 right-2 z-20 bg-status-warning/90 backdrop-blur text-yellow-900 border border-yellow-200/50 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1  uppercase tracking-wide">
-                                    <AlertCircle size={10} /> Incomplete
-                                </div>
-                            )}
-
-                            {/* Pet Image - More Landscape now */}
-                            <div className="aspect-[4/3] bg-bg-secondary relative overflow-hidden">
-                                {pet.media && pet.media.length > 0 ? (
-                                    <img src={pet.media[0].url} alt={pet.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                                ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center text-text-tertiary bg-bg-secondary">
-                                        <div className="w-10 h-10 rounded-full bg-bg-surface/50 flex items-center justify-center mb-2">
-                                            <Search size={16} className="opacity-50" />
-                                        </div>
-                                        <span className="text-[10px] font-medium ">No Photo</span>
-                                    </div>
-                                )}
-
-                                {/* Hover Overlay for Incomplete */}
-                                {!isComplete && (
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                                        <div className="bg-bg-surface text-text-primary text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1 transform translate-y-2 group-hover:translate-y-0 transition-transform shadow-lg">
-                                            <Edit2 size={10} /> Complete Profile
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Info Content */}
-                            <div className={`p-3 text-center transition-colors duration-300 ${isSelected ? 'bg-brand-primary/5' : 'bg-bg-surface'}`}>
-                                <h3 className={`text-base font-bold mb-0.5 tracking-tight ${isSelected ? 'text-brand-primary' : 'text-text-primary'}`}>
-                                    {pet.name}
-                                </h3>
-                                <div className="text-[10px] text-text-secondary font-medium ">
-                                    {pet.species || 'Unknown'}
-                                    {pet.breed && <span className="opacity-60"> • {pet.breed}</span>}
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-
-            {/* Footer / Action Bar */}
-            <div className="fixed bottom-0 left-0 right-0 bg-bg-surface/80 backdrop-blur-xl border-t border-border p-4 z-40 transform translate-y-0 transition-transform duration-300">
-                <div className="max-w-6xl mx-auto flex items-center justify-between">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="flex items-center gap-2 text-text-secondary hover:text-text-primary font-bold  transition-colors px-4 py-2 rounded-lg hover:bg-bg-secondary"
-                    >
-                        <ArrowLeft size={18} /> <span className="uppercase tracking-wider text-xs">Back</span>
-                    </button>
-
-                    <div className="hidden md:block">
-                        {selectedPet && (
-                            <div className="flex flex-col items-center animate-in fade-in slide-in-from-bottom-2">
-                                <span className="text-[10px] text-text-tertiary uppercase tracking-widest font-bold">Selected Pet</span>
-                                <span className="text-sm font-bold text-brand-primary">{selectedPet.name}</span>
-                            </div>
-                        )}
-                    </div>
-
-                    <button
-                        onClick={handleContinue}
-                        disabled={!selectedPetId}
-                        className={`
-                            h-12 px-6 rounded-full font-bold text-text-inverted transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-0.5
-                            ${selectedPetId
-                                ? 'bg-brand-secondary hover:opacity-90 cursor-pointer'
-                                : 'bg-text-tertiary cursor-not-allowed shadow-none hover:translate-y-0'}
-                        `}
-                    >
-                        <span className="uppercase tracking-widest text-xs">Continue</span>
-                        <ArrowRight size={18} />
-                    </button>
-                </div>
-            </div>
-        </div>
+            {/* Premium Action Bar - Clean & Modern */}
+            <RehomingActionBar
+                onBack={() => navigate(-1)}
+                onNext={handleContinue}
+                canNext={!!selectedPetId}
+                statusText={!selectedPetId ? 'Select a pet to proceed' : `Proceed with ${petsList.find(p => p.id === selectedPetId)?.name}`}
+            />
+        </div >
     );
 };
 

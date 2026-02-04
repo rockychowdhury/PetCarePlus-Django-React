@@ -479,13 +479,34 @@ class RoleRequestViewSet(viewsets.ModelViewSet):
          
         response = super().partial_update(request, *args, **kwargs)
         
-        # If successfully approved, update the user's role
+        # If successfully approved, update the user's role and sync provider profile if applicable
         if response.status_code == 200:
             instance = self.get_object()
             if instance.status == 'approved':
                 user = instance.user
                 user.role = instance.requested_role
                 user.save()
+                
+                # If they were requesting to be a service provider, approve their profile too
+                if instance.requested_role == User.UserRole.SERVICE_PROVIDER:
+                    from apps.services.models import ServiceProvider
+                    try:
+                        provider = user.service_provider_profile
+                        provider.application_status = 'approved'
+                        provider.verification_status = 'verified'
+                        provider.save()
+                    except (ServiceProvider.DoesNotExist, AttributeError):
+                        pass
+            
+            elif instance.status == 'rejected':
+                if instance.requested_role == User.UserRole.SERVICE_PROVIDER:
+                    from apps.services.models import ServiceProvider
+                    try:
+                        provider = instance.user.service_provider_profile
+                        provider.application_status = 'rejected'
+                        provider.save()
+                    except (ServiceProvider.DoesNotExist, AttributeError):
+                        pass
         
         return response
 
@@ -509,6 +530,17 @@ class RoleRequestViewSet(viewsets.ModelViewSet):
         user.role = role_request.requested_role
         user.is_active = True  # Ensure user account is active
         user.save()
+
+        # Sync ServiceProvider profile if applicable
+        if role_request.requested_role == User.UserRole.SERVICE_PROVIDER:
+            from apps.services.models import ServiceProvider
+            try:
+                provider = user.service_provider_profile
+                provider.application_status = 'approved'
+                provider.verification_status = 'verified'
+                provider.save()
+            except (ServiceProvider.DoesNotExist, AttributeError):
+                pass
         
         return Response({
             "message": "Role request approved successfully",
@@ -529,6 +561,16 @@ class RoleRequestViewSet(viewsets.ModelViewSet):
         role_request.status = 'rejected'
         role_request.admin_notes = request.data.get('admin_notes', 'Request rejected by admin')
         role_request.save()
+
+        # Update ServiceProvider profile status to rejected
+        if role_request.requested_role == User.UserRole.SERVICE_PROVIDER:
+            from apps.services.models import ServiceProvider
+            try:
+                provider = role_request.user.service_provider_profile
+                provider.application_status = 'rejected'
+                provider.save()
+            except (ServiceProvider.DoesNotExist, AttributeError):
+                pass
         
         return Response({
             "message": "Role request rejected",

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { Loader } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 import useServices from '../../hooks/useServices';
+import useAuth from '../../hooks/useAuth';
 
 // Components
 import ServiceHero from '../../components/Services/ServiceDetail/ServiceHero';
@@ -18,7 +19,10 @@ import ContactModal from '../../components/Services/ServiceDetail/ContactModal';
 const ServiceDetailPage = () => {
     const { id } = useParams();
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
+    const location = useLocation();
     const { useGetProvider } = useServices();
+    const { user } = useAuth();
     const { data: provider, isLoading } = useGetProvider(id);
 
     // State
@@ -39,6 +43,22 @@ const ServiceDetailPage = () => {
 
     // Handlers
     const handleOpenBooking = (service = null) => {
+        if (!user) {
+            toast.error("Please login to book a service");
+            navigate('/login', { state: { from: location.pathname } });
+            return;
+        }
+
+        if (user.role === 'service_provider') {
+            toast.error("Service Providers cannot book services");
+            return;
+        }
+
+        if (user.role === 'admin') {
+            toast.error("Admins cannot book services");
+            return;
+        }
+
         setSelectedServiceForBooking(service);
         setIsBookingModalOpen(true);
     };
@@ -91,7 +111,7 @@ const ServiceDetailPage = () => {
     const galleryImages = provider.media || [];
 
     return (
-        <div className="min-h-screen bg-white pb-24">
+        <div className="min-h-screen bg-[#FEF9ED] pb-24">
             <ServiceHero
                 provider={provider}
                 onBook={() => handleOpenBooking()}
@@ -99,12 +119,11 @@ const ServiceDetailPage = () => {
                 onShare={handleShare}
                 onFavorite={handleToggleFavorite}
                 isFavorite={isFavorite}
-                onOpenGallery={() => setIsGalleryOpen(true)}
             />
 
             <ServiceTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-            <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
+            <div className="max-w-[1400px] mx-auto px-6 lg:px-10 py-12">
                 {activeTab === 'overview' && (
                     <OverviewTab
                         provider={provider}

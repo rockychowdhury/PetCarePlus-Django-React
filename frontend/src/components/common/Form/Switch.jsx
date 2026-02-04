@@ -12,20 +12,32 @@ const Switch = ({
     size = 'md',
     ...props
 }) => {
-    const switchId = id || name || Math.random().toString(36).substr(2, 9);
+    const switchId = id || name || React.useMemo(() => `switch-${Math.random().toString(36).substr(2, 9)}`, []);
 
-    const sizes = {
-        sm: { track: 'w-8 h-4', thumb: 'w-3 h-3', translate: 'translate-x-4' },
-        md: { track: 'w-11 h-6', thumb: 'w-5 h-5', translate: 'translate-x-5' },
-        lg: { track: 'w-14 h-7', thumb: 'w-6 h-6', translate: 'translate-x-7' },
+    const sizeClasses = {
+        sm: {
+            track: 'w-8 h-4',
+            thumb: 'after:w-3 after:h-3',
+            translate: 'peer-checked:after:translate-x-4'
+        },
+        md: {
+            track: 'w-11 h-6',
+            thumb: 'after:w-5 after:h-5',
+            translate: 'peer-checked:after:translate-x-5'
+        },
+        lg: {
+            track: 'w-14 h-7',
+            thumb: 'after:w-6 after:h-6',
+            translate: 'peer-checked:after:translate-x-7'
+        }
     };
 
-    const currentSize = sizes[size] || sizes.md;
+    const current = sizeClasses[size] || sizeClasses.md;
 
     return (
-        <div className={`flex items-center gap-3 ${className}`}>
+        <label className={`group flex items-center gap-3 p-2.5 rounded-xl border border-transparent hover:bg-bg-secondary cursor-pointer transition-all active:scale-[0.98] ${className}`}>
             {/* Toggle Switch */}
-            <div className="relative inline-flex items-center">
+            <div className="relative inline-flex items-center shrink-0">
                 <input
                     id={switchId}
                     type="checkbox"
@@ -37,25 +49,27 @@ const Switch = ({
                     {...props}
                 />
                 <div className={`
-                ${currentSize.track} bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-brand-secondary/50 
-                rounded-full peer dark:bg-gray-700 peer-checked:after:${currentSize.translate} peer-checked:after:border-white 
-                after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white 
-                after:border-gray-300 after:border after:rounded-full after:transition-all 
-                ${currentSize.thumb} peer-checked:bg-brand-secondary
-                ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-            `}></div>
+                    ${current.track} bg-gray-200 dark:bg-gray-600 
+                    rounded-full transition-all duration-300
+                    after:content-[''] after:absolute after:top-[2px] after:start-[2px] 
+                    after:bg-white after:rounded-full after:transition-all after:duration-300
+                    after:shadow-sm
+                    ${current.thumb}
+                    ${current.translate}
+                    peer-checked:bg-[#C48B28]
+                    ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer group-hover:bg-gray-300'}
+                `}></div>
             </div>
 
-            {/* Label */}
+            {/* Label Text */}
             {label && (
-                <label
-                    htmlFor={switchId}
-                    className={`text-sm font-medium ${isDisabled ? 'text-text-tertiary' : 'text-text-primary'} cursor-pointer select-none`}
+                <span
+                    className={`text-xs font-black uppercase tracking-[0.1em] transition-colors flex-1 ${checked ? 'text-[#C48B28]' : 'text-[#402E11]/60'} ${isDisabled ? 'text-text-tertiary' : ''} select-none`}
                 >
                     {label}
-                </label>
+                </span>
             )}
-        </div>
+        </label>
     );
 };
 

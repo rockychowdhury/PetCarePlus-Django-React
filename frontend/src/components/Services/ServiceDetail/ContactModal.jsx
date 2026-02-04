@@ -114,7 +114,7 @@ const ContactModal = ({ isOpen, onClose, provider }) => {
                                 <div className="flex-1">
                                     <div className="text-xs font-bold text-gray-500 uppercase">Location</div>
                                     <div className="font-medium text-gray-900">
-                                        {provider.city}, {provider.state}
+                                        {provider.address?.city || provider.city || 'N/A'}, {provider.address?.state || provider.state || ''}
                                     </div>
                                 </div>
                             </div>

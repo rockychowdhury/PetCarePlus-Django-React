@@ -2,20 +2,18 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const SortDropdown = ({ currentSort, onSortChange }) => {
+const SortDropdown = ({ currentSort, onSortChange, options, customTrigger }) => {
     const [isOpen, setIsOpen] = useState(false);
     const sortRef = useRef(null);
 
-    const sortOptions = [
+    const defaultOptions = [
         { value: '-published_at', label: 'Newest First' },
-        { value: 'relevance', label: 'Relevance' },
-        { value: 'adoption_fee', label: 'Lowest Fee' },
-        { value: '-adoption_fee', label: 'Highest Fee' },
-        { value: 'age_months', label: 'Youngest First' },
-        { value: '-age_months', label: 'Oldest First' },
+        { value: 'created_at', label: 'Oldest First' },
+        { value: 'distance', label: 'Nearest to Me' },
     ];
 
-    const currentSortLabel = sortOptions.find(opt => opt.value === currentSort)?.label || 'Newest First';
+    const displayOptions = options || defaultOptions;
+    const currentSortLabel = displayOptions.find(opt => opt.value === currentSort)?.label || 'Newest First';
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -35,33 +33,42 @@ const SortDropdown = ({ currentSort, onSortChange }) => {
 
     return (
         <div className="relative" ref={sortRef}>
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 pl-4 pr-3 py-2.5 bg-white border border-gray-200 rounded-lg text-[13px] font-medium text-[#4B5563] hover:border-gray-300 transition-colors min-w-[200px] justify-between cursor-pointer"
-            >
-                <span className="truncate">Sort by: {currentSortLabel}</span>
-                <ChevronDown size={16} className={`text-gray-400 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-            </button>
+            {customTrigger ? (
+                <div onClick={() => setIsOpen(!isOpen)}>
+                    {customTrigger}
+                </div>
+            ) : (
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="flex items-center gap-4 px-6 py-4 bg-white border border-[#EBC176]/20 rounded-2xl text-[10px] font-black text-themev2-text uppercase tracking-widest hover:bg-[#FAF3E0] transition-all shadow-sm active:scale-95"
+                >
+                    <span>Sort by: {currentSortLabel}</span>
+                    <ChevronDown size={14} className={`text-[#EBC176] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+                </button>
+            )}
 
             {/* Dropdown Menu */}
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 5 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-full mt-1 w-full bg-white border border-gray-100 rounded-lg shadow-lg py-1 z-20 overflow-hidden"
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                        className="absolute right-0 top-full mt-2 w-56 bg-white border border-[#EBC176]/20 rounded-2xl shadow-xl py-2 z-50 overflow-hidden"
                     >
-                        {sortOptions.map((option) => (
+                        {displayOptions.map((option) => (
                             <button
                                 key={option.value}
                                 onClick={() => handleSelect(option.value)}
-                                className={`w-full text-left px-4 py-2.5 text-[13px] font-medium transition-colors flex items-center justify-between
-                                    ${currentSort === option.value ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-50'}
+                                className={`w-full text-left px-5 py-3 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-between
+                                    ${currentSort === option.value ? 'bg-[#FAF3E0] text-[#C48B28]' : 'text-themev2-text/60 hover:bg-[#FAF3E0]/50 hover:text-themev2-text'}
                                 `}
                             >
                                 {option.label}
+                                {currentSort === option.value && (
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#C48B28]" />
+                                )}
                             </button>
                         ))}
                     </motion.div>

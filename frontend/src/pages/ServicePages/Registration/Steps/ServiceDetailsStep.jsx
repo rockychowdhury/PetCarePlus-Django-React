@@ -1,6 +1,8 @@
 import React from 'react';
 import Input from '../../../../components/common/Form/Input';
+import Select from '../../../../components/common/Form/Select';
 import Textarea from '../../../../components/common/Form/Textarea';
+import Switch from '../../../../components/common/Form/Switch';
 import Button from '../../../../components/common/Buttons/Button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 
@@ -16,47 +18,62 @@ const ServiceDetailsStep = ({ formData, handleChange, handleMultiSelect, onNext,
     const isGroomer = slug === 'grooming';
     const isSitter = slug === 'pet_sitting';
 
-    // Helper to render species checkboxes
-    const renderSpeciesSelector = () => (
-        <div className="mt-4">
-            <label className="block text-sm font-bold text-text-primary mb-3">Accepted Species</label>
-            <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto p-2 border rounded-lg bg-gray-50">
-                {speciesList.map(s => (
-                    <label key={s.id} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-100 rounded">
-                        <input
-                            type="checkbox"
-                            value={s.id}
-                            checked={formData.species_ids?.includes(s.id)}
-                            onChange={(e) => handleMultiSelect(e, 'species_ids')}
-                            className="rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
-                        />
-                        <span className="text-sm">{s.name}</span>
-                    </label>
-                ))}
+    // Helper to render modern chip-based selector
+    const renderChiplist = (label, items, fieldName) => {
+        // Filter logic moved into map/display or pre-filtered
+        return (
+            <div className="mt-4">
+                <label className="block text-sm font-bold text-text-primary mb-3">{label}</label>
+                <div className="flex flex-wrap gap-2 p-4 border border-dashed border-border rounded-2xl bg-bg-secondary/10">
+                    {items.length === 0 ? (
+                        <p className="text-sm text-text-tertiary italic">No options available for this category.</p>
+                    ) : (
+                        items.map(item => {
+                            const isSelected = formData[fieldName]?.includes(item.id);
+                            return (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    onClick={() => {
+                                        // Mimic event for parent or handle locally
+                                        // We can't easily use handleMultiSelect from parent as it expects e.target.
+                                        // Better to use a direct setter wrapper logic here or update parent.
+                                        // But wait, the parent handleMultiSelect uses e.target.value and e.target.checked.
+                                        // Let's create a synthetic event.
+                                        const syntheticEvent = {
+                                            target: {
+                                                value: item.id,
+                                                checked: !isSelected
+                                            }
+                                        };
+                                        handleMultiSelect(syntheticEvent, fieldName);
+                                    }}
+                                    className={`
+                                        px-4 py-2 rounded-full text-sm font-bold transition-all border-2
+                                        ${isSelected
+                                            ? 'bg-brand-primary border-brand-primary text-white shadow-md transform scale-105'
+                                            : 'bg-white border-border text-text-secondary hover:border-brand-primary/50 hover:bg-brand-primary/5'
+                                        }
+                                    `}
+                                >
+                                    {item.name}
+                                </button>
+                            );
+                        })
+                    )}
+                </div>
             </div>
-        </div>
-    );
+        );
+    };
 
-    // Helper to render service checkboxes for vets
-    const renderServiceSelector = () => (
-        <div className="mt-4">
-            <label className="block text-sm font-bold text-text-primary mb-3">Services Offered</label>
-            <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-3 border rounded-lg bg-gray-50">
-                {serviceOptions.filter(o => o.category === parseInt(formData.category)).map(o => (
-                    <label key={o.id} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            value={o.id}
-                            checked={formData.services_ids?.includes(o.id)}
-                            onChange={(e) => handleMultiSelect(e, 'services_ids')}
-                            className="rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
-                        />
-                        <span className="text-sm">{o.name}</span>
-                    </label>
-                ))}
-            </div>
-        </div>
-    );
+    const renderSpeciesSelector = () => renderChiplist('Accepted Species', speciesList, 'species_ids');
+
+    const renderServiceSelector = () => {
+        // We filter options based on category here!
+        // IMPORTANT: formData.category is ID (string or number), o.category is ID (number)
+        const relevantOptions = serviceOptions.filter(o => o.category == formData.category);
+        return renderChiplist('Services Offered', relevantOptions, 'services_ids');
+    };
 
     // Helper to determine the prefix for nested form data based on service type
     const getTypePrefix = () => {
@@ -110,6 +127,22 @@ const ServiceDetailsStep = ({ formData, handleChange, handleMultiSelect, onNext,
                                 step="0.01"
                             />
                         </div>
+                        <Textarea
+                            label="Environment Details"
+                            name="environment_details"
+                            value={formData.environment_details || ''}
+                            onChange={handleChange}
+                            rows={2}
+                            placeholder="Describe your home environment, yard space, etc."
+                        />
+                        <Textarea
+                            label="Care Standards"
+                            name="care_standards"
+                            value={formData.care_standards || ''}
+                            onChange={handleChange}
+                            rows={2}
+                            placeholder="Your approach to pet care, daily routines, etc."
+                        />
                         {renderSpeciesSelector()}
                     </div>
                 )}
@@ -123,15 +156,29 @@ const ServiceDetailsStep = ({ formData, handleChange, handleMultiSelect, onNext,
                             value={formData.pricing_info || ''}
                             onChange={handleChange}
                             rows={3}
-                            placeholder="Consultation fees, emergency rates..."
+                            placeholder={`Consultation Fee: $50\nEmergency Visit: $100\nVaccinations: $20-$40`}
                         />
                         <div className="grid md:grid-cols-2 gap-4">
-                            <Input
+                            <div className="flex items-center gap-3 p-4 border rounded-xl bg-bg-secondary/5">
+                                <Switch
+                                    label="Emergency Services Available"
+                                    name="emergency_services"
+                                    checked={formData.emergency_services || false}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <Select
                                 label="Clinic Type"
                                 name="clinic_type"
                                 value={formData.clinic_type || ''}
                                 onChange={handleChange}
-                                placeholder="e.g. Small Animal, Emergency..."
+                                options={[
+                                    { value: 'general', label: 'General Practice' },
+                                    { value: 'emergency', label: 'Emergency' },
+                                    { value: 'specialty', label: 'Specialty' },
+                                    { value: 'mobile', label: 'Mobile Vet' }
+                                ]}
+                                placeholder="Select Clinic Type"
                             />
                             {/* Add more compact vet fields here if needed */}
                         </div>
@@ -140,11 +187,134 @@ const ServiceDetailsStep = ({ formData, handleChange, handleMultiSelect, onNext,
                     </div>
                 )}
 
-                {/* --- Trainer / Groomer / Sitter Shared Structure --- */}
-                {(isTrainer || isGroomer || isSitter) && (
+                {/* --- Trainer Specifics --- */}
+                {isTrainer && (
                     <div className="space-y-4">
-                        <h3 className="font-semibold text-brand-primary border-b pb-1">Experience & Pricing</h3>
+                        <h3 className="font-semibold text-brand-primary border-b pb-1">Training Details</h3>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <Select
+                                label="Primary Training Method"
+                                name="primary_method"
+                                value={formData.primary_method || ''}
+                                onChange={handleChange}
+                                options={[
+                                    { value: 'positive_reinforcement', label: 'Positive Reinforcement' },
+                                    { value: 'clicker_training', label: 'Clicker Training' },
+                                    { value: 'balanced', label: 'Balanced Training' },
+                                    { value: 'other', label: 'Other Methods' }
+                                ]}
+                                placeholder="Select Training Method"
+                            />
+                            <Input
+                                label="Years of Experience"
+                                type="number"
+                                name="years_experience"
+                                value={formData.years_experience || ''}
+                                onChange={handleChange}
+                                min="0"
+                            />
+                        </div>
+                        <Textarea
+                            label="Training Philosophy"
+                            name="training_philosophy"
+                            value={formData.training_philosophy || ''}
+                            onChange={handleChange}
+                            rows={3}
+                            placeholder="Describe your approach to training and your philosophy..."
+                        />
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <Input
+                                label="Private Session Rate ($/hr)"
+                                type="number"
+                                name="base_price"
+                                value={formData.base_price || ''}
+                                onChange={handleChange}
+                                min="0"
+                                step="0.01"
+                                placeholder="Hourly rate for private sessions"
+                                required
+                            />
+                            <Input
+                                label="Group Class Rate ($/class)"
+                                type="number"
+                                name="group_class_rate"
+                                value={formData.group_class_rate || ''}
+                                onChange={handleChange}
+                                min="0"
+                                step="0.01"
+                                placeholder="Per-class rate (optional)"
+                            />
+                        </div>
+                        <div className="space-y-3">
+                            <label className="block text-sm font-bold text-text-primary">Service Options</label>
+                            <div className="grid md:grid-cols-2 gap-3">
+                                <Switch
+                                    label="Private Sessions"
+                                    name="offers_private_sessions"
+                                    checked={formData.offers_private_sessions ?? true}
+                                    onChange={handleChange}
+                                />
+                                <Switch
+                                    label="Group Classes"
+                                    name="offers_group_classes"
+                                    checked={formData.offers_group_classes || false}
+                                    onChange={handleChange}
+                                />
+                                <Switch
+                                    label="Board & Train"
+                                    name="offers_board_and_train"
+                                    checked={formData.offers_board_and_train || false}
+                                    onChange={handleChange}
+                                />
+                                <Switch
+                                    label="Virtual Training"
+                                    name="offers_virtual_training"
+                                    checked={formData.offers_virtual_training || false}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+                        {renderSpeciesSelector()}
+                    </div>
+                )}
 
+                {/* --- Groomer Specifics --- */}
+                {isGroomer && (
+                    <div className="space-y-4">
+                        <h3 className="font-semibold text-brand-primary border-b pb-1">Grooming Details</h3>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <Select
+                                label="Salon Type"
+                                name="salon_type"
+                                value={formData.salon_type || ''}
+                                onChange={handleChange}
+                                options={[
+                                    { value: 'salon', label: 'Salon Based' },
+                                    { value: 'mobile', label: 'Mobile Grooming' },
+                                    { value: 'both', label: 'Both' }
+                                ]}
+                                placeholder="Select Salon Type"
+                            />
+                            <Input
+                                label="Base Grooming Price ($)"
+                                type="number"
+                                name="base_price"
+                                value={formData.base_price || ''}
+                                onChange={handleChange}
+                                min="0"
+                                step="0.01"
+                                placeholder="Starting price for basic groom"
+                                required
+                            />
+                        </div>
+                        {renderSpeciesSelector()}
+                    </div>
+                )}
+
+                {/* --- Pet Sitter Specifics --- */}
+                {isSitter && (
+                    <div className="space-y-4">
+                        <h3 className="font-semibold text-brand-primary border-b pb-1">Pet Sitting Details</h3>
                         <div className="grid md:grid-cols-2 gap-4">
                             <Input
                                 label="Years of Experience"
@@ -154,29 +324,59 @@ const ServiceDetailsStep = ({ formData, handleChange, handleMultiSelect, onNext,
                                 onChange={handleChange}
                                 min="0"
                             />
-                            {isSitter && (
-                                <Input
-                                    label="Service Radius (km)"
-                                    type="number"
-                                    name="service_radius_km"
-                                    value={formData.service_radius_km || ''}
+                            <Input
+                                label="Service Radius (km)"
+                                type="number"
+                                name="service_radius_km"
+                                value={formData.service_radius_km || ''}
+                                onChange={handleChange}
+                            />
+                        </div>
+                        <div className="space-y-3">
+                            <label className="block text-sm font-bold text-text-primary">Services Offered</label>
+                            <div className="grid md:grid-cols-3 gap-3">
+                                <Switch
+                                    label="Dog Walking"
+                                    name="offers_dog_walking"
+                                    checked={formData.offers_dog_walking ?? true}
                                     onChange={handleChange}
                                 />
-                            )}
-                            {(isGroomer || isTrainer) && (
-                                <Input
+                                <Switch
+                                    label="House Sitting"
+                                    name="offers_house_sitting"
+                                    checked={formData.offers_house_sitting || false}
+                                    onChange={handleChange}
                                 />
-                            )}
-
-                            {isSitter && (
-                                <>
-                                    <Input label="Dog Walking Rate ($)" type="number" name="walking_rate" value={formData.walking_rate || ''} onChange={handleChange} placeholder="Per walk" />
-                                    <Input label="House Sitting Rate ($)" type="number" name="house_sitting_rate" value={formData.house_sitting_rate || ''} onChange={handleChange} placeholder="Per night" />
-                                    <Input label="Drop-in Visit Rate ($)" type="number" name="drop_in_rate" value={formData.drop_in_rate || ''} onChange={handleChange} placeholder="Per visit" />
-                                </>
-                            )}
+                                <Switch
+                                    label="Drop-in Visits"
+                                    name="offers_drop_in_visits"
+                                    checked={formData.offers_drop_in_visits || false}
+                                    onChange={handleChange}
+                                />
+                            </div>
                         </div>
-
+                        <div className="space-y-3">
+                            <label className="block text-sm font-bold text-text-primary">Additional Details</label>
+                            <div className="grid md:grid-cols-2 gap-3">
+                                <Switch
+                                    label="Insured"
+                                    name="is_insured"
+                                    checked={formData.is_insured || false}
+                                    onChange={handleChange}
+                                />
+                                <Switch
+                                    label="Has Transport"
+                                    name="has_transport"
+                                    checked={formData.has_transport || false}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-4">
+                            <Input label="Dog Walking Rate ($)" type="number" name="walking_rate" value={formData.walking_rate || ''} onChange={handleChange} placeholder="Per walk" step="0.01" />
+                            <Input label="House Sitting Rate ($)" type="number" name="house_sitting_rate" value={formData.house_sitting_rate || ''} onChange={handleChange} placeholder="Per night" step="0.01" />
+                            <Input label="Drop-in Visit Rate ($)" type="number" name="drop_in_rate" value={formData.drop_in_rate || ''} onChange={handleChange} placeholder="Per visit" step="0.01" />
+                        </div>
                         {renderSpeciesSelector()}
                     </div>
                 )}

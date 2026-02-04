@@ -3,7 +3,7 @@ import { baseURL } from "../utils/baseURL";
 import { authObserver } from "../utils/AuthObserver";
 
 // Shared axios instance for the app
-const axiosInstance = axios.create({
+export const axiosInstance = axios.create({
     baseURL: baseURL,
     withCredentials: true,
 });

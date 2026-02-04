@@ -100,6 +100,7 @@ class RehomingRequestSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'pet', 'pet_details', 'owner', 'reason', 'urgency', 
             'ideal_home_notes', 'location_city', 'location_state', 
+            'latitude', 'longitude',
             'status', 'status_display',
             'terms_accepted', 'created_at'
         ]

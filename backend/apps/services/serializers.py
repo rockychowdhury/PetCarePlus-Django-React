@@ -22,12 +22,12 @@ class SpeciesSerializer(serializers.ModelSerializer):
 class SpecializationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Specialization
-        fields = ['id', 'name', 'description']
+        fields = ['id', 'name', 'description', 'category']
 
 class ServiceOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceOption
-        fields = ['id', 'name', 'base_price', 'description']
+        fields = ['id', 'name', 'base_price', 'description', 'category']
 
 class ServiceMediaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -40,6 +40,9 @@ class BusinessHoursSerializer(serializers.ModelSerializer):
     class Meta:
         model = BusinessHours
         fields = ['id', 'day', 'day_display', 'open_time', 'close_time', 'is_closed']
+        extra_kwargs = {
+            'id': {'read_only': True}
+        }
 
 class FosterServiceSerializer(serializers.ModelSerializer):
     species_accepted = SpeciesSerializer(many=True, read_only=True)
@@ -55,6 +58,18 @@ class FosterServiceSerializer(serializers.ModelSerializer):
             'daily_rate', 'weekly_discount', 'monthly_rate',
             'video_url'
         ]
+
+    def validate_capacity(self, value):
+        """Ensure capacity is positive"""
+        if value <= 0:
+            raise serializers.ValidationError("Capacity must be greater than 0")
+        return value
+
+    def validate_daily_rate(self, value):
+        """Ensure daily rate is positive"""
+        if value <= 0:
+            raise serializers.ValidationError("Daily rate must be greater than 0")
+        return value
 
 class VeterinaryClinicSerializer(serializers.ModelSerializer):
     services_offered = ServiceOptionSerializer(many=True, read_only=True)
@@ -75,6 +90,20 @@ class VeterinaryClinicSerializer(serializers.ModelSerializer):
             'species_treated', 'species_treated_ids',
             'pricing_info', 'amenities', 'emergency_services', 'base_price'
         ]
+
+    def validate_services_offered_ids(self, value):
+        """Ensure at least one service is offered"""
+        if not value or len(value) == 0:
+            raise serializers.ValidationError(
+                "Veterinary clinics must offer at least one service"
+            )
+        return value
+
+    def validate_amenities(self, value):
+        """Validate amenities is a list"""
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Amenities must be a list")
+        return value
 
     def get_base_price(self, obj):
         # Extract price from pricing_info string (e.g., "Starts at $75")
@@ -107,6 +136,20 @@ class TrainerServiceSerializer(serializers.ModelSerializer):
             'video_url'
         ]
 
+    def validate_specializations_ids(self, value):
+        """Ensure at least one specialization"""
+        if not value or len(value) == 0:
+            raise serializers.ValidationError(
+                "Trainers must have at least one specialization"
+            )
+        return value
+
+    def validate_certifications(self, value):
+        """Validate certifications format"""
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Certifications must be a list")
+        return value
+
 class GroomerServiceSerializer(serializers.ModelSerializer):
     species_accepted = SpeciesSerializer(many=True, read_only=True)
     species_accepted_ids = serializers.PrimaryKeyRelatedField(
@@ -119,6 +162,18 @@ class GroomerServiceSerializer(serializers.ModelSerializer):
             'salon_type', 'base_price', 'service_menu', 
             'species_accepted', 'species_accepted_ids', 'amenities'
         ]
+
+    def validate_service_menu(self, value):
+        """Validate service menu format"""
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Service menu must be a list")
+        return value
+
+    def validate_amenities(self, value):
+        """Validate amenities format"""
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Amenities must be a list")
+        return value
 
 class PetSitterServiceSerializer(serializers.ModelSerializer):
     species_accepted = SpeciesSerializer(many=True, read_only=True)
@@ -140,14 +195,24 @@ class ServiceReviewSerializer(serializers.ModelSerializer):
     rating = serializers.IntegerField(source='rating_overall', read_only=True)
     comment = serializers.CharField(source='review_text', read_only=True)
     
+    provider_details = serializers.SerializerMethodField()
+    
     class Meta:
         model = ServiceReview
         fields = [
-            'id', 'provider', 'reviewer', 'rating', 'comment', 
+            'id', 'booking', 'provider', 'provider_details', 'reviewer', 'rating', 'comment', 
+            'rating_overall', 'review_text',
             'rating_communication', 'rating_cleanliness', 'rating_quality', 'rating_value',
             'category', 'verified_client', 'provider_response', 'response_date', 'created_at'
         ]
-        read_only_fields = ['provider', 'reviewer', 'response_date', 'created_at']
+        read_only_fields = ['reviewer', 'response_date', 'created_at']
+
+    def get_provider_details(self, obj):
+        return {
+            'business_name': obj.provider.business_name,
+            'category': obj.provider.category.name if obj.provider.category else None,
+            'category_slug': obj.provider.category.slug if obj.provider.category else None
+        }
 
 
 class ProviderAvailabilityBlockSerializer(serializers.ModelSerializer):
@@ -192,24 +257,25 @@ class ProviderAvailabilityBlockSerializer(serializers.ModelSerializer):
         
         return data
 
+class CategoryField(serializers.SlugRelatedField):
+    def to_representation(self, value):
+        return ServiceCategorySerializer(value).data
+
 class ServiceProviderSerializer(serializers.ModelSerializer):
     user = PublicUserSerializer(read_only=True)
-    category = ServiceCategorySerializer(read_only=True)
-    category_id = serializers.PrimaryKeyRelatedField(
+    category = CategoryField(
         queryset=ServiceCategory.objects.all(), 
-        write_only=True, 
-        source='category',
-        required=True
+        slug_field='slug'
     )
     media = ServiceMediaSerializer(many=True, read_only=True)
-    hours = BusinessHoursSerializer(many=True, read_only=True)
+    hours = BusinessHoursSerializer(many=True, required=False)
     reviews = ServiceReviewSerializer(many=True, read_only=True)
     
-    foster_details = FosterServiceSerializer(required=False)
-    vet_details = VeterinaryClinicSerializer(required=False)
-    trainer_details = TrainerServiceSerializer(required=False)
-    groomer_details = GroomerServiceSerializer(required=False)
-    sitter_details = PetSitterServiceSerializer(required=False)
+    foster_details = FosterServiceSerializer(required=False, allow_null=True)
+    vet_details = VeterinaryClinicSerializer(required=False, allow_null=True)
+    trainer_details = TrainerServiceSerializer(required=False, allow_null=True)
+    groomer_details = GroomerServiceSerializer(required=False, allow_null=True)
+    sitter_details = PetSitterServiceSerializer(required=False, allow_null=True)
     
     avg_rating = serializers.FloatField(read_only=True)
     avg_communication = serializers.FloatField(read_only=True)
@@ -219,31 +285,94 @@ class ServiceProviderSerializer(serializers.ModelSerializer):
     
     reviews_count = serializers.IntegerField(source='review_count', read_only=True)
     is_verified = serializers.SerializerMethodField()
-    distance = serializers.SerializerMethodField()
+    distance = serializers.FloatField(read_only=True, required=False)  # Annotated by haversine filter
     
+    address = serializers.SerializerMethodField()
+    service_specific_details = serializers.SerializerMethodField()
+
     class Meta:
         model = ServiceProvider
         fields = [
-            'id', 'user', 'business_name', 'category', 'category_id', 'description', 'website',
-            'address_line1', 'address_line2', 'city', 'state', 'zip_code', 'latitude', 'longitude',
+            'id', 'user', 'business_name', 'category', 'description', 'website',
+            'phone', 'email', 'license_number', 'verification_status',
             'phone', 'email', 'license_number', 'verification_status',
             'media', 'hours',
+            'address',
+            'address', 
+            'address_line1', 'address_line2', 'city', 'state', 'zip_code', 'latitude', 'longitude',
             'is_verified', 'reviews', 'reviews_count', 'avg_rating', 
             'avg_communication', 'avg_cleanliness', 'avg_quality', 'avg_value',
             'distance',
-            'foster_details', 'vet_details', 'trainer_details', 
-            'groomer_details', 'sitter_details',
+            'service_specific_details',
+            'foster_details', 'vet_details', 'trainer_details', 'groomer_details', 'sitter_details',
+            'settings',
             'created_at'
         ]
-        read_only_fields = ['user', 'created_at', 'avg_rating', 'reviews_count']
+        read_only_fields = ['user', 'created_at', 'avg_rating', 'reviews_count', 'address', 'service_specific_details']
+        extra_kwargs = {
+            'address_line1': {'write_only': True},
+            'address_line2': {'write_only': True},
+            'city': {'write_only': True},
+            'state': {'write_only': True},
+            'zip_code': {'write_only': True},
+            'latitude': {'write_only': True},
+            'longitude': {'write_only': True},
+        }
+
+    def get_address(self, obj):
+        return {
+            "line1": obj.address_line1,
+            "line2": obj.address_line2,
+            "city": obj.city,
+            "state": obj.state,
+            "zip": obj.zip_code,
+            "coordinates": {
+                "lat": obj.latitude,
+                "lng": obj.longitude
+            }
+        }
+
+    def get_service_specific_details(self, obj):
+        # Determine category and return appropriate details
+        # Note: Ideally we check obj.category.slug, but here we check relation existence
+        if hasattr(obj, 'vet_details'):
+            return VeterinaryClinicSerializer(obj.vet_details).data
+        elif hasattr(obj, 'foster_details'):
+            return FosterServiceSerializer(obj.foster_details).data
+        elif hasattr(obj, 'trainer_details'):
+            return TrainerServiceSerializer(obj.trainer_details).data
+        elif hasattr(obj, 'groomer_details'):
+            return GroomerServiceSerializer(obj.groomer_details).data
+        elif hasattr(obj, 'sitter_details'):
+            return PetSitterServiceSerializer(obj.sitter_details).data
+        return {}
         
     def get_is_verified(self, obj):
         return obj.verification_status == 'verified'
 
     def get_distance(self, obj):
-        # Placeholder for distance calculation if context has user location
-        # This will be handled by the view with annotate normally, but good to have the field exist
         return getattr(obj, 'distance', None)
+
+    def validate(self, attrs):
+        """Comprehensive validation"""
+        category = attrs.get('category')
+        
+        if category:
+            category_slug = category.slug if hasattr(category, 'slug') else None
+            
+            # Ensure category-specific details are provided
+            if category_slug == 'veterinary' and not attrs.get('vet_details'):
+                raise serializers.ValidationError("Veterinary providers must provide clinic details")
+            elif category_slug == 'foster' and not attrs.get('foster_details'):
+                raise serializers.ValidationError("Foster providers must provide service details")
+            elif category_slug == 'training' and not attrs.get('trainer_details'):
+                raise serializers.ValidationError("Training providers must provide trainer details")
+            elif category_slug == 'grooming' and not attrs.get('groomer_details'):
+                raise serializers.ValidationError("Grooming providers must provide groomer details")
+            elif category_slug == 'pet_sitting' and not attrs.get('sitter_details'):
+                raise serializers.ValidationError("Pet sitting providers must provide sitter details")
+        
+        return attrs
         
     def create(self, validated_data):
         foster_data = validated_data.pop('foster_details', None)
@@ -251,27 +380,38 @@ class ServiceProviderSerializer(serializers.ModelSerializer):
         trainer_data = validated_data.pop('trainer_details', None)
         groomer_data = validated_data.pop('groomer_details', None)
         sitter_data = validated_data.pop('sitter_details', None)
+        hours_data = validated_data.pop('hours', [])
         
         provider = ServiceProvider.objects.create(**validated_data)
         
-        # Note: Detailed service creation would ideally handle M2M and Hours here too
-        # but for now we follow the existing pattern for the OneToOne fields.
+        # Create business hours
+        for hour_data in hours_data:
+            BusinessHours.objects.create(provider=provider, **hour_data)
         
         if foster_data:
-            FosterService.objects.create(provider=provider, **foster_data)
+            species = foster_data.pop('species_accepted', [])
+            foster = FosterService.objects.create(provider=provider, **foster_data)
+            foster.species_accepted.set(species)
         elif vet_data:
-            VeterinaryClinic.objects.create(provider=provider, **vet_data)
+            services = vet_data.pop('services_offered', [])
+            species = vet_data.pop('species_treated', [])
+            vet = VeterinaryClinic.objects.create(provider=provider, **vet_data)
+            vet.services_offered.set(services)
+            vet.species_treated.set(species)
         elif trainer_data:
-            TrainerService.objects.create(provider=provider, **trainer_data)
+            specializations = trainer_data.pop('specializations', [])
+            species = trainer_data.pop('species_trained', [])
+            trainer = TrainerService.objects.create(provider=provider, **trainer_data)
+            trainer.specializations.set(specializations)
+            trainer.species_trained.set(species)
         elif groomer_data:
-            # Handle M2M manually for create if needed, but Serializer usually handles nestedcreate if set up right? 
-            # DRF default nested create doesn't support M2M well without custom logic usually.
-            # Mirroring logic below.
-            s = GroomerService.objects.create(provider=provider, **{k:v for k,v in groomer_data.items() if k != 'species_accepted'})
-            s.species_accepted.set(groomer_data.get('species_accepted', []))
+            species = groomer_data.pop('species_accepted', [])
+            groomer = GroomerService.objects.create(provider=provider, **groomer_data)
+            groomer.species_accepted.set(species)
         elif sitter_data:
-            s = PetSitterService.objects.create(provider=provider, **{k:v for k,v in sitter_data.items() if k != 'species_accepted'})
-            s.species_accepted.set(sitter_data.get('species_accepted', []))
+            species = sitter_data.pop('species_accepted', [])
+            sitter = PetSitterService.objects.create(provider=provider, **sitter_data)
+            sitter.species_accepted.set(species)
             
         return provider
     
@@ -319,6 +459,7 @@ class ServiceBookingSerializer(serializers.ModelSerializer):
     client = PublicUserSerializer(read_only=True)
     pet = PetProfileSerializer(read_only=True)
     service_option = ServiceOptionSerializer(read_only=True)
+    has_review = serializers.SerializerMethodField()
     
     class Meta:
         model = ServiceBooking
@@ -328,9 +469,15 @@ class ServiceBookingSerializer(serializers.ModelSerializer):
             'start_datetime', 'end_datetime',
             'agreed_price', 'deposit_paid', 'special_requirements',
             'status', 'payment_status', 'cancellation_reason',
-            'created_at', 'updated_at', 'duration_hours'
+            'created_at', 'updated_at', 'duration_hours', 'has_review'
         ]
         read_only_fields = ['client', 'agreed_price', 'deposit_paid', 'status', 'payment_status', 'created_at', 'updated_at']
+
+    def get_has_review(self, obj):
+        try:
+            return obj.review is not None
+        except Exception:
+            return False
 
 class ServiceBookingCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -339,7 +486,7 @@ class ServiceBookingCreateSerializer(serializers.ModelSerializer):
             'provider', 'pet', 'service_option', 
             'booking_type', 'booking_date', 'booking_time',
             'start_datetime', 'end_datetime',
-            'special_requirements'
+            'special_requirements', 'agreed_price'
         ]
     
     def validate(self, attrs):

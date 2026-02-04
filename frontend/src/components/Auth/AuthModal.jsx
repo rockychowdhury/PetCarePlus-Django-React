@@ -22,25 +22,25 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
             {/* Modal Container */}
-            <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden flex min-h-[600px] animate-scale-up">
+            <div className="relative bg-white rounded-[3rem] shadow-2xl w-full max-w-4xl overflow-hidden flex min-h-[580px] animate-scale-up">
 
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 z-50 p-2 bg-white/10 hover:bg-black/5 rounded-full backdrop-blur-sm transition-colors text-gray-500 hover:text-gray-900"
+                    className="absolute top-6 right-6 z-50 p-2.5 bg-[#FAF3E0] hover:bg-[#EBC176]/20 rounded-full transition-all duration-300 shadow-sm border border-[#402E11]/10 group"
                 >
-                    <X size={24} />
+                    <X size={20} strokeWidth={3} className="text-[#402E11]/40 group-hover:text-[#402E11]" />
                 </button>
 
                 {/* Left Side - Carousel (Hidden on Mobile) */}
-                <div className="hidden lg:block w-1/2 relative bg-gray-900">
+                <div className="hidden lg:block w-1/2 relative">
                     <FeatureCarousel />
                 </div>
 
                 {/* Right Side - Form */}
-                <div className="w-full lg:w-1/2 p-8 md:p-12 lg:p-16 flex flex-col justify-center bg-white">
+                <div className="w-full lg:w-1/2 p-8 md:p-10 lg:p-12 flex flex-col justify-center bg-white">
                     <AuthForm initialMode={initialMode} onSuccess={handleSuccess} />
                 </div>
             </div>

@@ -100,6 +100,7 @@ class UserSerializer(serializers.ModelSerializer):
             'phone_number', 'location_city', 'location_state', 'location_country', 'zip_code',
             'email_verified', 'phone_verified', 'verified_identity', 'pet_owner_verified',
             'can_create_listing', 'account_status', 'profile_is_complete', 'missing_profile_fields',
+            'has_service_profile',
             'pets', 'privacy_settings', 'received_reviews'
         ]
 

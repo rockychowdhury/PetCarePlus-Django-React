@@ -17,9 +17,9 @@ const Textarea = ({
 }) => {
     const inputId = id || name || Math.random().toString(36).substr(2, 9);
 
-    const baseStyles = 'w-full p-4 rounded-xl border bg-bg-surface text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-opacity-20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed resize-y min-h-[100px]';
+    const baseStyles = 'w-full p-4 rounded-2xl border bg-white text-[#402E11] placeholder:text-[#402E11]/30 focus:outline-none focus:ring-4 focus:ring-[#C48B28]/5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed resize-y min-h-[100px] shadow-sm shadow-[#402E11]/5 font-medium text-sm';
 
-    let stateStyles = 'border-border focus:border-border-focus focus:ring-border-focus';
+    let stateStyles = 'border-[#EBC176]/20 focus:border-[#C48B28]';
     if (error) {
         stateStyles = 'border-status-error focus:border-status-error focus:ring-status-error';
     }
@@ -27,8 +27,8 @@ const Textarea = ({
     return (
         <div className={`w-full ${className}`}>
             {label && (
-                <div className="flex justify-between mb-2">
-                    <label htmlFor={inputId} className="block text-sm font-semibold text-text-primary">
+                <div className="flex justify-between mb-2.5 ml-1">
+                    <label htmlFor={inputId} className="block text-[11px] font-black text-[#402E11] uppercase tracking-[0.2em]">
                         {label}
                     </label>
                 </div>

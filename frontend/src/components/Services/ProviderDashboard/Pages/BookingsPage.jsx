@@ -25,13 +25,73 @@ const BookingsPage = ({ provider }) => {
     const [activeTab, setActiveTab] = useState('pending');
     const [searchQuery, setSearchQuery] = useState('');
 
+    const [selectedBooking, setSelectedBooking] = useState(null);
+    const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
+    const [completionData, setCompletionData] = useState({ finalPrice: '', paymentReceived: false });
+
+    const [rejectionModal, setRejectionModal] = useState({ isOpen: false, bookingId: null, action: null });
+    const [rejectionReason, setRejectionReason] = useState('');
+
     const handleAction = async (id, action, reason = null) => {
+        if (action === 'complete') {
+            const booking = filteredBookings.find(b => b.id === id);
+            setSelectedBooking(booking);
+            setCompletionData({
+                finalPrice: booking.agreed_price || booking.service_option?.base_price || '0.00',
+                paymentReceived: booking.payment_status === 'paid'
+            });
+            setIsCompleteModalOpen(true);
+            return;
+        }
+
+        if (action === 'reject' || action === 'cancel') {
+            setRejectionModal({ isOpen: true, bookingId: id, action });
+            setRejectionReason('');
+            return;
+        }
+
         try {
             await bookingAction.mutateAsync({ id, action, data: reason ? { reason } : {} });
             toast.success(`Booking ${action}ed successfully`);
         } catch (error) {
             console.error(error);
             toast.error(`Failed to ${action} booking`);
+        }
+    };
+
+    const handleRejectionSubmit = async () => {
+        const { bookingId, action } = rejectionModal;
+        if (!bookingId || !action) return;
+
+        try {
+            await bookingAction.mutateAsync({ id: bookingId, action, data: { reason: rejectionReason } });
+            toast.success(`Booking ${action === 'reject' ? 'declined' : 'cancelled'} successfully`);
+            setRejectionModal({ isOpen: false, bookingId: null, action: null });
+            setRejectionReason('');
+        } catch (error) {
+            console.error(error);
+            toast.error(`Failed to ${action} booking`);
+        }
+    };
+
+    const handleCompleteSubmit = async () => {
+        if (!selectedBooking) return;
+
+        try {
+            await bookingAction.mutateAsync({
+                id: selectedBooking.id,
+                action: 'complete',
+                data: {
+                    final_price: completionData.finalPrice,
+                    payment_received: completionData.paymentReceived
+                }
+            });
+            toast.success('Booking completed successfully');
+            setIsCompleteModalOpen(false);
+            setSelectedBooking(null);
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to complete booking');
         }
     };
 
@@ -43,6 +103,7 @@ const BookingsPage = ({ provider }) => {
         all: allBookings.length,
         pending: allBookings.filter(b => b.status === 'pending').length,
         confirmed: allBookings.filter(b => b.status === 'confirmed').length,
+        in_progress: allBookings.filter(b => b.status === 'in_progress').length,
         completed: allBookings.filter(b => b.status === 'completed').length,
         cancelled: allBookings.filter(b => b.status === 'cancelled').length,
     };
@@ -65,6 +126,7 @@ const BookingsPage = ({ provider }) => {
         { id: 'all', label: 'All' },
         { id: 'pending', label: `Pending (${counts.pending})` },
         { id: 'confirmed', label: 'Confirmed' },
+        { id: 'in_progress', label: 'In Progress' },
         { id: 'completed', label: 'Completed' },
         { id: 'cancelled', label: 'Cancelled' }
     ];
@@ -145,11 +207,12 @@ const BookingsPage = ({ provider }) => {
                                 <span className="text-sm font-medium text-gray-500">#BK-{booking.id}</span>
                                 <Badge variant={
                                     booking.status === 'confirmed' ? 'success' :
-                                        booking.status === 'pending' ? 'warning' :
-                                            booking.status === 'completed' ? 'info' :
-                                                'error'
+                                        booking.status === 'in_progress' ? 'warning' :
+                                            booking.status === 'pending' ? 'warning' :
+                                                booking.status === 'completed' ? 'info' :
+                                                    'error'
                                 } className="capitalize px-3 py-1">
-                                    {booking.status === 'pending' ? 'Pending Request' : booking.status}
+                                    {booking.status === 'pending' ? 'Pending Request' : booking.status.replace('_', ' ')}
                                 </Badge>
                             </div>
 
@@ -178,17 +241,18 @@ const BookingsPage = ({ provider }) => {
                                 {/* 2. Service */}
                                 <div>
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">Service</label>
-                                    <div className="font-semibold text-gray-900">{booking.service_option?.name || booking.service_name || 'Service'}</div>
-                                    <div className="text-xs text-gray-500 mt-0.5">Est. {booking.service_option?.duration || '1'} hour</div>
+                                    <div className="font-semibold text-gray-900">{booking.service_option?.name || booking.service_name || booking.booking_type || 'Service'}</div>
+                                    <div className="text-xs text-gray-500 mt-0.5">Duration: {booking.duration_hours ? `${booking.duration_hours} hr` : 'N/A'}</div>
                                 </div>
 
+                                {/* 3. Schedule */}
                                 <div>
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">Schedule</label>
                                     <div className="font-semibold text-gray-900">
                                         {booking.booking_date ? format(new Date(booking.booking_date), 'MMM dd, yyyy') : 'TBD'}
                                     </div>
                                     <div className="text-xs text-gray-500 mt-0.5">
-                                        {booking.booking_time ? booking.booking_time : 'Time TBD'}
+                                        {booking.booking_time ? booking.booking_time.substring(0, 5) : 'Time TBD'}
                                         {booking.end_datetime && ` - ${format(new Date(booking.end_datetime), 'hh:mm a')}`}
                                     </div>
                                 </div>
@@ -197,7 +261,7 @@ const BookingsPage = ({ provider }) => {
                                 <div>
                                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">Price</label>
                                     <div className="font-bold text-gray-900">${booking.agreed_price || booking.service_option?.base_price || '0.00'}</div>
-                                    <div className="text-xs text-red-500 font-medium mt-0.5">
+                                    <div className={`text-xs font-medium mt-0.5 ${booking.payment_status === 'paid' ? 'text-green-600' : 'text-red-500'}`}>
                                         {booking.payment_status === 'paid' ? 'Paid' : booking.payment_status === 'partial' ? 'Partially Paid' : 'Unpaid'}
                                     </div>
                                 </div>
@@ -227,10 +291,7 @@ const BookingsPage = ({ provider }) => {
                                                 size="sm"
                                                 variant="outline"
                                                 className="border-red-100 text-red-600 hover:bg-red-50 hover:border-red-200"
-                                                onClick={() => {
-                                                    const reason = prompt("Enter rejection reason:");
-                                                    if (reason) handleAction(booking.id, 'reject', reason);
-                                                }}
+                                                onClick={() => handleAction(booking.id, 'reject')}
                                             >
                                                 Decline
                                             </Button>
@@ -244,16 +305,32 @@ const BookingsPage = ({ provider }) => {
                                         </>
                                     )}
                                     {booking.status === 'confirmed' && (
+                                        <>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="text-gray-600 border-gray-200"
+                                                onClick={() => handleAction(booking.id, 'cancel')}
+                                            >
+                                                Cancel
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                className="bg-blue-600 hover:bg-blue-700 text-white border-transparent"
+                                                onClick={() => handleAction(booking.id, 'start')}
+                                            >
+                                                Start Service
+                                            </Button>
+                                        </>
+                                    )}
+
+                                    {booking.status === 'in_progress' && (
                                         <Button
                                             size="sm"
-                                            variant="outline"
-                                            className="text-gray-600 border-gray-200"
-                                            onClick={() => {
-                                                const reason = prompt("Enter cancellation reason:");
-                                                if (reason) handleAction(booking.id, 'cancel', reason);
-                                            }}
+                                            className="bg-green-600 hover:bg-green-700 text-white border-transparent"
+                                            onClick={() => handleAction(booking.id, 'complete')}
                                         >
-                                            Cancel Booking
+                                            Complete Service
                                         </Button>
                                     )}
                                 </div>
@@ -262,6 +339,103 @@ const BookingsPage = ({ provider }) => {
                     ))
                 )}
             </div>
+            {/* Completion Modal */}
+            {isCompleteModalOpen && selectedBooking && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+                        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                            <h3 className="text-lg font-bold text-gray-900">Complete Service</h3>
+                            <button onClick={() => setIsCompleteModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                                <span className="text-2xl">&times;</span>
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <p className="text-sm text-gray-600">
+                                Please confirm payment details before completing the service for <strong>{selectedBooking.client.first_name}</strong>.
+                            </p>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Final Service Price</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all"
+                                        value={completionData.finalPrice}
+                                        onChange={(e) => setCompletionData({ ...completionData, finalPrice: e.target.value })}
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">Adjust if additional services were provided.</p>
+                            </div>
+
+                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <input
+                                    type="checkbox"
+                                    id="paymentReceived"
+                                    className="w-5 h-5 text-teal-600 rounded focus:ring-teal-500 border-gray-300"
+                                    checked={completionData.paymentReceived}
+                                    onChange={(e) => setCompletionData({ ...completionData, paymentReceived: e.target.checked })}
+                                />
+                                <label htmlFor="paymentReceived" className="text-sm font-medium text-gray-900 cursor-pointer">
+                                    Payment Received (Cash/Reception)
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3">
+                            <Button variant="outline" onClick={() => setIsCompleteModalOpen(false)}>Cancel</Button>
+                            <Button onClick={handleCompleteSubmit} className="bg-green-600 hover:bg-green-700 text-white">
+                                Confirm & Complete
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Rejection/Cancellation Modal */}
+            {rejectionModal.isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+                        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                            <h3 className="text-lg font-bold text-gray-900 capitalize">
+                                {rejectionModal.action === 'reject' ? 'Decline Request' : 'Cancel Booking'}
+                            </h3>
+                            <button onClick={() => setRejectionModal({ ...rejectionModal, isOpen: false })} className="text-gray-400 hover:text-gray-600">
+                                <span className="text-2xl">&times;</span>
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <p className="text-sm text-gray-600">
+                                Please provide a reason for {rejectionModal.action === 'reject' ? 'declining' : 'cancelling'} this booking. This will be sent to the client.
+                            </p>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+                                <textarea
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all h-32 resize-none"
+                                    placeholder="Enter reason here..."
+                                    value={rejectionReason}
+                                    onChange={(e) => setRejectionReason(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3">
+                            <Button variant="outline" onClick={() => setRejectionModal({ ...rejectionModal, isOpen: false })}>Cancel</Button>
+                            <Button
+                                onClick={handleRejectionSubmit}
+                                className="bg-red-600 hover:bg-red-700 text-white"
+                                disabled={!rejectionReason.trim()}
+                            >
+                                {rejectionModal.action === 'reject' ? 'Decline Booking' : 'Cancel Booking'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

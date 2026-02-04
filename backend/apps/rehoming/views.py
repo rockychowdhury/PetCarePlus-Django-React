@@ -163,34 +163,60 @@ class ListingListCreateView(generics.ListCreateAPIView):
                 Q(location_city__icontains=search_query)
             )
 
-        # 2. Location & Radius Filtering
-        location_lat = params.get('lat')
-        location_lon = params.get('lng') # or 'lon'
-        radius = params.get('radius') # in miles/km
-
-        if location_lat and location_lon and radius:
+        # 2. Location & Geolocation Filtering
+        location = params.get('location')
+        nearby = params.get('nearby')
+        
+        if nearby:
             try:
-                lat = float(location_lat)
-                lon = float(location_lon)
-                rad = float(radius)
+                from django.db.models import F, FloatField, ExpressionWrapper, Value
+                from django.db.models.functions import ACos, Cos, Radians, Sin, Greatest, Least
                 
-                # Simple bounding box first for speed
-                # 1 deg lat ~= 69 miles (111km)
-                # 1 deg lon ~= 69 miles * cos(lat)
-                # This is an approximation
+                parts = nearby.split(',')
+                lat = float(parts[0])
+                lng = float(parts[1])
+                radius = float(parts[2]) if len(parts) > 2 else 50.0
                 
-                lat_delta = rad / 69.0
-                lon_delta = rad / (69.0 * abs(math.cos(math.radians(lat))))
-                
-                queryset = queryset.filter(
-                    latitude__range=(lat - lat_delta, lat + lat_delta),
-                    longitude__range=(lon - lon_delta, lon + lon_delta)
+                # Robust Cosine Calculation
+                cos_calc = (
+                    Cos(Radians(lat)) * Cos(Radians(F('latitude'))) *
+                    Cos(Radians(F('longitude')) - Radians(lng)) +
+                    Sin(Radians(lat)) * Sin(Radians(F('latitude')))
                 )
                 
-                # Optionally: Exact distance calculation could be done here or in DB if using PostGIS
-                # For SQLite/Basic, Bounding Box is usually sufficient for small datasets
-            except (ValueError, TypeError):
-                pass
+                # Haversine formula (km) - 6371 is Earth's radius in km
+                # Wrapped in Least/Greatest to prevent floating point domain errors for ACos
+                queryset = queryset.annotate(
+                    distance=ExpressionWrapper(
+                        6371 * ACos(
+                            Least(Greatest(cos_calc, Value(-1.0)), Value(1.0))
+                        ),
+                        output_field=FloatField()
+                    )
+                )
+
+                # Filter: Within radius OR legacy location match (if location provided)
+                # This ensures items with missing coordinates but matching city still appear
+                location_filter = Q(distance__lte=radius)
+                if location:
+                    location_filter |= (
+                        Q(location_city__icontains=location) | 
+                        Q(location_state__icontains=location)
+                    )
+                
+                queryset = queryset.filter(location_filter).order_by(F('distance').asc(nulls_last=True), '-published_at')
+            except (ValueError, IndexError, TypeError):
+                if location:
+                    queryset = queryset.filter(
+                        Q(location_city__icontains=location) |
+                        Q(location_state__icontains=location)
+                    )
+        elif location:
+            # Legacy/Manual Location name search only
+            queryset = queryset.filter(
+                Q(location_city__icontains=location) |
+                Q(location_state__icontains=location)
+            )
         
         # 3. Standard Filters
         species = params.get('species')
@@ -218,24 +244,21 @@ class ListingListCreateView(generics.ListCreateAPIView):
         age_range = params.get('age_range')
         if age_range:
             today = datetime.date.today()
-            if age_range == 'under_6_months':
-                start_date = today - datetime.timedelta(days=365*0.5)
-                queryset = queryset.filter(pet__birth_date__gte=start_date)
-            elif age_range == '6_12_months':
+            if age_range == 'baby' or age_range == 'under_6_months':
                 start_date = today - datetime.timedelta(days=365)
-                end_date = today - datetime.timedelta(days=365*0.5)
-                queryset = queryset.filter(pet__birth_date__range=(start_date, end_date))
-            elif age_range == '1_3_years':
-                start_date = today - datetime.timedelta(days=365*3)
+                queryset = queryset.filter(pet__birth_date__gte=start_date)
+            elif age_range == 'adult' or age_range == '1_3_years' or age_range == '3_10_years':
+                start_date = today - datetime.timedelta(days=365*10)
                 end_date = today - datetime.timedelta(days=365)
                 queryset = queryset.filter(pet__birth_date__range=(start_date, end_date))
-            elif age_range == '3_10_years':
-                start_date = today - datetime.timedelta(days=365*10)
-                end_date = today - datetime.timedelta(days=365*3)
-                queryset = queryset.filter(pet__birth_date__range=(start_date, end_date))
-            elif age_range == '10_plus_years':
+            elif age_range == 'senior' or age_range == '10_plus_years':
                 end_date = today - datetime.timedelta(days=365*10)
                 queryset = queryset.filter(pet__birth_date__lt=end_date)
+            elif age_range == '6_12_months':
+                # Keep legacy support if needed, though frontend won't send it
+                start_date = today - datetime.timedelta(days=365)
+                end_date = today - datetime.timedelta(days=180)
+                queryset = queryset.filter(pet__birth_date__range=(start_date, end_date))
 
         # Traits (Compatibility)
         # Assuming frontend sends 'true' for checked boxes
@@ -301,7 +324,9 @@ class ListingListCreateView(generics.ListCreateAPIView):
             urgency=rehoming_req.urgency,
             ideal_home_notes=rehoming_req.ideal_home_notes,
             location_city=rehoming_req.location_city,
-            location_state=rehoming_req.location_state
+            location_state=rehoming_req.location_state,
+            latitude=rehoming_req.latitude,
+            longitude=rehoming_req.longitude
         )
 
         log_business_event('REHOMING_LISTING_CREATED', user, {

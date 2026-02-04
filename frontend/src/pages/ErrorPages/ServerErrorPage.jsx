@@ -14,13 +14,13 @@ const ServerErrorPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-bg-primary flex flex-col  relative overflow-hidden">
+        <div className="min-h-screen bg-[#FEF9ED] flex flex-col  relative overflow-hidden">
             {/* ... header ... */}
             <header className="px-6 py-6 md:px-12 flex justify-between items-center z-20">
                 <Link to="/">
                     <Logo />
                 </Link>
-                <Link to="/" className="text-sm font-semibold text-text-secondary hover:text-text-primary transition-colors">
+                <Link to="/" className="text-sm font-semibold text-themev2-text/70 hover:text-themev2-text transition-colors">
                     Back to Home
                 </Link>
             </header>
@@ -44,7 +44,7 @@ const ServerErrorPage = () => {
                     </div>
                 )}
 
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[15rem] md:text-[25rem] font-bold text-bg-secondary select-none pointer-events-none z-0">
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[15rem] md:text-[25rem] font-bold text-[#FDF6E3] select-none pointer-events-none z-0">
                     500
                 </div>
 
@@ -57,36 +57,36 @@ const ServerErrorPage = () => {
                                 className="w-full h-full object-cover"
                             />
                         </div>
-                        <div className="absolute -top-6 -left-6 w-14 h-14 md:w-16 md:h-16 bg-status-error text-text-inverted rounded-full flex items-center justify-center shadow-lg border-4 border-bg-primary animate-bounce-slow">
+                        <div className="absolute -top-6 -left-6 w-14 h-14 md:w-16 md:h-16 bg-[#C48B28] text-white rounded-full flex items-center justify-center shadow-lg border-4 border-[#FEF9ED] animate-bounce-slow">
                             <AlertTriangle size={28} strokeWidth={2.5} />
                         </div>
                     </div>
 
-                    <h1 className="text-4xl md:text-5xl font-bold text-text-primary mb-4 font-serif">
+                    <h1 className="text-4xl md:text-5xl font-bold text-themev2-text mb-4 font-serif">
                         Something Went Wrong
                     </h1>
-                    <p className="text-lg md:text-xl text-text-secondary mb-10 max-w-md">
+                    <p className="text-lg md:text-xl text-themev2-text/70 mb-10 max-w-md">
                         We're working on fixing this issue. Please bear with us!
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
                         <button
                             onClick={handleTryAgain}
-                            className="w-full sm:w-auto px-8 py-3 bg-text-primary text-bg-primary rounded-full font-semibold flex items-center justify-center gap-2 hover:bg-black transition-all shadow-lg hover:shadow-xl active:scale-95"
+                            className="w-full sm:w-auto px-8 py-3 bg-[#C48B28] text-white rounded-full font-semibold flex items-center justify-center gap-2 hover:bg-[#B07212] transition-all shadow-lg hover:shadow-xl active:scale-95"
                         >
                             <RefreshCcw size={18} />
                             Try Again
                         </button>
                         <Link
                             to="/"
-                            className="w-full sm:w-auto px-8 py-3 bg-transparent border-2 border-border text-text-primary rounded-full font-semibold flex items-center justify-center gap-2 hover:bg-bg-secondary hover:border-text-tertiary transition-all"
+                            className="w-full sm:w-auto px-8 py-3 bg-transparent border-2 border-[#EBC176]/40 text-themev2-text rounded-full font-semibold flex items-center justify-center gap-2 hover:bg-[#FEF9ED] hover:border-[#C48B28] transition-all"
                         >
                             Go to Homepage
                         </Link>
                     </div>
 
-                    <p className="mt-12 text-sm text-text-tertiary">
-                        If the problem persists, please <Link to="/contact" className="underline hover:text-text-primary transition-colors">contact support</Link>.
+                    <p className="mt-12 text-sm text-themev2-text/60">
+                        If the problem persists, please <Link to="/contact" className="underline hover:text-themev2-text transition-colors">contact support</Link>.
                     </p>
                 </div>
             </main>

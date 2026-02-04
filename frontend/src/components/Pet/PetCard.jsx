@@ -3,12 +3,12 @@ import {
     Heart, MapPin, Clock, Sparkles, ShieldCheck,
     Home, Share2, LayoutGrid, List as ListIcon,
     Calendar, CheckCircle2, Info, Trash2, Archive, RotateCcw, Pencil, Eye,
-    Cake, Ruler, Scale
+    Cake, Ruler, Scale, Users, PawPrint
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
-const PetCard = ({ pet, viewMode = 'grid', variant = 'listing', onDelete, onToggleActive }) => {
+const PetCard = ({ pet, viewMode = 'grid', variant = 'listing', onDelete, onToggleActive, onView, isPreview = false }) => {
     const isProfile = variant === 'profile';
 
     // -------------------------------------------------------------------------
@@ -31,7 +31,7 @@ const PetCard = ({ pet, viewMode = 'grid', variant = 'listing', onDelete, onTogg
             gender: p.gender || 'Unknown',
 
             // Image
-            photo: p.main_photo || (p.photos && p.photos[0]?.url) || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80',
+            photo: p.main_photo || (p.photos && p.photos[0]?.url) || null,
 
             // Location
             city: pet.location_city || 'Nearby',
@@ -74,7 +74,7 @@ const PetCard = ({ pet, viewMode = 'grid', variant = 'listing', onDelete, onTogg
             age: pet.age_display || (pet.birth_date ? `${new Date().getFullYear() - new Date(pet.birth_date).getFullYear()} years` : 'Age Unknown'),
             gender: pet.gender || 'Unknown',
 
-            photo: (pet.media && pet.media[0]?.url) || pet.photoURL || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80',
+            photo: (pet.media && pet.media[0]?.url) || pet.photoURL || null,
 
             city: pet.location_city || 'Nearby',
             state: pet.location_state || '',
@@ -106,110 +106,130 @@ const PetCard = ({ pet, viewMode = 'grid', variant = 'listing', onDelete, onTogg
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="group bg-white rounded-[20px] shadow-sm hover:shadow-xl transition-all duration-300 border border-border/50 overflow-hidden flex flex-col  relative h-full"
+                className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col max-w-[280px] w-full mx-auto"
             >
-                {/* Hero Zone - Compact Aspect Ratio */}
-                <div className="relative aspect-[3/2] overflow-hidden">
-                    <img
-                        src={data.photo}
-                        alt={data.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-50" />
+                {/* Image Section with Status Badge */}
+                <div className="relative aspect-[4/3] overflow-hidden bg-[#FEF9ED]">
+                    {data.photo ? (
+                        <img
+                            src={data.photo}
+                            alt={data.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-[#C48B28]/20 gap-2">
+                            <PawPrint size={32} strokeWidth={1.5} />
+                            <span className="text-[8px] font-black uppercase tracking-[0.2em]">No Photo Uploaded</span>
+                        </div>
+                    )}
 
-                    {/* Status Badge - Smaller */}
-                    <div className="absolute top-3 left-3">
-                        <div className={`px-2 py-1 text-white text-[9px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 shadow-sm backdrop-blur-md ${data.status === 'active' ? 'bg-status-success' : 'bg-gray-500'}`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${data.status === 'active' ? 'bg-white' : 'bg-gray-300'}`} />
-                            {data.status === 'active' ? 'Active' : 'Archived'}
+                    {/* Status Badge - Top Left */}
+                    <div className="absolute top-2 left-2">
+                        <div className={`px-2 py-0.5 text-white text-[8px] font-black uppercase tracking-widest rounded-full flex items-center gap-1 shadow-sm backdrop-blur-sm ${isPreview ? 'bg-[#C48B28]' : (data.status === 'active' ? 'bg-[#C48B28]' : 'bg-[#402E11]/70')
+                            }`}>
+                            <div className={`w-1 h-1 rounded-full ${isPreview ? 'bg-white animate-pulse' : (data.status === 'active' ? 'bg-white animate-pulse' : 'bg-gray-300')}`} />
+                            {isPreview ? 'Preview' : (data.status === 'active' ? 'Active' : 'Inactive')}
                         </div>
                     </div>
 
-                    {/* Edit Action - Smaller */}
-                    <Link
-                        to={`/dashboard/pets/${data.id}/edit`}
-                        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-brand-primary transition-all shadow-lg group/edit"
-                    >
-                        <Pencil size={14} className="group-hover/edit:scale-90 transition-transform" />
-                    </Link>
+                    {/* Edit Button - Top Right (Hidden in Preview) */}
+                    {!isPreview && (
+                        <Link
+                            to={`/dashboard/pets/${data.id}/edit`}
+                            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-[#402E11] hover:bg-[#C48B28] hover:text-white transition-all shadow-sm"
+                        >
+                            <Pencil size={10} />
+                        </Link>
+                    )}
                 </div>
 
-                {/* Body - Reduced Padding */}
-                <div className="p-4 flex flex-col gap-3 flex-1">
-
-                    {/* Header Info - Compact */}
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <h3 className="text-lg font-bold text-text-primary leading-tight">{data.name}</h3>
-                            <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider flex items-center gap-1.5 mt-0.5">
-                                {data.species} • <span className="text-brand-primary/80">{data.breed}</span>
-                            </p>
-                        </div>
+                {/* Content Section */}
+                <div className="p-3 flex flex-col gap-2.5">
+                    {/* Pet Name & Type */}
+                    <div>
+                        <h3 className="text-sm font-black text-themev2-text leading-tight mb-0.5 truncate">{data.name}</h3>
+                        <p className="text-[9px] font-bold text-themev2-text/50 uppercase tracking-widest truncate">
+                            {data.species} • {data.breed}
+                        </p>
                     </div>
 
-                    {/* Stats Grid - Single Row / Compact Grid */}
-                    <div className="grid grid-cols-2 gap-2 py-2 border-t border-border/40">
-                        <div className="flex items-center gap-2 text-text-secondary">
-                            <Cake size={14} className="text-brand-orange" />
-                            <span className="text-xs font-bold">{data.age}</span>
+                    {/* Stats Grid - Ultra Compact */}
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+                        <div className="flex items-center gap-1.5">
+                            <Cake size={10} className="text-themev2-primary flex-shrink-0" />
+                            <p className="text-[10px] font-bold text-themev2-text truncate">{data.age}</p>
                         </div>
-                        <div className="flex items-center gap-2 text-text-secondary">
-                            <span className="text-sm">
+
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-themev2-primary flex-shrink-0 leading-none">
                                 {data.gender.toLowerCase() === 'female' ? '♀' : data.gender.toLowerCase() === 'male' ? '♂' : '?'}
                             </span>
-                            <span className="text-xs font-bold capitalize">{data.gender}</span>
-                            {data.isNeutered && <CheckCircle2 size={12} className="text-status-success ml-1" />}
+                            <p className="text-[10px] font-bold text-themev2-text capitalize truncate">{data.gender}</p>
                         </div>
-                        <div className="flex items-center gap-2 text-text-secondary">
-                            <Scale size={14} className="text-brand-secondary" />
-                            <span className="text-xs font-bold">{data.weight}</span>
+
+                        <div className="flex items-center gap-1.5">
+                            <Ruler size={10} className="text-themev2-primary flex-shrink-0" />
+                            <p className="text-[10px] font-bold text-themev2-text capitalize truncate">{data.size}</p>
                         </div>
-                        <div className="flex items-center gap-2 text-text-secondary">
-                            <Ruler size={14} className="text-brand-tertiary" />
-                            <span className="text-xs font-bold capitalize">{data.size}</span>
+
+                        <div className="flex items-center gap-1.5">
+                            <Scale size={10} className="text-themev2-primary flex-shrink-0" />
+                            <p className="text-[10px] font-bold text-themev2-text truncate">{data.weight}</p>
                         </div>
                     </div>
 
-                    {/* Traits - Single Line */}
+                    {/* Health Status - Tiny pills */}
+                    <div className="flex items-center gap-1.5">
+                        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${data.isNeutered ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-400'
+                            }`}>
+                            <CheckCircle2 size={8} />
+                            {data.isNeutered ? 'Neutered' : 'Not'}
+                        </div>
+                        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${data.isChipped ? 'bg-green-50 text-green-700' : 'bg-orange-50 text-orange-600'
+                            }`}>
+                            <Info size={8} />
+                            {data.isChipped ? 'Chipped' : 'No Chip'}
+                        </div>
+                    </div>
+
+                    {/* Traits */}
                     {data.traits.length > 0 && (
-                        <div className="flex items-center gap-1.5 overflow-hidden pb-1">
-                            {data.traits.slice(0, 3).map((trait, i) => (
-                                <span key={i} className="px-2 py-1 bg-bg-secondary text-text-secondary text-[9px] font-bold rounded-md whitespace-nowrap border border-border/50">
+                        <div className="flex flex-wrap gap-1">
+                            {data.traits.slice(0, 2).map((trait, i) => (
+                                <span key={i} className="px-1.5 py-0.5 bg-themev2-surface/20 text-themev2-text/70 text-[8px] font-bold rounded border border-themev2-surface/40">
                                     {trait}
                                 </span>
                             ))}
-                            {data.traits.length > 3 && (
-                                <span className="px-1.5 py-1 text-text-tertiary text-[9px] font-bold whitespace-nowrap">
-                                    +{data.traits.length - 3}
+                            {data.traits.length > 2 && (
+                                <span className="px-1.5 py-0.5 text-themev2-text/50 text-[8px] font-bold">
+                                    +{data.traits.length - 2}
                                 </span>
                             )}
                         </div>
                     )}
 
-                    {/* Footer Actions - Shorter Height */}
-                    <div className="mt-auto pt-2 flex gap-2">
-                        <Link
-                            to={`/pets/${data.id}`}
-                            className="flex-1 bg-text-primary text-text-inverted h-9 rounded-xl flex items-center justify-center text-[10px] font-black uppercase tracking-wider hover:bg-brand-primary hover:shadow-lg transition-all"
+                    {/* Action Buttons */}
+                    <div className="flex gap-1.5 mt-auto pt-1">
+                        <button
+                            onClick={() => onView && onView(pet)}
+                            className="flex-1 bg-themev2-text text-white h-7 rounded-lg flex items-center justify-center text-[9px] font-bold uppercase tracking-wide hover:bg-themev2-primary transition-all shadow-sm"
                         >
                             View
-                        </Link>
+                        </button>
                         {onToggleActive && (
                             <button
                                 onClick={() => onToggleActive(pet)}
-                                title={data.status === 'active' ? 'Archive Pet' : 'Activate Pet'}
-                                className="w-9 h-9 flex items-center justify-center border border-border rounded-xl text-text-tertiary hover:text-brand-primary hover:bg-brand-primary/5 transition-all"
+                                className="w-7 h-7 flex items-center justify-center border border-themev2-surface rounded-lg text-themev2-text/60 hover:text-themev2-primary hover:bg-themev2-surface/20 transition-all"
                             >
-                                {data.status === 'active' ? <Archive size={16} /> : <RotateCcw size={16} />}
+                                {data.status === 'active' ? <Archive size={12} /> : <RotateCcw size={12} />}
                             </button>
                         )}
                         {onDelete && (
                             <button
                                 onClick={() => onDelete(pet.id)}
-                                title="Delete Profile"
-                                className="w-9 h-9 flex items-center justify-center border border-status-error/20 bg-status-error/5 rounded-xl text-status-error hover:bg-status-error hover:text-white transition-all"
+                                className="w-7 h-7 flex items-center justify-center border border-red-100 bg-red-50 rounded-lg text-red-600 hover:bg-red-600 hover:text-white transition-all"
                             >
-                                <Trash2 size={16} />
+                                <Trash2 size={12} />
                             </button>
                         )}
                     </div>
@@ -233,13 +253,20 @@ const PetCard = ({ pet, viewMode = 'grid', variant = 'listing', onDelete, onTogg
                 className="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col h-full"
             >
                 {/* Image Section - 4:3 Aspect Ratio to match Services */}
-                <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+                <div className="relative aspect-[4/3] overflow-hidden bg-[#FEF9ED]">
                     <Link to={`/pets/${data.id}`} className="block w-full h-full">
-                        <img
-                            src={data.photo}
-                            alt={data.name}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
+                        {data.photo ? (
+                            <img
+                                src={data.photo}
+                                alt={data.name}
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            />
+                        ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-[#C48B28]/20 gap-1">
+                                <PawPrint size={24} strokeWidth={1.5} />
+                                <span className="text-[7px] font-black uppercase tracking-widest">No Photo</span>
+                            </div>
+                        )}
                     </Link>
 
                     {/* Top Right Heart (Optional, similar to ServiceCard commented out, but good for Pets) */}
@@ -334,121 +361,117 @@ const PetCard = ({ pet, viewMode = 'grid', variant = 'listing', onDelete, onTogg
     // --- Public Rehoming Listing Card (The Original/Large Layout) ---
     // Matches docs/listcard.txt
 
+    // --- Public Rehoming Listing Card (The New Premium Layout) ---
     return (
         <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className={`group bg-white rounded-[24px] shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_24px_rgba(0,0,0,0.08)] border border-border/40 overflow-hidden transition-all duration-300 h-full flex flex-col ${viewMode === 'list' ? 'lg:flex-row' : ''}`}
+            layout
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className={`group bg-white rounded-[2.5rem] border border-[#EBC176]/20 overflow-hidden hover:shadow-2xl hover:shadow-[#EBC176]/10 transition-all duration-300 flex flex-col h-full ${viewMode === 'list' ? 'md:flex-row' : ''}`}
         >
-            {/* 1. Media Section */}
-            <div className={`relative overflow-hidden ${viewMode === 'list' ? 'lg:w-72 h-64 lg:h-auto' : 'aspect-[4/3] w-full'}`}>
-                <Link to={`/pets/${data.id}`} className="block h-full">
-                    <img
-                        src={data.photo}
-                        alt={data.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                    />
+            {/* Media Section */}
+            <div className={`relative bg-[#FEF9ED] flex items-center justify-center overflow-hidden transition-colors duration-500 ${viewMode === 'list' ? 'w-full md:w-80 h-48 md:h-full' : 'h-36'}`}>
+                <Link to={`/rehoming/listings/${data.id}`} className="block h-full w-full text-inherit">
+                    {data.photo ? (
+                        <img
+                            src={data.photo}
+                            alt={data.name}
+                            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-[#C48B28]/20 gap-2">
+                            <PawPrint size={viewMode === 'list' ? 48 : 32} strokeWidth={1} />
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">Pending Visuals</span>
+                        </div>
+                    )}
                 </Link>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-80" />
+
+                {/* Visual Overlays */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                 {/* Top Badges */}
-                <div className="absolute top-3 inset-x-3 flex justify-between items-start pointer-events-none">
-                    {/* Urgency Badge (Left) */}
-                    <div className="flex flex-col gap-1.5">
-                        {data.isUrgent ? (
-                            <div className="px-2.5 py-1 bg-status-error text-white text-[9px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 shadow-sm animate-pulse-slow">
-                                <Clock size={10} strokeWidth={3} /> Immediate
+                <div className="absolute top-4 inset-x-4 flex justify-between items-start pointer-events-none">
+                    <div>
+                        {data.isUrgent && (
+                            <div className="px-3 py-1 bg-status-error text-white text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center gap-1.5 shadow-sm">
+                                <Clock size={12} strokeWidth={3} /> Immediate
                             </div>
-                        ) : data.urgency === 'soon' ? (
-                            <div className="px-2.5 py-1 bg-amber-500 text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-sm">
-                                Due Soon
-                            </div>
-                        ) : null}
-
-                        {/* Available Badge */}
-                        <div className="px-2.5 py-1 bg-white/20 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5">
-                            Availability
-                        </div>
+                        )}
                     </div>
 
-                    {/* Bookmark Interaction (Right) */}
-                    <button className="pointer-events-auto w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-status-error transition-all hover:scale-110 shadow-sm">
-                        <Heart size={16} />
+                    <button className="pointer-events-auto p-2.5 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white hover:text-red-500 transition-all active:scale-90 border border-white/20 shadow-sm z-20">
+                        <Heart size={18} fill="currentColor" className="fill-transparent hover:fill-current transition-all" />
                     </button>
                 </div>
             </div>
 
-            {/* 2. Content Body */}
-            <div className="p-5 flex flex-col flex-1 gap-4 relative">
-
-                {/* Identity Block */}
-                <div>
-                    <div className="flex justify-between items-start">
-                        <Link to={`/pets/${data.id}`}>
-                            <h3 className="text-2xl font-bold text-text-primary leading-none mb-1.5 group-hover:text-brand-primary transition-colors">
-                                {data.name}
-                            </h3>
-                        </Link>
-                        {/* Gender Icon Visual */}
-                        {data.gender && (
-                            <span className={`text-[12px] px-2 py-0.5 rounded-full font-bold uppercase ${data.gender.toLowerCase() === 'male' ? 'bg-blue-50 text-blue-600' : data.gender.toLowerCase() === 'female' ? 'bg-pink-50 text-pink-600' : 'bg-gray-50 text-gray-500'}`}>
-                                {data.gender.toLowerCase() === 'male' ? 'Boy' : data.gender.toLowerCase() === 'female' ? 'Girl' : '?'}
-                            </span>
-                        )}
-                    </div>
-                    <p className="text-[11px] font-bold text-text-tertiary uppercase tracking-wider flex items-center gap-1.5">
-                        {data.species} • {data.breed} • {data.age}
-                    </p>
-                </div>
-
-                {/* Emotional Compatibility (Traits) - Placeholder for now if empty */}
-                <div className="flex flex-wrap gap-2">
-                    <span className="px-3 py-1 bg-bg-secondary/50 text-text-secondary text-[10px] font-bold rounded-full">
-                        Friendly
-                    </span>
-                    <span className="px-3 py-1 bg-bg-secondary/50 text-text-secondary text-[10px] font-bold rounded-full">
-                        Home-raised
+            {/* Content Body */}
+            <div className="p-4 flex flex-col flex-1 relative bg-white">
+                {/* Species & Breed Label */}
+                <div className="flex items-center gap-1.5 mb-2">
+                    <span className="text-[10px] font-black text-themev2-text/30 uppercase tracking-[0.2em] truncate whitespace-nowrap">
+                        {data.species} • {data.breed}
                     </span>
                 </div>
 
-                {/* Location & Trust */}
-                <div className="mt-auto pt-4 border-t border-border/30 flex items-center justify-between">
-                    <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1.5 text-text-secondary">
-                            <MapPin size={12} className="text-brand-primary" />
-                            <span className="text-[11px] font-bold">{data.locationLabel}</span>
-                        </div>
-                        {data.isVerified ? (
-                            <div className="flex items-center gap-1 text-brand-primary text-[10px] font-bold pl-0.5">
-                                <ShieldCheck size={10} /> Verified Owner
-                            </div>
-                        ) : (
-                            <div className="text-text-tertiary text-[10px] font-semibold pl-4">
-                                Profile Available
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Engagement Signals */}
-                {data.applications > 0 && (
-                    <div className="flex items-center gap-3 text-[10px] font-bold text-text-tertiary">
-                        <span className="flex items-center gap-1"><Eye size={12} /> {data.views} views</span>
-                        <span className="flex items-center gap-1 text-brand-primary"><Heart size={12} /> {data.applications} interested</span>
-                    </div>
-                )}
-
-                {/* Primary CTA */}
-                <div className="grid grid-cols-[1fr,auto] gap-2 pt-2">
-                    <Link
-                        to={`/pets/${data.id}`}
-                        className="h-10 bg-brand-primary text-white rounded-full flex items-center justify-center text-[11px] font-black uppercase tracking-widest hover:bg-brand-primary/90 hover:shadow-lg hover:-translate-y-0.5 transition-all"
-                    >
-                        View Details
+                {/* Name & Basic Info */}
+                <div className="mb-4">
+                    <Link to={`/rehoming/listings/${data.id}`} className="block group/link">
+                        <h3 className="text-sm font-black text-themev2-text tracking-tight group-hover/link:text-[#C48B28] transition-colors leading-tight mb-1">
+                            {data.name}
+                        </h3>
                     </Link>
-                    <button className="w-10 h-10 rounded-full border border-border/50 flex items-center justify-center text-text-tertiary hover:text-text-primary hover:border-text-primary hover:bg-bg-secondary transition-all">
-                        <Share2 size={16} />
-                    </button>
+
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-themev2-text/60">
+                            <span>{data.age}</span>
+                            <span className="text-themev2-text/20">•</span>
+                            <span className="capitalize">{data.gender}</span>
+                            <span className="text-themev2-text/20">•</span>
+                            <span className="capitalize">{data.size}</span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-themev2-text/30 mt-1">
+                        <MapPin size={10} strokeWidth={2.5} className="text-[#C48B28]/40" />
+                        <span className="text-[10px] font-bold">{data.locationLabel}</span>
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap gap-1 mb-4 items-start align-top min-h-[36px] mt-auto">
+                    {data.traits.slice(0, 3).map((trait, idx) => (
+                        <span
+                            key={idx}
+                            className="px-2.5 py-1 bg-[#FDF8F3]/50 border border-[#EBC176]/20 rounded-md text-[10px] font-bold text-themev2-text/60 shadow-sm whitespace-nowrap hover:bg-[#FDF8F3] transition-colors cursor-default"
+                        >
+                            {trait}
+                        </span>
+                    ))}
+                    {data.traits.length > 3 && (
+                        <span className="text-[10px] font-bold text-themev2-text/30 ml-1 py-1">+{data.traits.length - 3} more</span>
+                    )}
+                </div>
+
+                <div className="mt-auto pt-6 border-t border-[#EBC176]/10 flex items-center justify-between">
+                    <div
+                        className="flex items-center gap-2 group/apps cursor-help"
+                        title={`Total application is ${data.applications}`}
+                    >
+                        <div className="w-9 h-9 rounded-xl bg-[#FEF2D5] flex items-center justify-center text-[#C48B28] shadow-sm border border-[#EBC176]/20 transition-all group-hover/apps:bg-[#C48B28] group-hover/apps:text-white">
+                            <Users size={16} strokeWidth={2.5} />
+                        </div>
+                        <span className="text-sm font-black text-themev2-text/40 group-hover/apps:text-[#C48B28] transition-colors">
+                            {data.applications}
+                        </span>
+                    </div>
+
+                    <Link
+                        to={`/rehoming/listings/${data.id}`}
+                        className="px-6 py-2.5 bg-[#D4A056] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#C48B28] transition-all shadow-md shadow-[#D4A056]/10 active:scale-95"
+                    >
+                        Details
+                    </Link>
                 </div>
             </div>
         </motion.div>

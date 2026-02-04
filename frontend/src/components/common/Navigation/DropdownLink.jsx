@@ -5,9 +5,9 @@ import PropTypes from 'prop-types';
 const DropdownLink = ({ to, icon, label }) => (
     <Link
         to={to}
-        className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-secondary transition-colors duration-200"
+        className="flex items-center gap-3 px-4 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-secondary transition-colors duration-200"
     >
-        {icon}
+        {icon && React.cloneElement(icon, { size: 14 })}
         {label}
     </Link>
 );

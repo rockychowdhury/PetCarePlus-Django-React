@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import useAPI from './useAPI';
 
 const useReviews = () => {
@@ -29,13 +29,26 @@ const useReviews = () => {
             onSuccess: () => {
                 queryClient.invalidateQueries(['serviceReviews']);
                 queryClient.invalidateQueries(['serviceProvider']); // to update avg rating
+                queryClient.invalidateQueries(['myBookings']); // to update has_review status on bookings
             },
+        });
+    };
+
+    // Get My Reviews (Given)
+    const useGetMyReviews = (filters = {}) => {
+        return useQuery({
+            queryKey: ['myServiceReviews', filters],
+            queryFn: async () => {
+                const response = await api.get('/services/reviews/', { params: filters });
+                return response.data;
+            }
         });
     };
 
     return {
         useSubmitAdoptionReview,
-        useSubmitServiceReview
+        useSubmitServiceReview,
+        useGetMyReviews
     };
 };
 

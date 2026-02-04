@@ -83,7 +83,7 @@ const FosterForm = ({ initialData, onSave, isLoading }) => {
         // Let's assume we pass { ...data, species_accepted: [...] }
         const payload = {
             ...formData,
-            species_accepted: formData.species_accepted_ids
+            species_accepted_ids: formData.species_accepted_ids
         };
         onSave(payload);
     };

@@ -1,20 +1,25 @@
-from rest_framework import viewsets, permissions, filters
+from rest_framework import viewsets, permissions, filters, parsers, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
 from django_filters.rest_framework import DjangoFilterBackend
 import django_filters
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Avg, Count, F, Value, FloatField
+from django.db.models.functions import Coalesce
 from apps.common.logging_utils import log_business_event
 
 from .models import (
     ServiceProvider, ServiceReview, ServiceCategory, 
     Species, ServiceOption, ServiceBooking, Specialization,
-    BusinessHours, ServiceMedia
+    BusinessHours, ServiceMedia,
+    VeterinaryClinic, FosterService, TrainerService, GroomerService, PetSitterService
 )
 from .serializers import (
     ServiceProviderSerializer, ServiceReviewSerializer,
     ServiceCategorySerializer, SpeciesSerializer, ServiceOptionSerializer,
-    ServiceBookingSerializer, ServiceBookingCreateSerializer, SpecializationSerializer
+    ServiceBookingSerializer, ServiceBookingCreateSerializer, SpecializationSerializer,
+    VeterinaryClinicSerializer, FosterServiceSerializer, TrainerServiceSerializer,
+    GroomerServiceSerializer, PetSitterServiceSerializer
 )
 
 class ServiceCategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -37,11 +42,34 @@ class SpecializationViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SpecializationSerializer
     permission_classes = [permissions.AllowAny]
 
+class BaseServiceDetailViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [permissions.AllowAny]
+    lookup_field = 'provider__id' # Lookup by provider ID
+
+class VeterinaryServiceViewSet(BaseServiceDetailViewSet):
+    queryset = VeterinaryClinic.objects.all()
+    serializer_class = VeterinaryClinicSerializer
+
+class FosterServiceViewSet(BaseServiceDetailViewSet):
+    queryset = FosterService.objects.all()
+    serializer_class = FosterServiceSerializer
+
+class TrainerServiceViewSet(BaseServiceDetailViewSet):
+    queryset = TrainerService.objects.all()
+    serializer_class = TrainerServiceSerializer
+
+class GroomerServiceViewSet(BaseServiceDetailViewSet):
+    queryset = GroomerService.objects.all()
+    serializer_class = GroomerServiceSerializer
+
+class PetSitterServiceViewSet(BaseServiceDetailViewSet):
+    queryset = PetSitterService.objects.all()
+    serializer_class = PetSitterServiceSerializer
+
 class ServiceProviderFilter(django_filters.FilterSet):
-    min_price = django_filters.NumberFilter(method='filter_min_price')
-    max_price = django_filters.NumberFilter(method='filter_max_price')
     species = django_filters.CharFilter(method='filter_species') # Slug or name
     availability = django_filters.CharFilter(method='filter_availability')
+    min_rating = django_filters.NumberFilter(method='filter_min_rating')
     services = django_filters.CharFilter(method='filter_services')
     
     # Filter by category slug
@@ -53,26 +81,9 @@ class ServiceProviderFilter(django_filters.FilterSet):
 
     class Meta:
         model = ServiceProvider
-        fields = ['category', 'city', 'state', 'verification_status', 'nearby']
+        fields = ['city', 'state', 'verification_status', 'nearby']
     
     nearby = django_filters.CharFilter(method='filter_nearby')
-
-    def filter_min_price(self, queryset, name, value):
-        # Applies to Foster services or other services with rates/base prices
-        return queryset.filter(
-            Q(foster_details__daily_rate__gte=value) |
-            Q(trainer_details__private_session_rate__gte=value) | 
-            Q(groomer_details__base_price__gte=value) |
-            Q(sitter_details__walking_rate__gte=value)
-        )
-
-    def filter_max_price(self, queryset, name, value):
-        return queryset.filter(
-            Q(foster_details__daily_rate__lte=value) |
-            Q(trainer_details__private_session_rate__lte=value) |
-            Q(groomer_details__base_price__lte=value) |
-            Q(sitter_details__walking_rate__lte=value)
-        )
 
     def filter_species(self, queryset, name, value):
         # Support slug or name lookup across all service types
@@ -111,38 +122,72 @@ class ServiceProviderFilter(django_filters.FilterSet):
 
     def filter_nearby(self, queryset, name, value):
         """
-        Simple bounding box filtering for 'nearby' functionality.
+        Accurate radius filtering using haversine distance formula.
         Expected format: lat,lng,radius_km (optional, default 10)
         Example: ?nearby=23.8103,90.4125,5
         """
         try:
+            from django.db.models import F, FloatField, ExpressionWrapper
+            from django.db.models.functions import ACos, Cos, Radians, Sin
+            
             parts = value.split(',')
             lat = float(parts[0])
             lng = float(parts[1])
             radius_km = float(parts[2]) if len(parts) > 2 else 10.0
             
-            # 1 degree lat ~= 111km
-            lat_delta = radius_km / 111.0
-            # 1 degree lng ~= 111km * cos(lat)
-            import math
-            lng_delta = radius_km / (111.0 * math.cos(math.radians(lat)))
+            # Haversine formula: calculate great-circle distance
+            # distance = 6371 * acos(cos(lat1) * cos(lat2) * cos(lng2 - lng1) + sin(lat1) * sin(lat2))
+            queryset = queryset.annotate(
+                distance=ExpressionWrapper(
+                    6371 * ACos(
+                        Cos(Radians(lat)) * Cos(Radians(F('latitude'))) *
+                        Cos(Radians(F('longitude')) - Radians(lng)) +
+                        Sin(Radians(lat)) * Sin(Radians(F('latitude')))
+                    ),
+                    output_field=FloatField()
+                )
+            ).filter(
+                distance__lte=radius_km
+            ).order_by('distance')
             
-            return queryset.filter(
-                latitude__range=(lat - lat_delta, lat + lat_delta),
-                longitude__range=(lng - lng_delta, lng + lng_delta)
-            )
-        except (ValueError, IndexError):
             return queryset
+        except (ValueError, IndexError, TypeError):
+            return queryset
+            
+    def filter_min_rating(self, queryset, name, value):
+        return queryset.filter(avg_rating__gte=value)
+
+class ServiceReviewFilter(django_filters.FilterSet):
+    rating_min = django_filters.NumberFilter(field_name="rating_overall", lookup_expr='gte')
+    rating_max = django_filters.NumberFilter(field_name="rating_overall", lookup_expr='lte')
+    has_response = django_filters.BooleanFilter(method='filter_has_response')
+    category_slug = django_filters.CharFilter(field_name="category__slug")
+    category_id = django_filters.NumberFilter(field_name="category__id")
+    verified_only = django_filters.BooleanFilter(field_name="verified_client")
+
+    class Meta:
+        model = ServiceReview
+        fields = ['provider', 'reviewer', 'rating_overall', 'verified_client', 'category_slug', 'category_id']
+
+    def filter_has_response(self, queryset, name, value):
+        if value is True:
+            return queryset.filter(provider_response__isnull=False).exclude(provider_response='')
+        elif value is False:
+            return queryset.filter(Q(provider_response__isnull=True) | Q(provider_response=''))
+        return queryset
 
 class ServiceProviderViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
-        from django.db.models import Avg, Sum, Count, F
-        
         queryset = ServiceProvider.objects.annotate(
-            avg_communication=Avg('reviews__rating_communication'),
-            avg_cleanliness=Avg('reviews__rating_cleanliness'),
-            avg_quality=Avg('reviews__rating_quality'),
-            avg_value=Avg('reviews__rating_value')
+            avg_rating=Coalesce(Avg('reviews__rating_overall'), Value(0.0, output_field=FloatField())),
+            avg_communication=Coalesce(Avg('reviews__rating_communication'), Value(0.0, output_field=FloatField())),
+            avg_cleanliness=Coalesce(Avg('reviews__rating_cleanliness'), Value(0.0, output_field=FloatField())),
+            avg_quality=Coalesce(Avg('reviews__rating_quality'), Value(0.0, output_field=FloatField())),
+            avg_value=Coalesce(Avg('reviews__rating_value'), Value(0.0, output_field=FloatField())),
+            reviews_count=Count('reviews')
+        ).select_related('user', 'category').prefetch_related(
+            'vet_details', 'foster_details', 'trainer_details', 
+            'groomer_details', 'sitter_details', 'hours'
         ).order_by('-created_at')
         
         user = self.request.user
@@ -169,23 +214,36 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         return queryset.filter(verification_status='verified')
     serializer_class = ServiceProviderSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = ServiceProviderFilter
     search_fields = ['business_name', 'description', 'category__name', 'city']
+    ordering_fields = ['avg_rating', 'reviews_count', 'created_at', 'business_name', 'distance']
+    ordering = ['-created_at']
     
     def perform_create(self, serializer):
         user = self.request.user
-        # Allow any user to create a provider profile (as draft)
+        # Allow any user to create a provider profile (starts as submitted for admin review)
         
         if ServiceProvider.objects.filter(user=user).exists():
              raise permissions.exceptions.PermissionDenied("You already have a Service Provider profile.")
 
-        # Force status to draft initially
-        instance = serializer.save(user=user, application_status='draft')
+        # Save as submitted
+        instance = serializer.save(user=user, application_status='submitted', verification_status='pending')
+        
+        # Create Role Request automatically so admin can approve the role change
+        from apps.users.models import RoleRequest, User as UserModel
+        RoleRequest.objects.create(
+            user=user,
+            requested_role=UserModel.UserRole.SERVICE_PROVIDER,
+            reason="Automated role request from service provider registration.",
+            status='pending'
+        )
+
         log_business_event('SERVICE_PROVIDER_PROFILE_CREATED', user, {
             'provider_id': instance.id,
             'business_name': instance.business_name
         })
+        log_business_event('PROVIDER_APPLICATION_SUBMITTED', user, {'provider_id': instance.id})
 
     def perform_update(self, serializer):
         # Prevent updates if status is submitted (locked)
@@ -215,6 +273,7 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         )
         
         provider.application_status = 'submitted'
+        provider.verification_status = 'pending'
         provider.save()
         
         log_business_event('PROVIDER_APPLICATION_SUBMITTED', user, {'provider_id': provider.id})
@@ -341,41 +400,176 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         
         return Response(self.get_serializer(provider).data)
         
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
-    def update_media(self, request, pk=None):
+    @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny], url_path='availability')
+    def availability(self, request, pk=None):
+        """Get availability for a provider (Contract 3.4)"""
         provider = self.get_object()
-        media_list = request.data
-        if not isinstance(media_list, list):
-             return Response({"error": "Expected a list of media items."}, status=400)
-             
-        # Strategy: Get existing IDs. 
-        existing_ids = set(provider.media.values_list('id', flat=True))
-        incoming_ids = set(item.get('id') for item in media_list if item.get('id'))
         
-        # Delete missing
-        to_delete = existing_ids - incoming_ids
-        ServiceMedia.objects.filter(id__in=to_delete).delete()
+        # Default to checking next 7 days or specific date from query param
+        date_str = request.query_params.get('date')
         
-        # Update or Create
-        for item in media_list:
-            if item.get('id') and item.get('id') in existing_ids:
-                # Update
-                media = ServiceMedia.objects.get(id=item.get('id'))
-                media.is_primary = item.get('is_primary', False)
-                # media.file_url = item.get('file_url') # Usually shouldn't change URL of existing unless re-upload
-                media.save()
+        try:
+            from datetime import datetime, time, timedelta
+            from django.utils import timezone
+            
+            # Logic adapted from 'check_availability'
+            if date_str:
+                 target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
             else:
-                # Create
-                ServiceMedia.objects.create(
+                 target_date = timezone.now().date() # Default to today
+                 
+            day_of_week = target_date.weekday()
+            
+             # Get business hours for this day
+            try:
+                business_hour = provider.hours.get(day=day_of_week)
+                is_closed = business_hour.is_closed
+                open_time = business_hour.open_time
+                close_time = business_hour.close_time
+            except BusinessHours.DoesNotExist: 
+                # Default hours if not set
+                from datetime import time
+                is_closed = False
+                open_time = time(9, 0)
+                close_time = time(18, 0)
+
+            if is_closed:
+                 return Response({
+                    "date": target_date,
+                    "is_open": False,
+                    "business_hours": None,
+                    "available_slots": []
+                 })
+                 
+            # Generate slots logic... (Simplified for brevity, or copied fully?)
+            # Since I am moving it, I should implement full logic or call a helper.
+            # I'll implement a concise version.
+            
+            available_slots = []
+            if open_time and close_time:
+                current_time = datetime.combine(target_date, open_time)
+                end_time = datetime.combine(target_date, close_time)
+                slot_duration = timedelta(hours=1)
+                
+                day_start = timezone.make_aware(datetime.combine(target_date, time(0, 0)))
+                day_end = timezone.make_aware(datetime.combine(target_date, time(23, 59, 59)))
+                
+                bookings = ServiceBooking.objects.filter(
                     provider=provider,
-                    file_url=item.get('file_url'),
-                    thumbnail_url=item.get('thumbnail_url'),
-                    is_primary=item.get('is_primary', False),
-                    alt_text=item.get('alt_text', '')
+                    status__in=['confirmed', 'pending'],
+                    start_datetime__gte=day_start,
+                    start_datetime__lt=day_end
                 )
                 
-                
-        return Response(self.get_serializer(provider).data)
+                while current_time < end_time:
+                    slot_start = timezone.make_aware(current_time)
+                    slot_end = slot_start + slot_duration
+                    
+                    conflicts = bookings.filter(
+                        start_datetime__lt=slot_end,
+                        end_datetime__gt=slot_start
+                    ).count()
+                    
+                    is_available = True
+                    capacity = 1
+                    if hasattr(provider, 'foster_details'):
+                         capacity = provider.foster_details.capacity or 1
+                         is_available = conflicts < capacity
+                    else:
+                         is_available = conflicts == 0
+                         
+                    if is_available:
+                        # Only adding available slots to list per contract usually? 
+                        # Or contract says "available_slots": ["09:00", ...]
+                        available_slots.append(current_time.strftime('%H:%M'))
+                        
+                    current_time += slot_duration
+
+            return Response({
+                "date": target_date,
+                "is_open": True,
+                "business_hours": {
+                    "open": open_time.strftime('%H:%M'),
+                    "close": close_time.strftime('%H:%M')
+                },
+                "available_slots": available_slots
+            })
+            
+        except ValueError:
+            return Response({"error": "Invalid date format"}, status=400)
+
+    @action(
+        detail=True, 
+        methods=['post'], 
+        permission_classes=[permissions.IsAuthenticated],
+        url_path='media'
+    )
+    def upload_media(self, request, pk=None):
+        """Add media to provider (expects URL from ImgBB uploaded by client)"""
+        provider = self.get_object()
+        
+        if provider.user != request.user:
+            return Response({"error": "Not authorized"}, status=403)
+        
+        # Handle if data is sent as a list (take first item)
+        data = request.data
+        if isinstance(data, list):
+            if not data:
+                return Response({"error": "No media data provided"}, status=400)
+            data = data[0]
+        
+        # Expect JSON with file_url, thumbnail_url (optional)
+        file_url = data.get('file_url')
+        if not file_url:
+            return Response({
+                "error": "file_url is required",
+                "hint": "Upload image to ImgBB on client-side first, then send the URL",
+                "received_data_type": type(request.data).__name__,
+                "received_data": str(request.data)[:200]
+            }, status=400)
+        
+        thumbnail_url = data.get('thumbnail_url') or file_url
+        is_primary = data.get('is_primary', False)
+        alt_text = data.get('alt_text', '')
+        
+        # If setting as primary, unset other primary images
+        if is_primary:
+            ServiceMedia.objects.filter(provider=provider, is_primary=True).update(is_primary=False)
+        
+        media = ServiceMedia.objects.create(
+            provider=provider,
+            file_url=file_url,
+            thumbnail_url=thumbnail_url,
+            is_primary=is_primary,
+            alt_text=alt_text
+        )
+        
+        from .serializers import ServiceMediaSerializer
+        return Response(ServiceMediaSerializer(media).data, status=201)
+
+    @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny], url_path='reviews')
+    def list_reviews(self, request, pk=None):
+        """List reviews for a provider with filtering"""
+        provider = self.get_object()
+        queryset = provider.reviews.all().order_by('-created_at')
+        
+        # Filtering
+        min_rating = request.query_params.get('min_rating')
+        if min_rating:
+            queryset = queryset.filter(rating_overall__gte=min_rating)
+            
+        verified_only = request.query_params.get('verified_only')
+        if verified_only and verified_only.lower() == 'true':
+            queryset = queryset.filter(verified_client=True)
+            
+        # Pagination
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = ServiceReviewSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+            
+        serializer = ServiceReviewSerializer(queryset, many=True)
+        return Response(serializer.data)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
     def update_status(self, request, pk=None):
@@ -455,10 +649,106 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
             "today_schedule": ServiceBookingSerializer(today_bookings, many=True).data,
         })
 
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def analytics(self, request):
+        """
+        Get historical analytics for provider.
+        """
+        user = request.user
+        if not hasattr(user, 'service_provider_profile'):
+             return Response({"error": "User is not a service provider"}, status=403)
+        
+        provider = user.service_provider_profile
+        bookings = ServiceBooking.objects.filter(provider=provider).exclude(status='cancelled').exclude(payment_status='refunded')
+        
+        from django.utils import timezone
+        from django.db.models.functions import TruncMonth
+        
+        # Last 6 months earnings
+        six_months_ago = timezone.now() - timezone.timedelta(days=180)
+        
+        monthly_stats = bookings.filter(created_at__gte=six_months_ago)\
+            .annotate(month=TruncMonth('created_at'))\
+            .values('month')\
+            .annotate(earnings=Sum('agreed_price'), count=Count('id'))\
+            .order_by('month')
+            
+        # Format for frontend
+        data = []
+        for entry in monthly_stats:
+            data.append({
+                "month": entry['month'].strftime('%b %Y'),
+                "earnings": entry['earnings'] or 0,
+                "bookings": entry['count']
+            })
+            
+        return Response(data)
+
+
+class ServiceReviewViewSet(viewsets.ModelViewSet):
+    queryset = ServiceReview.objects.all().order_by('-created_at')
+    serializer_class = ServiceReviewSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = ServiceReviewFilter
+    search_fields = ['review_text', 'provider__business_name', 'provider__category__name']
+    ordering_fields = ['created_at', 'rating_overall']
+    ordering = ['-created_at']
+
+    def perform_create(self, serializer):
+        # Ensure reviewer is the logged-in user
+        if not self.request.user.is_authenticated:
+            raise permissions.exceptions.NotAuthenticated()
+            
+        booking = serializer.validated_data.get('booking')
+        provider = serializer.validated_data.get('provider')
+
+        # Logic: If booking is provided, it must be completed and belongs to the user
+        if booking:
+            if booking.client != self.request.user:
+                 raise serializers.ValidationError("You can only review your own bookings.")
+            if booking.status != 'completed':
+                 raise serializers.ValidationError("You can only review completed bookings.")
+            if booking.provider != provider:
+                 raise serializers.ValidationError("Booking does not match the provider.")
+            if hasattr(booking, 'review'):
+                 raise serializers.ValidationError("You have already reviewed this booking.")
+            has_booking = True
+        else:
+            # Fallback/Legacy: If no booking ID, check if they have ANY completed booking for this provider
+            has_booking = ServiceBooking.objects.filter(
+                provider=provider, 
+                client=self.request.user, 
+                status='completed'
+            ).exists()
+            
+            # If user wants to force reviews to require a booking ID:
+            # raise serializers.ValidationError("A completed booking is required to leave a review.")
+        
+        # Auto-set category from provider if not passed
+        category = serializer.validated_data.get('category')
+        if not category and provider.category:
+            category = provider.category
+             
+        review = serializer.save(
+            reviewer=self.request.user,
+            verified_client=has_booking,
+            category=category,
+            booking=booking
+        )
+        
+        log_business_event('SERVICE_REVIEW_CREATED', self.request.user, {
+            'review_id': review.id,
+            'provider_id': review.provider.id,
+            'rating': review.rating_overall,
+            'verified': has_booking
+        })
+
 
 class ServiceBookingViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['status', 'booking_type', 'payment_status']
     ordering_fields = ['start_date', 'created_at']
     ordering = ['-created_at']
 
@@ -479,7 +769,7 @@ class ServiceBookingViewSet(viewsets.ModelViewSet):
             provider_bookings = ServiceBooking.objects.filter(provider=user.service_provider_profile)
             queryset = queryset | provider_bookings
             
-        return queryset.distinct()
+        return queryset.select_related('provider', 'pet', 'service_option', 'review').distinct()
 
     def perform_create(self, serializer):
         # Allow client to create booking
@@ -534,114 +824,252 @@ class ServiceBookingViewSet(viewsets.ModelViewSet):
         booking.save()
         return Response(ServiceBookingSerializer(booking).data)
 
-    @action(detail=False, methods=['post'])
-    def check_availability(self, request):
-        """
-        Check if a provider is available for specific dates.
-        Returns structured time slot data.
-        Input: provider_id, date (YYYY-MM-DD)
-        """
-        provider_id = request.data.get('provider_id')
-        date_str = request.data.get('date')
+    @action(detail=True, methods=['post'])
+    def mark_paid(self, request, pk=None):
+        booking = self.get_object()
+        # In a real app, verify payment signature/webhook here.
+        # For now, we trust the client (Mock Payment).
         
-        if not all([provider_id, date_str]):
-            return Response({"error": "Missing required fields (provider_id, date)"}, status=400)
+        booking.payment_status = 'paid'
+        booking.save()
+        return Response(ServiceBookingSerializer(booking).data)
+
+        return Response(ServiceBookingSerializer(booking).data)
+
+    @action(detail=True, methods=['post'])
+    def start(self, request, pk=None):
+        booking = self.get_object()
+        # Only the provider can start
+        if booking.provider.user != request.user:
+            return Response({"error": "Only the service provider can start this booking."}, status=403)
         
+        if booking.status != 'confirmed':
+            return Response({"error": "Can only start confirmed bookings."}, status=400)
+            
+        booking.status = 'in_progress'
+        booking.save()
+        log_business_event('SERVICE_BOOKING_STARTED', request.user, {
+            'booking_id': booking.id
+        })
+        return Response(ServiceBookingSerializer(booking).data)
+
+    @action(detail=True, methods=['post'])
+    def complete(self, request, pk=None):
+        booking = self.get_object()
+        # Only the provider can complete
+        if booking.provider.user != request.user:
+            return Response({"error": "Only the service provider can complete this booking."}, status=403)
+        
+        if booking.status != 'in_progress':
+             # Allow completing confirmed ones directly if they forgot to start? 
+             # For strictness, let's require start, OR allow 'confirmed' -> 'completed' for instant services.
+             # Let's allow 'confirmed' or 'in_progress'
+             if booking.status not in ['confirmed', 'in_progress']:
+                 return Response({"error": "Can only complete confirmed or in-progress bookings."}, status=400)
+        
+        # Handle Price and Payment updates
+        final_price = request.data.get('final_price')
+        if final_price is not None:
+            booking.agreed_price = final_price
+            
+        payment_received = request.data.get('payment_received')
+        if payment_received:
+            booking.payment_status = 'paid'
+            
+        booking.status = 'completed'
+        booking.save()
+        log_business_event('SERVICE_BOOKING_COMPLETED', request.user, {
+            'booking_id': booking.id,
+            'final_price': str(booking.agreed_price),
+            'payment_status': booking.payment_status
+        })
+        return Response(ServiceBookingSerializer(booking).data)
+
+    @action(detail=True, methods=['post'])
+    def reschedule(self, request, pk=None):
+        """Allow user to reschedule a pending booking"""
+        booking = self.get_object()
+        
+        # Only the client can reschedule (or provider if permitted, but user asked for pending check)
+        if booking.client != request.user:
+            return Response({"error": "Only the client can reschedule this booking."}, status=403)
+            
+        if booking.status != 'pending':
+            return Response({"error": "Only pending bookings can be rescheduled."}, status=400)
+            
+        new_date_str = request.data.get('booking_date')
+        new_time_str = request.data.get('booking_time')
+        
+        if not new_date_str or not new_time_str:
+            return Response({"error": "New date and time are required."}, status=400)
+            
         try:
             from datetime import datetime, timedelta
             from django.utils import timezone
-            from .models import BusinessHours, ServiceProvider # Import BusinessHours and ServiceProvider
             
-            provider = ServiceProvider.objects.get(id=provider_id)
-            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-            day_of_week = target_date.weekday()  # 0=Monday
+            new_date = datetime.strptime(new_date_str, '%Y-%m-%d').date()
+            new_time = datetime.strptime(new_time_str, '%H:%M').time()
             
-            # Get business hours for this day
+            # Re-calculate start/end datetime
+            new_start_datetime = timezone.make_aware(datetime.combine(new_date, new_time))
+            duration = booking.end_datetime - booking.start_datetime
+            new_end_datetime = new_start_datetime + duration
+            
+            # --- Availability Check ---
+            # 1. Business Hours
+            day_of_week = new_date.weekday()
             try:
-                business_hour = provider.hours.get(day=day_of_week)
-                if business_hour.is_closed:
-                    return Response({
-                        "is_available": False,
-                        "reason": "Provider is closed on this day",
-                        "available_slots": []
-                    })
-                open_time = business_hour.open_time
-                close_time = business_hour.close_time
-            except BusinessHours.DoesNotExist: # Catch specific exception
-                # Default hours if not set
-                from datetime import time
-                open_time = time(9, 0)
-                close_time = time(18, 0)
-            
-            # Generate time slots (60-minute intervals)
-            available_slots = []
-            current_time = datetime.combine(target_date, open_time)
-            end_time = datetime.combine(target_date, close_time)
-            slot_duration = timedelta(hours=1)
-            
-            # Get all confirmed/pending bookings for this day
-            day_start = timezone.make_aware(datetime.combine(target_date, time(0, 0)))
-            day_end = timezone.make_aware(datetime.combine(target_date, time(23, 59, 59, 999999))) # Ensure it covers the whole day
-            
-            bookings = ServiceBooking.objects.filter(
-                provider=provider,
+                hours = booking.provider.hours.get(day=day_of_week)
+                if hours.is_closed:
+                    return Response({"error": f"Provider is closed on {new_date_str}"}, status=400)
+                    
+                if hours.open_time and hours.close_time:
+                    if new_time < hours.open_time or new_time > hours.close_time:
+                        return Response({"error": "Time is outside business hours."}, status=400)
+            except BusinessHours.DoesNotExist:
+                pass # Assume 24/7 or default 9-6 if not set
+                
+            # 2. Conflicts
+            conflicts = ServiceBooking.objects.filter(
+                provider=booking.provider,
                 status__in=['confirmed', 'pending'],
-                start_datetime__gte=day_start,
-                start_datetime__lt=day_end
-            )
+                start_datetime__lt=new_end_datetime,
+                end_datetime__gt=new_start_datetime
+            ).exclude(id=booking.id).count()
             
-            # Build slot list
-            while current_time < end_time:
-                slot_start = timezone.make_aware(current_time)
-                slot_end = slot_start + slot_duration
+            capacity = 1
+            if hasattr(booking.provider, 'foster_details'):
+                capacity = booking.provider.foster_details.capacity or 1
                 
-                # Check if this slot conflicts with any booking
-                conflicts = bookings.filter(
-                    start_datetime__lt=slot_end,
-                    end_datetime__gt=slot_start
-                ).count()
+            if conflicts >= capacity:
+                return Response({"error": "Slot is no longer available."}, status=400)
                 
-                # Check capacity for foster services
-                is_available = True
-                capacity = 1
-                
-                if hasattr(provider, 'foster_details'):
-                    capacity = provider.foster_details.capacity or 1
-                    is_available = conflicts < capacity
-                else:
-                    is_available = conflicts == 0
-                
-                available_slots.append({
-                    "time": current_time.strftime('%H:%M'),
-                    "datetime": slot_start.isoformat(),
-                    "available": is_available,
-                    "capacity": capacity,
-                    "booked": conflicts,
-                    "duration_minutes": 60
-                })
-                
-                current_time += slot_duration
+            # Update booking
+            booking.booking_date = new_date
+            booking.booking_time = new_time
+            booking.start_datetime = new_start_datetime
+            booking.end_datetime = new_end_datetime
+            booking.save()
             
-            # Get business hours summary
-            business_hours = {}
-            for hour in provider.hours.all():
-                day_name = dict(BusinessHours.DAYS_OF_WEEK).get(hour.day, '').lower()
-                business_hours[day_name] = {
-                    "open": hour.open_time.strftime('%H:%M') if hour.open_time else None,
-                    "close": hour.close_time.strftime('%H:%M') if hour.close_time else None,
-                    "is_closed": hour.is_closed
-                }
-            
-            return Response({
-                "provider_id": provider_id,
-                "date": date_str,
-                "business_hours": business_hours,
-                "available_slots": available_slots,
-                "total_slots": len(available_slots),
-                "available_count": sum(1 for slot in available_slots if slot['available'])
+            log_business_event('SERVICE_BOOKING_RESCHEDULED', request.user, {
+                'booking_id': booking.id,
+                'new_date': new_date_str,
+                'new_time': new_time_str
             })
             
-        except ServiceProvider.DoesNotExist:
-            return Response({"error": "Provider not found"}, status=404)
-        except ValueError as e:
-            return Response({"error": f"Invalid date format: {str(e)}"}, status=400)
+            return Response(ServiceBookingSerializer(booking).data)
+            
+        except ValueError:
+            return Response({"error": "Invalid date or time format."}, status=400)
+
+    @action(detail=False, methods=['get'])
+    def export_csv(self, request):
+        """
+        Export bookings to CSV
+        """
+        import csv
+        from django.http import HttpResponse
+
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="bookings.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Booking ID', 'Service', 'Client', 'Pet', 'Date', 'Time', 'Status', 'Price', 'Payment Status'])
+
+        for booking in queryset:
+            writer.writerow([
+                booking.id,
+                booking.service_option.name if booking.service_option else booking.booking_type,
+                booking.client.email,
+                booking.pet.name,
+                booking.booking_date,
+                booking.booking_time,
+                booking.status,
+                booking.agreed_price,
+                booking.payment_status
+            ])
+
+        return response
+
+class ProviderDashboardViewSet(viewsets.ViewSet):
+    """
+    Dedicated ViewSet for Provider Dashboard widgets and analytics.
+    Exposed at /api/services/provider/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @action(detail=False, methods=['get'], url_path='dashboard-stats')
+    def dashboard_stats(self, request):
+        """
+        Aggregated stats for the dashboard overview.
+        """
+        user = request.user
+        if not hasattr(user, 'service_provider_profile'):
+             return Response({"error": "User is not a service provider"}, status=403)
+        
+        provider = user.service_provider_profile
+        bookings = ServiceBooking.objects.filter(provider=provider)
+        
+        from django.utils import timezone
+        now = timezone.now()
+        thirty_days_ago = now - timezone.timedelta(days=30)
+        
+        # 1. Booking Counts
+        total_bookings = bookings.count()
+        pending_bookings = bookings.filter(status='pending').count()
+        
+        # 2. Earnings (valid bookings only)
+        valid_bookings_for_earnings = bookings.filter(status='completed').exclude(payment_status='refunded')
+        
+        total_earnings = valid_bookings_for_earnings.aggregate(total=Sum('agreed_price'))['total'] or 0
+        
+        # Monthly Stats
+        current_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        month_earnings = valid_bookings_for_earnings.filter(updated_at__gte=current_month_start).aggregate(total=Sum('agreed_price'))['total'] or 0
+        
+        # 3. Active Guests (In Progress)
+        active_guests = bookings.filter(status='in_progress').count()
+        
+        # 4. Today's Bookings Count
+        todays_bookings_count = bookings.filter(booking_date=now.date()).exclude(status='cancelled').count()
+        
+        # 5. Recent Activity (Pending requests)
+        recent_pending = bookings.filter(status='pending').order_by('created_at')[:5]
+        
+        from .serializers import ServiceBookingSerializer
+        return Response({
+            "metrics": {
+                "total_earnings": total_earnings,
+                "month_earnings": month_earnings,
+                "total_bookings": total_bookings,
+                "pending_requests": pending_bookings,
+                "active_guests": active_guests,
+                "todays_bookings": todays_bookings_count
+            },
+            "recent_pending": ServiceBookingSerializer(recent_pending, many=True).data
+        })
+
+    @action(detail=False, methods=['get'], url_path='today')
+    def today_schedule(self, request):
+        """
+        Get all bookings for today, ordered by time.
+        """
+        user = request.user
+        if not hasattr(user, 'service_provider_profile'):
+             return Response({"error": "User is not a service provider"}, status=403)
+             
+        provider = user.service_provider_profile
+        from django.utils import timezone
+        today = timezone.now().date()
+        
+        bookings = ServiceBooking.objects.filter(
+            provider=provider,
+            booking_date=today
+        ).exclude(status='cancelled').order_by('booking_time', 'start_datetime')
+        
+        from .serializers import ServiceBookingSerializer
+        return Response(ServiceBookingSerializer(bookings, many=True).data)
+
+

@@ -52,11 +52,11 @@ const HowItWorksPage = () => {
     ];
 
     return (
-        <div className="bg-bg-primary min-h-screen  text-text-primary">
+        <div className="bg-[#FEF9ED] min-h-screen text-themev2-text pt-20">
             {/* Hero */}
-            <section className="bg-brand-primary text-text-inverted py-20 px-6 text-center">
-                <h1 className="text-4xl md:text-5xl font-bold mb-6">How PetCircle Works</h1>
-                <p className="text-xl text-white/80 max-w-2xl mx-auto">
+            <section className="bg-[#C48B28] text-white py-20 px-6 text-center">
+                <h1 className="text-4xl md:text-5xl font-bold mb-6 font-serif">How PetCircle Works</h1>
+                <p className="text-xl text-white/90 max-w-2xl mx-auto">
                     We've simplified the journey for both pet seekers and owners, ensuring a safe, transparent, and loving process for every animal.
                 </p>
             </section>
@@ -65,12 +65,12 @@ const HowItWorksPage = () => {
             <section className="py-20 max-w-7xl mx-auto px-6">
                 {/* Tabs */}
                 <div className="flex justify-center mb-16">
-                    <div className="bg-white p-2 rounded-full shadow-md border border-border inline-flex">
+                    <div className="bg-white p-2 rounded-full shadow-md border border-[#EBC176]/20 inline-flex">
                         <button
                             onClick={() => setActiveTab('adopter')}
                             className={`px-8 py-3 rounded-full font-bold transition-all duration-300 ${activeTab === 'adopter'
-                                ? 'bg-brand-primary text-white shadow-sm'
-                                : 'text-text-secondary hover:bg-gray-100'
+                                ? 'bg-[#C48B28] text-white shadow-sm'
+                                : 'text-themev2-text/60 hover:bg-[#FEF9ED] hover:text-themev2-text'
                                 }`}
                         >
                             I want to Adopt
@@ -78,8 +78,8 @@ const HowItWorksPage = () => {
                         <button
                             onClick={() => setActiveTab('owner')}
                             className={`px-8 py-3 rounded-full font-bold transition-all duration-300 ${activeTab === 'owner'
-                                ? 'bg-brand-secondary text-white shadow-sm'
-                                : 'text-text-secondary hover:bg-gray-100'
+                                ? 'bg-[#5A3C0B] text-white shadow-sm'
+                                : 'text-themev2-text/60 hover:bg-[#FEF9ED] hover:text-themev2-text'
                                 }`}
                         >
                             I need to Rehome
@@ -90,13 +90,13 @@ const HowItWorksPage = () => {
                 {/* Steps Grid */}
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {(activeTab === 'adopter' ? adopterSteps : ownerSteps).map((step, index) => (
-                        <div key={index} className="bg-white p-8 rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow group">
-                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-colors ${activeTab === 'adopter' ? 'bg-brand-primary/10 text-brand-primary' : 'bg-brand-secondary/10 text-brand-secondary'
+                        <div key={index} className="bg-white p-8 rounded-2xl border border-[#EBC176]/20 shadow-sm hover:shadow-md transition-shadow group">
+                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-colors ${activeTab === 'adopter' ? 'bg-[#C48B28]/10 text-[#C48B28]' : 'bg-[#5A3C0B]/10 text-[#5A3C0B]'
                                 }`}>
                                 <step.icon size={32} />
                             </div>
-                            <h3 className="text-xl font-bold mb-4 group-hover:text-brand-primary transition-colors">{step.title}</h3>
-                            <p className="text-text-secondary leading-relaxed">
+                            <h3 className={`text-xl font-bold mb-4 transition-colors ${activeTab === 'adopter' ? 'group-hover:text-[#C48B28]' : 'group-hover:text-[#5A3C0B]'}`}>{step.title}</h3>
+                            <p className="text-themev2-text/70 leading-relaxed">
                                 {step.description}
                             </p>
                         </div>
@@ -105,14 +105,14 @@ const HowItWorksPage = () => {
             </section>
 
             {/* CTA */}
-            <section className="py-16 bg-white border-t border-border">
+            <section className="py-16 bg-white border-t border-[#EBC176]/20">
                 <div className="max-w-4xl mx-auto px-6 text-center">
-                    <h2 className="text-3xl font-bold mb-8">Ready to start your journey?</h2>
+                    <h2 className="text-3xl font-bold mb-8 text-themev2-text">Ready to start your journey?</h2>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <Link to="/pets" className="px-8 py-4 bg-brand-primary text-white rounded-full font-bold hover:bg-brand-primary/90 transition shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                        <Link to="/pets" className="px-8 py-4 bg-[#C48B28] text-white rounded-full font-bold hover:bg-[#B07212] transition shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                             Browse Pets
                         </Link>
-                        <Link to="/register" className="px-8 py-4 bg-white border-2 border-brand-primary text-brand-primary rounded-full font-bold hover:bg-brand-primary/5 transition">
+                        <Link to="/register" className="px-8 py-4 bg-white border-2 border-[#C48B28] text-[#C48B28] rounded-full font-bold hover:bg-[#FEF9ED] transition">
                             Create Account
                         </Link>
                     </div>

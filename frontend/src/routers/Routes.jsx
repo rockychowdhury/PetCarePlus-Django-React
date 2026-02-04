@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom';
 import useAuth from "../hooks/useAuth";
-import PrivateRoute, { AdminRoute, ServiceProviderRoute } from './PrivateRoute';
+import PrivateRoute, { AdminRoute, ServiceProviderRoute, GuestRoute, PetOwnerRoute } from './PrivateRoute';
 
 // Layouts
 import MainLayout from "../layouts/MainLayout";
@@ -26,6 +26,7 @@ import HowItWorksPage from "../pages/AboutPages/HowItWorksPage";
 import FAQPage from "../pages/AboutPages/FAQPage";
 import TermsOfServicePage from "../pages/LegalPages/TermsOfServicePage";
 import PrivacyPolicyPage from "../pages/LegalPages/PrivacyPolicyPage";
+import CookiePolicyPage from "../pages/LegalPages/CookiePolicyPage";
 
 // Feature Pages
 import PetListingPage from "../pages/PetPages/PetListingPage";
@@ -39,6 +40,14 @@ import ServiceReviewPage from "../pages/ServicePages/ServiceReviewPage";
 import ServiceProviderRegistrationPage from "../pages/ServicePages/ServiceProviderRegistrationPage";
 import BecomeProviderPage from "../pages/ServicePages/BecomeProviderPage";
 import ProviderDashboardPage from "../pages/ServicePages/ProviderDashboardPage";
+import DashboardOverview from "../components/Services/ProviderDashboard/Pages/DashboardOverview";
+import BookingsPage from "../components/Services/ProviderDashboard/Pages/BookingsPage";
+import CalendarPage from "../components/Services/ProviderDashboard/Pages/CalendarPage";
+import AvailabilityManager from "../components/Services/ProviderDashboard/Pages/AvailabilityManager";
+import ProfileManager from "../components/Services/ProviderDashboard/Pages/ProfileManager";
+import ReviewsManager from "../components/Services/ProviderDashboard/Pages/ReviewsManager";
+import ProviderAnalyticsPage from "../components/Services/ProviderDashboard/Pages/AnalyticsPage";
+import SettingsPage from "../components/Services/ProviderDashboard/Pages/SettingsPage";
 
 // Rehoming
 import RehomingFlowLayout from "../layouts/RehomingFlowLayout";
@@ -74,6 +83,7 @@ import VerificationPage from "../pages/ProfilePages/VerificationPage";
 import MyPetsPage from "../pages/PetPages/MyPetsPage";
 import AddPetPage from "../pages/PetPages/AddPetPage";
 import UserServiceBookingsPage from "../pages/Dashboard/UserServiceBookingsPage";
+import UserReviewsPage from "../pages/Dashboard/UserReviewsPage";
 
 // Admin
 import AdminDashboard from "../pages/AdminPages/AdminDashboard";
@@ -81,7 +91,7 @@ import UserManagementPage from "../pages/AdminPages/UserManagementPage";
 import UserDetailPage from "../pages/AdminPages/UserDetailPage";
 import ListingModerationPage from "../pages/AdminPages/ListingModerationPage";
 import ReportManagementPage from "../pages/AdminPages/ReportManagementPage";
-import AnalyticsPage from "../pages/AdminPages/AnalyticsPage";
+import AdminAnalyticsPage from "../pages/AdminPages/AnalyticsPage";
 import RoleRequestsPage from "../pages/AdminPages/RoleRequestsPage";
 import AdminProvidersPage from "../pages/AdminPages/AdminProvidersPage";
 
@@ -101,53 +111,62 @@ const router = createBrowserRouter([
         errorElement: <ServerErrorPage />,
         children: [
             /* =======================
-               PUBLIC (NO AUTH)
+               UNAUTHORIZED / GUEST ROUTES
+               (Redirects to dashboard if logged in)
             ======================== */
-            { path: "/", element: <HomePage /> },
-
-            { path: "/login", element: <LoginPage /> },
-            { path: "/register", element: <RegisterPage /> },
-            { path: "/verify-email", element: <VerifyEmailPage /> },
-            { path: "/forgot-password", element: <ForgotPasswordPage /> },
-            { path: "/password-reset/:uid/:token", element: <ResetPasswordPage /> },
+            {
+                element: (
+                    <GuestRoute>
+                        <Outlet />
+                    </GuestRoute>
+                ),
+                children: [
+                    { path: "/login", element: <LoginPage /> },
+                    { path: "/register", element: <RegisterPage /> },
+                    { path: "/verify-email", element: <VerifyEmailPage /> },
+                    { path: "/forgot-password", element: <ForgotPasswordPage /> },
+                    { path: "/password-reset/:uid/:token", element: <ResetPasswordPage /> },
+                ],
+            },
 
             /* =======================
-               PUBLIC SITE (MainLayout)
+               PUBLIC ROUTES
+               (Accessible by everyone)
             ======================== */
             {
                 element: <MainLayout />,
                 children: [
-                    /* Pets */
-                    { path: "/pets", element: <PetListingPage /> },
-                    { path: "/pets/:id", element: <PetDetailPage /> },
+                    { path: "/", element: <HomePage /> },
 
-                    /* SEO aliases → redirect */
-                    { path: "/browse", element: <Navigate to="/pets" replace /> },
-                    { path: "/adopt", element: <Navigate to="/pets" replace /> },
-                    { path: "/find-pet", element: <Navigate to="/pets" replace /> },
-
-                    /* Rehoming - Authenticated only now */
-                    { path: "/rehoming/listings/:id", element: <RehomingListingDetailPage /> },
-
-                    /* Services */
-                    { path: "/services", element: <ServiceSearchPage /> },
-                    { path: "/services/:id", element: <ServiceDetailPage /> },
-
-                    /* Static */
+                    /* Static Pages */
                     { path: "/about", element: <AboutPage /> },
                     { path: "/contact", element: <ContactPage /> },
                     { path: "/how-it-works", element: <HowItWorksPage /> },
                     { path: "/faq", element: <FAQPage /> },
                     { path: "/terms", element: <TermsOfServicePage /> },
                     { path: "/privacy", element: <PrivacyPolicyPage /> },
+                    { path: "/cookies", element: <CookiePolicyPage /> },
 
-                    /* Public profile */
+                    /* Services (Search & Viewing) */
+                    { path: "/services", element: <ServiceSearchPage /> },
+                    { path: "/services/:id", element: <ServiceDetailPage /> },
+
+                    /* Pets (Listing & Viewing - Public Listing, Private Details) */
+                    { path: "/pets", element: <PetListingPage /> },
+
+                    /* SEO aliases */
+                    { path: "/browse", element: <Navigate to="/pets" replace /> },
+                    { path: "/adopt", element: <Navigate to="/pets" replace /> },
+                    { path: "/find-pet", element: <Navigate to="/pets" replace /> },
+
+                    /* Public Profiles */
                     { path: "/profile/:username", element: <PublicProfilePage /> },
                 ],
             },
 
             /* =======================
-               AUTHENTICATED (NON-DASHBOARD)
+               AUTHENTICATED COMMON ROUTES
+               (Accessible by any logged-in user)
             ======================== */
             {
                 element: (
@@ -156,38 +175,48 @@ const router = createBrowserRouter([
                     </PrivateRoute>
                 ),
                 children: [
+                    /* Pet Details (Private) */
+                    { path: "/pets/:id", element: <PetDetailPage /> },
+
+                    /* Reviews */
                     { path: "/services/:id/review", element: <ServiceReviewPage /> },
                     { path: "/adoptions/:id/review", element: <AdoptionReviewPage /> },
 
-                    /* Rehoming flow */
+                    /* Rehoming Flow */
                     {
                         path: "/rehoming",
-                        element: <RehomingFlowLayout />,
+                        element: (
+                            <PetOwnerRoute>
+                                <RehomingFlowLayout />
+                            </PetOwnerRoute>
+                        ),
                         children: [
                             { index: true, element: <Navigate to="select-pet" replace /> },
                             { path: "select-pet", element: <RehomingPetSelectionPage /> },
-
-                            /* Split Form Steps */
                             { path: "situation", element: <RehomingSituationPage /> },
                             { path: "details", element: <RehomingDetailsPage /> },
                             { path: "review", element: <RehomingReviewPage /> },
                         ]
                     },
 
-                    /* Applications */
+                    /* Applications (General) */
                     { path: "/applications", element: <MyApplicationsPage /> },
                     { path: "/applications/:id", element: <ApplicationDetailPage /> },
-                    { path: "/applications/profile", element: <AdoptionProfilePage /> }, // Setup removed
-                    { path: "/rehoming/listings/:id/inquiry", element: <ApplicationMailboxPage /> }, // Replaced apply
+                    { path: "/applications/profile", element: <AdoptionProfilePage /> },
+                    { path: "/rehoming/listings/:id/inquiry", element: <ApplicationMailboxPage /> },
                     { path: "/rehoming/listings/:id/apply-ai", element: <AIApplicationPage /> },
                     { path: "/rehoming/listings/:id/applications", element: <OwnerApplicationReviewPage /> },
                     { path: "/applications/:id/review", element: <OwnerApplicationDetailPage /> },
+
+                    /* Rehoming Listing Details (Private Action) */
+                    { path: "/rehoming/listings/:id", element: <RehomingListingDetailPage /> },
 
                     /* Payment */
                     { path: "/checkout/:bookingId", element: <PaymentCheckoutPage /> },
                     { path: "/checkout/success/:bookingId", element: <PaymentSuccessPage /> },
                     { path: "/checkout/failure", element: <PaymentFailurePage /> },
 
+                    /* Provider Registration */
                     { path: "/become-provider", element: <BecomeProviderPage /> },
                     { path: "/service-provider/register", element: <ServiceProviderRegistrationPage /> },
                 ],
@@ -195,9 +224,7 @@ const router = createBrowserRouter([
 
             /* =======================
                SERVICE PROVIDER ROUTES
-            ======================== */
-            /* =======================
-               SERVICE PROVIDER ROUTES
+               (Role: service_provider)
             ======================== */
             {
                 element: (
@@ -206,19 +233,34 @@ const router = createBrowserRouter([
                     </ServiceProviderRoute>
                 ),
                 children: [
-                    { path: "/provider/dashboard", element: <ProviderDashboardPage /> },
+                    {
+                        path: "/provider",
+                        element: <ProviderDashboardPage />,
+                        children: [
+                            { index: true, element: <Navigate to="dashboard" replace /> },
+                            { path: "dashboard", element: <DashboardOverview /> },
+                            { path: "bookings", element: <BookingsPage /> },
+                            { path: "calendar", element: <CalendarPage /> },
+                            { path: "availability", element: <AvailabilityManager /> },
+                            { path: "profile", element: <ProfileManager /> },
+                            { path: "reviews", element: <ReviewsManager /> },
+                            { path: "analytics", element: <ProviderAnalyticsPage /> },
+                            { path: "settings", element: <SettingsPage /> },
+                        ]
+                    },
                 ],
             },
 
             /* =======================
-               USER DASHBOARD
+               PET OWNER DASHBOARD ROUTES
+               (Default authenticated role)
             ======================== */
             {
                 path: "/dashboard",
                 element: (
-                    <PrivateRoute>
+                    <PetOwnerRoute>
                         <DashboardLayout />
-                    </PrivateRoute>
+                    </PetOwnerRoute>
                 ),
                 children: [
                     { index: true, element: <UserDashboardOverview /> },
@@ -237,28 +279,21 @@ const router = createBrowserRouter([
                     /* Service Bookings */
                     { path: "bookings", element: <UserServiceBookingsPage /> },
 
-                    /* Rehoming */
+                    /* Rehoming Management */
                     { path: "rehoming", element: <RehomingDashboardPage /> },
 
                     /* Applications */
                     { path: "applications", element: <MyApplicationsPage /> },
                     { path: "applications/:id", element: <ApplicationDetailPage /> },
 
-                    /* Reviews placeholder */
-                    {
-                        path: "reviews",
-                        element: (
-                            <div className="p-8">
-                                <h1 className="text-2xl font-bold">Reviews</h1>
-                                <p className="text-text-secondary">Coming soon.</p>
-                            </div>
-                        ),
-                    },
+                    /* Reviews */
+                    { path: "reviews", element: <UserReviewsPage /> },
                 ],
             },
 
             /* =======================
-               ADMIN
+               ADMIN ROUTES
+               (Role: admin)
             ======================== */
             {
                 path: "/admin",
@@ -275,12 +310,12 @@ const router = createBrowserRouter([
                     { path: "providers", element: <AdminProvidersPage /> },
                     { path: "moderation", element: <ListingModerationPage /> },
                     { path: "reports", element: <ReportManagementPage /> },
-                    { path: "analytics", element: <AnalyticsPage /> },
+                    { path: "analytics", element: <AdminAnalyticsPage /> },
                 ],
             },
 
             /* =======================
-               404
+               404 FALLBACK
             ======================== */
             {
                 element: <MainLayout />,

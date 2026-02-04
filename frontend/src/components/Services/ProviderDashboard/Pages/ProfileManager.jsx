@@ -20,14 +20,14 @@ const ProfileManager = ({ provider }) => {
     // Basic Info State
     const [basicInfo, setBasicInfo] = useState({
         business_name: provider.business_name || '',
-        business_type: provider.business_type || '', // Assuming this maps to Category
+        business_type: provider.category?.slug || '',
         description: provider.description || '',
         phone: provider.phone || '',
         website: provider.website || '',
-        city: provider.city || '',
-        state: provider.state || '',
-        zip_code: provider.zip_code || '',
-        address: provider.address || '',
+        city: provider.address?.city || '',
+        state: provider.address?.state || '',
+        zip_code: provider.address?.zip || '',
+        address_line1: provider.address?.line1 || '', // Changed from address to address_line1 for clarity and matching backend expectation if flattened
     });
 
     const handleBasicInfoChange = (e) => {
@@ -36,11 +36,29 @@ const ProfileManager = ({ provider }) => {
     };
 
     const handleSaveBasic = () => {
+        // Prepare payload - address fields need to be at root for serializer as per previous analysis? 
+        // Serializer extra_kwargs showed them as write_only at root.
+        // So we send { business_name, city, state, ... }
+
+        // Map address_line1 back to key backend expects. 
+        // If backend expects 'address_line1', we used that in state key so it's fine.
+        // Wait, previous state had 'address', but serializer has 'address_line1'.
+        // Let's ensure we send correct keys.
+
+        const payload = {
+            ...basicInfo,
+            // If we used address_line1 in state, it passes through.
+        };
+
         updateProfile.mutate(
-            { id: provider.id, data: basicInfo },
+            { id: provider.id, data: payload },
             {
                 onSuccess: () => toast.success("Profile updated successfully!"),
-                onError: () => toast.error("Failed to update profile.")
+                onError: (error) => {
+                    const message = error.response?.data?.detail || error.response?.data?.message || "Failed to update profile.";
+                    toast.error(message);
+                    console.error("Profile update error:", error);
+                }
             }
         );
     };
@@ -49,21 +67,33 @@ const ProfileManager = ({ provider }) => {
     const handleSaveServiceDetails = (data) => {
         updateProfile.mutate({ id: provider.id, data }, {
             onSuccess: () => toast.success("Service details updated!"),
-            onError: () => toast.error("Failed to update service details.")
+            onError: (error) => {
+                const message = error.response?.data?.detail || error.response?.data?.message || "Failed to update service details.";
+                toast.error(message);
+                console.error("Service details update error:", error);
+            }
         });
     };
 
     const handleSaveHours = (hoursData) => {
         updateHours.mutate({ id: provider.id, data: hoursData }, {
             onSuccess: () => toast.success("Business hours updated!"),
-            onError: () => toast.error("Failed to update hours.")
+            onError: (error) => {
+                const message = error.response?.data?.detail || error.response?.data?.message || "Failed to update hours.";
+                toast.error(message);
+                console.error("Hours update error:", error);
+            }
         });
     };
 
     const handleSaveMedia = (mediaData) => {
         updateMedia.mutate({ id: provider.id, data: mediaData }, {
             onSuccess: () => toast.success("Media gallery updated!"),
-            onError: () => toast.error("Failed to update media.")
+            onError: (error) => {
+                const message = error.response?.data?.detail || error.response?.data?.message || "Failed to update media.";
+                toast.error(message);
+                console.error("Media update error:", error);
+            }
         });
     };
 
@@ -72,7 +102,6 @@ const ProfileManager = ({ provider }) => {
         { id: 'service', label: 'Service Details' },
         { id: 'media', label: 'Media' },
         { id: 'hours', label: 'Business Hours' },
-        { id: 'pricing', label: 'Pricing' }, // Placeholder for now
     ];
 
     return (
@@ -201,8 +230,8 @@ const ProfileManager = ({ provider }) => {
                                     <div className="md:col-span-3">
                                         <label className="block text-sm font-semibold text-gray-700 mb-1.5">Address</label>
                                         <input
-                                            name="address"
-                                            value={basicInfo.address}
+                                            name="address_line1"
+                                            value={basicInfo.address_line1}
                                             onChange={handleBasicInfoChange}
                                             className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
                                             placeholder="Street address"
@@ -283,14 +312,6 @@ const ProfileManager = ({ provider }) => {
                             onSave={handleSaveHours}
                             isLoading={updateHours.isPending}
                         />
-                    </div>
-                )}
-
-                {activeTab === 'pricing' && (
-                    <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-500">
-                        <DollarSign className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                        <h3 className="text-lg font-medium text-gray-900">Pricing Management</h3>
-                        <p>Feature coming soon.</p>
                     </div>
                 )}
             </div>

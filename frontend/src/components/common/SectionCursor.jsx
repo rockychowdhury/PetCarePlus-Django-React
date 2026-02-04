@@ -38,19 +38,24 @@ const SectionCursor = ({ label, icon, children, className = "" }) => {
     return (
         <div
             className={`relative group/cursor ${className}`}
-            onMouseEnter={() => setIsHovered(true)}
+            onMouseEnter={(e) => {
+                mouseX.set(e.clientX);
+                mouseY.set(e.clientY);
+                setIsHovered(true);
+            }}
             onMouseLeave={() => setIsHovered(false)}
         >
             {children}
 
             {/* Cursor Caption */}
             <motion.div
-                initial={{ opacity: 0, scale: 0.5 }}
+                initial={{ opacity: 0, scale: 0.8, y: 10 }}
                 animate={{
                     opacity: isHovered ? 1 : 0,
-                    scale: isHovered ? 1 : 0.5
+                    scale: isHovered ? 1 : 0.8,
+                    y: isHovered ? 0 : 10
                 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 style={{
                     position: 'fixed',
                     left: springX,
@@ -60,10 +65,10 @@ const SectionCursor = ({ label, icon, children, className = "" }) => {
                     pointerEvents: 'none',
                     zIndex: 9999,
                 }}
-                className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-bg-surface/80 backdrop-blur-md border border-brand-primary/20 rounded-full shadow-2xl"
+                className="hidden md:flex items-center gap-2.5 px-4 py-2 bg-white/90 backdrop-blur-xl border border-[#C48B28]/20 rounded-full shadow-[0_8px_32px_rgba(196,139,40,0.15)]"
             >
-                {icon && <span className="text-brand-primary">{icon}</span>}
-                <span className="text-[10px] font-black text-text-primary uppercase tracking-[0.2em] whitespace-nowrap">
+                {icon && <span className="text-[#C48B28]">{icon}</span>}
+                <span className="text-[10px] font-black text-themev2-text uppercase tracking-[0.2em] whitespace-nowrap">
                     {label}
                 </span>
             </motion.div>

@@ -1,0 +1,20 @@
+from django.db.models.signals import post_save, pre_save
+from django.dispatch import receiver
+from .models import ServiceBooking
+from .tasks import send_booking_confirmation_email_task, send_booking_status_update_email_task
+
+@receiver(post_save, sender=ServiceBooking)
+def booking_notification(sender, instance, created, **kwargs):
+    """
+    Trigger emails on booking creation and status updates.
+    """
+    if created:
+        # Send initial confirmation (Request Sent)
+        # Using on_commit is safer if using transactions, but .delay() usually suffices for simple setups.
+        # If atomic blocks are used heavily, consider transaction.on_commit(lambda: task.delay(...))
+        send_booking_confirmation_email_task.delay(instance.id)
+    else:
+        if instance.status in ['confirmed', 'rejected', 'cancelled', 'in_progress', 'completed']:
+             send_booking_status_update_email_task.delay(instance.id)
+
+# Note: In a production app, checking `if instance.tracker.has_changed('status')` (django-model-utils) is recommended.

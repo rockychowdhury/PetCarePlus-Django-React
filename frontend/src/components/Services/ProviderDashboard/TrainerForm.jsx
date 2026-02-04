@@ -76,8 +76,8 @@ const TrainerForm = ({ initialData, onSave, isLoading }) => {
         e.preventDefault();
         const payload = {
             ...formData,
-            specializations: formData.specializations_ids,
-            species_trained: formData.species_trained_ids
+            specializations_ids: formData.specializations_ids,
+            species_trained_ids: formData.species_trained_ids
         };
         onSave(payload);
     };

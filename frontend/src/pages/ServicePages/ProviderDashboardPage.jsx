@@ -1,33 +1,21 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Loader } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, Outlet } from 'react-router-dom';
 import useServices from '../../hooks/useServices';
 import useAuth from '../../hooks/useAuth';
 
 // Components
 import DashboardLayout from '../../components/Services/ProviderDashboard/Layout/DashboardLayout';
-import DashboardOverview from '../../components/Services/ProviderDashboard/Pages/DashboardOverview';
-import BookingsPage from '../../components/Services/ProviderDashboard/Pages/BookingsPage';
-import CalendarPage from '../../components/Services/ProviderDashboard/Pages/CalendarPage';
-import AvailabilityManager from '../../components/Services/ProviderDashboard/Pages/AvailabilityManager';
-import ProfileManager from '../../components/Services/ProviderDashboard/Pages/ProfileManager';
-import ReviewsManager from '../../components/Services/ProviderDashboard/Pages/ReviewsManager';
-import AnalyticsPage from '../../components/Services/ProviderDashboard/Pages/AnalyticsPage';
-import SettingsPage from '../../components/Services/ProviderDashboard/Pages/SettingsPage';
 import Navbar from '../../components/common/Navbar';
 import Button from '../../components/common/Buttons/Button';
 import { User } from 'lucide-react';
 
 const ProviderDashboardPage = () => {
     const { user } = useAuth();
-    const { useGetMyProviderProfile, useGetDashboardStats } = useServices();
-
-    // State
-    const [activeView, setActiveView] = useState('overview');
+    const { useGetMyProviderProfile } = useServices();
 
     // Data Fetching
     const { data: provider, isLoading: profileLoading } = useGetMyProviderProfile();
-    const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
 
     // Loading State
     if (profileLoading) {
@@ -60,46 +48,8 @@ const ProviderDashboardPage = () => {
     }
 
     return (
-        <DashboardLayout
-            activeView={activeView}
-            onViewChange={setActiveView}
-            provider={provider}
-        >
-            {activeView === 'overview' && (
-                <DashboardOverview
-                    provider={provider}
-                    stats={stats}
-                    onNavigate={setActiveView}
-                />
-            )}
-
-            {activeView === 'bookings' && (
-                <BookingsPage provider={provider} />
-            )}
-
-            {activeView === 'calendar' && (
-                <CalendarPage provider={provider} />
-            )}
-
-            {activeView === 'availability' && (
-                <AvailabilityManager provider={provider} />
-            )}
-
-            {activeView === 'profile' && (
-                <ProfileManager provider={provider} />
-            )}
-
-            {activeView === 'reviews' && (
-                <ReviewsManager provider={provider} />
-            )}
-
-            {activeView === 'analytics' && (
-                <AnalyticsPage />
-            )}
-
-            {activeView === 'settings' && (
-                <SettingsPage />
-            )}
+        <DashboardLayout provider={provider}>
+            <Outlet context={{ provider }} />
         </DashboardLayout>
     );
 };

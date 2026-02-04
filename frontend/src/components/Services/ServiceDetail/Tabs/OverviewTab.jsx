@@ -1,8 +1,10 @@
 import React from 'react';
-import { MapPin, Phone, Mail, Globe, Clock, ArrowRight, Star, CheckCircle, Info } from 'lucide-react';
+import { MapPin, Phone, Mail, Globe, Clock, ArrowRight, Star, CheckCircle, Info, ShieldCheck, Award, Building2, Scissors, GraduationCap, Car, PawPrint, DollarSign, ExternalLink } from 'lucide-react';
+import { motion } from 'framer-motion';
 import Card from '../../../common/Layout/Card';
 import Badge from '../../../common/Feedback/Badge';
 import Button from '../../../common/Buttons/Button';
+import ServiceLocationMap from '../ServiceLocationMap';
 
 const OverviewTab = ({ provider, onViewMap, onReadReviews }) => {
 
@@ -10,47 +12,50 @@ const OverviewTab = ({ provider, onViewMap, onReadReviews }) => {
     const renderKeyInfo = () => {
         if (!provider) return null;
 
-        const isFoster = !!provider.foster_details;
-        const isTrainer = !!provider.trainer_details;
-        const isVet = !!provider.vet_details;
-        const isGroomer = !!provider.groomer_details;
-        const isSitter = !!provider.sitter_details;
+        const details = provider.service_specific_details || {};
+        const slug = provider.category?.slug;
+
+        const isFoster = slug === 'foster';
+        const isTrainer = slug === 'training';
+        const isVet = slug === 'veterinary';
+        const isGroomer = slug === 'grooming';
+        const isSitter = slug === 'pet_sitting';
 
         const items = [];
 
         // 1. Capacity / Type / Experience
-        if (isFoster) items.push({ label: 'Capacity', value: `${provider.foster_details.current_count} / ${provider.foster_details.capacity} animals`, icon: 'users' });
-        if (isTrainer) items.push({ label: 'Experience', value: `${provider.trainer_details.years_experience} Years`, icon: 'award' });
-        if (isVet) items.push({ label: 'Clinic Type', value: provider.vet_details.clinic_type, icon: 'building' });
-        if (isGroomer) items.push({ label: 'Salon Type', value: provider.groomer_details.salon_type, icon: 'scissors' });
-        if (isSitter) items.push({ label: 'Experience', value: `${provider.sitter_details.years_experience} Years`, icon: 'award' });
+        if (isFoster) items.push({ label: 'Capacity', value: `${details.current_count || 0} / ${details.capacity || 0} animals`, icon: PawPrint });
+        if (isTrainer) items.push({ label: 'Experience', value: `${details.years_experience} Years`, icon: GraduationCap });
+        if (isVet) items.push({ label: 'Clinic Type', value: details.clinic_type, icon: Building2 });
+        if (isGroomer) items.push({ label: 'Salon Type', value: details.salon_type, icon: Scissors });
+        if (isSitter) items.push({ label: 'Experience', value: `${details.years_experience} Years`, icon: Award });
 
         // 2. Species / Focus
-        const species = (provider.foster_details?.species_accepted || provider.trainer_details?.species_trained || provider.vet_details?.species_treated || provider.groomer_details?.species_accepted || provider.sitter_details?.species_accepted || []).slice(0, 3).map(s => s.name).join(', ');
-        if (species) items.push({ label: 'Species Accepted', value: species, icon: 'paw' });
+        const speciesList = details.species_accepted || details.species_trained || details.species_treated || [];
+        const species = speciesList.slice(0, 3).map(s => s.name).join(', ');
+        if (species) items.push({ label: 'Species Accepted', value: species, icon: PawPrint });
 
         // 3. Environment / Specialties
-        if (isFoster) items.push({ label: 'Environment', value: provider.foster_details?.environment_details?.type || 'Home Environment', icon: 'home' });
-        if (isTrainer && provider.trainer_details?.specializations?.[0]) items.push({ label: 'Specialty', value: provider.trainer_details.specializations[0].name, icon: 'star' });
-        if (isSitter) items.push({ label: 'Transport', value: provider.sitter_details.has_transport ? 'Provided' : 'Not Provided', icon: 'car' });
+        if (isFoster) items.push({ label: 'Environment', value: details.environment_details?.type || 'Home Environment', icon: Building2 });
+        if (isTrainer && details.specializations?.[0]) items.push({ label: 'Specialty', value: details.specializations[0].name, icon: Star });
+        if (isSitter) items.push({ label: 'Transport', value: details.has_transport ? 'Provided' : 'Not Provided', icon: Car });
 
         // 4. Rate
-        if (isFoster) items.push({ label: 'Daily Rate', value: `$${provider.foster_details.daily_rate} / night`, icon: 'dollar' });
-        if (isTrainer) items.push({ label: 'Session Rate', value: `$${provider.trainer_details.private_session_rate} / hr`, icon: 'dollar' });
-        if (isGroomer) items.push({ label: 'Starting Rate', value: `$${provider.groomer_details.base_price}`, icon: 'dollar' });
-        if (isSitter) items.push({ label: 'Walk Rate', value: `$${provider.sitter_details.walking_rate} / walk`, icon: 'dollar' });
+        if (isFoster) items.push({ label: 'Daily Rate', value: `$${details.daily_rate} / night`, icon: DollarSign });
+        if (isTrainer) items.push({ label: 'Session Rate', value: `$${details.private_session_rate} / hr`, icon: DollarSign });
+        if (isGroomer) items.push({ label: 'Starting Rate', value: `$${details.base_price}`, icon: DollarSign });
+        if (isSitter) items.push({ label: 'Walk Rate', value: `$${details.walking_rate} / walk`, icon: DollarSign });
 
         return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-10">
                 {items.map((item, idx) => (
-                    <div key={idx} className="bg-gray-50 rounded-lg p-4 flex flex-col gap-3 h-full">
-                        <div className="flex items-center gap-2 text-gray-500">
-                            {/* You can map specific icons here if needed, keeping simple for now */}
-                            <Info size={16} />
-                            <span className="text-sm font-medium">{item.label}</span>
+                    <div key={idx} className="bg-[#FAF3E0] rounded-2xl p-6 flex items-start gap-4 border border-[#EBC176]/10">
+                        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-[#C48B28] shadow-sm shrink-0">
+                            <item.icon size={22} />
                         </div>
-                        <div className="font-bold text-gray-900 text-base">
-                            {item.value}
+                        <div className="flex flex-col gap-1.5">
+                            <span className="text-[10px] font-black text-[#C48B28] uppercase tracking-widest">{item.label}</span>
+                            <span className="text-base font-black text-themev2-text tracking-tight">{item.value}</span>
                         </div>
                     </div>
                 ))}
@@ -60,133 +65,164 @@ const OverviewTab = ({ provider, onViewMap, onReadReviews }) => {
 
     return (
         <div className="animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
                 {/* --- MAIN COLUMN --- */}
-                <div className="lg:col-span-2 space-y-10">
+                <div className="lg:col-span-2 space-y-12">
 
-                    {/* Key Info */}
-                    <section>
-                        <h3 className="text-lg font-bold text-gray-900 mb-4 font-sans">Key Information</h3>
+                    {/* Key Info Section */}
+                    <div className="bg-white rounded-[2.5rem] p-8 lg:p-10 border border-[#EBC176]/20 shadow-sm shadow-[#EBC176]/5">
+                        <h3 className="text-[11px] font-black text-[#C48B28] uppercase tracking-[0.2em] mb-8">Key Information</h3>
                         {renderKeyInfo()}
-                    </section>
+                    </div>
 
-                    {/* About */}
-                    <section>
-                        <h3 className="text-lg font-bold text-gray-900 mb-4 font-sans">About {provider.business_name}</h3>
-                        <p className="text-gray-600 leading-relaxed whitespace-pre-line">
+                    {/* About Section */}
+                    <div className="bg-white rounded-[2.5rem] p-8 lg:p-10 border border-[#EBC176]/20 shadow-sm shadow-[#EBC176]/5">
+                        <h3 className="text-[11px] font-black text-[#C48B28] uppercase tracking-[0.2em] mb-8">About {provider.business_name}</h3>
+                        <p className="text-sm font-bold text-themev2-text/60 leading-relaxed uppercase tracking-widest leading-loose">
                             {provider.description}
                         </p>
-                        <button className="text-brand-primary font-bold mt-2 hover:underline text-sm">Read more</button>
+                        <button className="flex items-center gap-2 text-[10px] font-black text-[#C48B28] uppercase tracking-widest mt-6 hover:translate-x-1 transition-transform">
+                            Read more <ArrowRight size={14} />
+                        </button>
+                    </div>
 
-                        {/* Fix 6: Separator Line */}
-                        <hr className="border-gray-100 mt-8" />
-                    </section>
-
-                    {/* Featured Reviews */}
-                    <section>
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-bold text-gray-900 font-sans">Featured Reviews</h3>
-                            <button onClick={onReadReviews} className="text-brand-primary font-medium hover:underline text-sm">
+                    {/* Featured Reviews Section */}
+                    <div className="bg-white rounded-[2.5rem] p-8 lg:p-10 border border-[#EBC176]/20 shadow-sm shadow-[#EBC176]/5">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10">
+                            <h3 className="text-[11px] font-black text-[#C48B28] uppercase tracking-[0.2em]">Featured Reviews</h3>
+                            <button onClick={onReadReviews} className="text-[10px] font-black text-themev2-text/40 hover:text-[#C48B28] uppercase tracking-widest transition-colors">
                                 See all {provider.reviews_count} reviews
                             </button>
                         </div>
 
                         <div className="space-y-6">
-                            {provider.reviews?.slice(0, 2).map((review) => ( // Show top 2 reviews
-                                <Card key={review.id} className="p-6 border-gray-100 shadow-sm">
-                                    <div className="flex items-center gap-4 mb-4">
-                                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-xl font-bold text-gray-500">
-                                            {review.reviewer?.first_name?.[0]}
+                            {(provider.reviews?.length > 0) ? provider.reviews.slice(0, 2).map((review) => (
+                                <div key={review.id} className="bg-[#FAF3E0]/30 rounded-[2rem] p-8 border border-[#EBC176]/10">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-6">
+                                        <div className="relative">
+                                            {review.reviewer?.photoURL ? (
+                                                <img
+                                                    src={review.reviewer.photoURL}
+                                                    alt={review.reviewer.first_name}
+                                                    className="w-14 h-14 rounded-full object-cover border-4 border-white shadow-sm"
+                                                />
+                                            ) : (
+                                                <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-xl font-black text-[#C48B28] border-4 border-white shadow-sm uppercase">
+                                                    {review.reviewer?.first_name?.[0]}
+                                                </div>
+                                            )}
                                         </div>
-                                        <div>
-                                            <div className="font-bold text-gray-900">{review.reviewer?.first_name}</div>
-                                            <div className="text-sm text-gray-500">{new Date(review.created_at).toLocaleDateString()}</div>
-                                        </div>
-                                        <div className="ml-auto flex text-yellow-400 gap-0.5">
-                                            {[...Array(5)].map((_, i) => (
-                                                <Star key={i} size={16} fill={i < review.rating ? "currentColor" : "none"} />
-                                            ))}
+                                        <div className="flex-1">
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                <div>
+                                                    <h4 className="text-base font-black text-themev2-text tracking-tight">{review.reviewer?.first_name} {review.reviewer?.last_name}</h4>
+                                                    <p className="text-[10px] font-black text-themev2-text/30 uppercase tracking-widest mt-1">{new Date(review.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</p>
+                                                </div>
+                                                <div className="flex text-[#C48B28] gap-0.5">
+                                                    {[...Array(5)].map((_, i) => (
+                                                        <Star key={i} size={14} fill={i < review.rating ? "currentColor" : "none"} />
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <p className="text-gray-600 leading-relaxed">{review.comment}</p>
+                                    <p className="text-xs font-bold text-themev2-text/60 leading-relaxed uppercase tracking-widest leading-loose">
+                                        {review.comment}
+                                    </p>
                                     {review.verified_client && (
-                                        <div className="flex items-center gap-2 mt-4 text-xs font-bold text-green-700 bg-green-50 w-fit px-2 py-1 rounded">
-                                            <CheckCircle size={12} /> Verified Client
+                                        <div className="inline-flex items-center gap-2 mt-6 px-4 py-1.5 bg-white border border-green-100 rounded-full">
+                                            <ShieldCheck size={12} className="text-green-500" />
+                                            <span className="text-[9px] font-black text-green-600 uppercase tracking-widest">Verified Client</span>
                                         </div>
                                     )}
-                                </Card>
-                            ))}
-                            {(!provider.reviews || provider.reviews.length === 0) && (
-                                <p className="text-gray-500 italic">No reviews yet.</p>
+                                </div>
+                            )) : (
+                                <div className="py-12 flex flex-col items-center justify-center bg-[#FAF3E0]/20 rounded-[2rem] border border-dashed border-[#EBC176]/30">
+                                    <Star size={32} className="text-[#C48B28]/20 mb-4" />
+                                    <p className="text-[10px] font-black text-themev2-text/30 uppercase tracking-widest">No reviews yet for this provider</p>
+                                </div>
                             )}
                         </div>
-                    </section>
+                    </div>
                 </div>
 
-                {/* --- SIDEBAR --- */}
-                <div className="lg:col-span-1 space-y-6">
+                {/* --- SIDEBAR COLUMN --- */}
+                <div className="lg:col-span-1 space-y-8">
 
                     {/* Location & Contact Card */}
-                    <Card className="p-0 border border-gray-200 overflow-hidden shadow-sm">
-                        <div className="p-4 border-b border-gray-100">
-                            <h3 className="font-bold text-gray-900">Location & Contact</h3>
+                    <div className="bg-white rounded-[2.5rem] overflow-hidden border border-[#EBC176]/20 shadow-sm shadow-[#EBC176]/5">
+                        <div className="p-6 border-b border-[#EBC176]/10">
+                            <h3 className="text-[11px] font-black text-[#C48B28] uppercase tracking-[0.2em]">Location & Contact</h3>
                         </div>
 
-                        {/* Map Snippet */}
-                        <div className="h-40 bg-gray-100 relative group cursor-pointer" onClick={onViewMap}>
-                            <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                                <MapPin size={32} />
-                            </div>
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full px-4 py-2 font-bold text-sm text-gray-800 opacity-0 group-hover:opacity-100 transition-opacity">
-                                View on Map
+                        {/* Map Section */}
+                        <div className="p-4 relative">
+                            <div className="rounded-[1.5rem] overflow-hidden border border-[#EBC176]/10 h-[220px]">
+                                <ServiceLocationMap provider={provider} />
                             </div>
                         </div>
 
-                        <div className="p-4 space-y-4">
-                            <div className="flex items-start gap-3">
-                                <MapPin className="text-gray-400 shrink-0 mt-1" size={18} />
-                                <div>
-                                    <div className="font-medium text-gray-900">{provider.address_line1}</div>
-                                    <div className="text-sm text-gray-500">{provider.city}, {provider.state} {provider.zip_code}</div>
+                        <div className="px-8 pb-10 space-y-6">
+                            <div className="space-y-4">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-10 h-10 bg-[#FAF3E0] rounded-xl flex items-center justify-center shrink-0">
+                                        <MapPin size={18} className="text-[#C48B28]" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-[#C48B28] uppercase tracking-widest mb-1">Address</p>
+                                        <p className="text-[11px] font-black text-themev2-text leading-relaxed">
+                                            {provider.address?.area_name || 'Dhaka'}, {provider.address?.city || 'Bangladesh'}
+                                            <br />
+                                            <span className="text-themev2-text/40 text-[9px]">{provider.latitude}, {provider.longitude}</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-4">
+                                    <div className="w-10 h-10 bg-[#FAF3E0] rounded-xl flex items-center justify-center shrink-0">
+                                        <Phone size={18} className="text-[#C48B28]" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-[#C48B28] uppercase tracking-widest mb-1">Phone</p>
+                                        <a href={`tel:${provider.phone}`} className="text-[11px] font-black text-themev2-text hover:text-[#C48B28] transition-colors tracking-widest">{provider.phone}</a>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-4">
+                                    <div className="w-10 h-10 bg-[#FAF3E0] rounded-xl flex items-center justify-center shrink-0">
+                                        <Mail size={18} className="text-[#C48B28]" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-[#C48B28] uppercase tracking-widest mb-1">Email</p>
+                                        <a href={`mailto:${provider.email}`} className="text-[11px] font-black text-themev2-text hover:text-[#C48B28] transition-colors truncate block">{provider.email}</a>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div className="flex items-center gap-3">
-                                <Phone className="text-gray-400 shrink-0" size={18} />
-                                <a href={`tel:${provider.phone}`} className="text-brand-primary hover:underline font-medium">
-                                    {provider.phone}
-                                </a>
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                                <Mail className="text-gray-400 shrink-0" size={18} />
-                                <a href={`mailto:${provider.email}`} className="text-brand-primary hover:underline font-medium truncate">
-                                    {provider.email}
-                                </a>
-                            </div>
                         </div>
-                    </Card>
+                    </div>
 
                     {/* Business Hours Card */}
-                    <Card className="p-0 border border-gray-200 overflow-hidden shadow-sm">
-                        <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-                            <h3 className="font-bold text-gray-900">Business Hours</h3>
-                            <Badge variant="success" className="text-xs px-2 py-0.5">Open Now</Badge>
+                    <div className="bg-white rounded-[2.5rem] overflow-hidden border border-[#EBC176]/20 shadow-sm shadow-[#EBC176]/5">
+                        <div className="p-8 pb-4 flex justify-between items-center">
+                            <h3 className="text-xl font-black text-themev2-text tracking-tight">Business Hours</h3>
+                            <div className="px-3 py-1 bg-[#E8F5E9] rounded-full">
+                                <span className="text-[9px] font-black text-[#2E7D32] uppercase tracking-widest">Open Now</span>
+                            </div>
                         </div>
-                        <div className="p-4">
-                            <div className="space-y-3 text-sm">
+                        <div className="px-8 pb-8">
+                            <div className="space-y-0">
                                 {provider.hours?.map((h, i) => (
-                                    <div key={i} className="flex justify-between items-center">
-                                        <span className="text-gray-500 w-24">{h.day_display}</span>
-                                        <span className={`font-medium ${h.is_closed ? 'text-gray-400 italic' : 'text-gray-900'}`}>
+                                    <div key={i} className={`flex justify-between items-center py-5 ${i !== provider.hours.length - 1 ? 'border-b border-dashed border-[#EBC176]/20' : ''}`}>
+                                        <span className="text-sm font-bold text-[#D4A056]">{h.day_display}</span>
+                                        <span className={`text-sm font-black tracking-tight ${h.is_closed ? 'text-[#EF5350]' : 'text-themev2-text'}`}>
                                             {h.is_closed ? 'Closed' : `${h.open_time?.slice(0, 5)} - ${h.close_time?.slice(0, 5)}`}
                                         </span>
                                     </div>
                                 ))}
                             </div>
                         </div>
-                    </Card>
+                    </div>
                 </div>
             </div>
         </div>

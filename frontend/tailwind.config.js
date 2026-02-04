@@ -40,6 +40,13 @@ export default {
           warning: 'var(--color-status-warning)',
           info: 'var(--color-status-info)',
         },
+        themev2: {
+          bg: 'var(--themev2-bg)',
+          surface: 'var(--themev2-surface)',
+          primary: 'var(--themev2-primary)',
+          text: 'var(--themev2-text)',
+        },
+
       },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'sans-serif'],

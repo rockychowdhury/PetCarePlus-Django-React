@@ -1,13 +1,13 @@
 import React from 'react';
-import Badge from '../../../common/Feedback/Badge'; // Corrected path to src/components/common
-import Button from '../../../common/Buttons/Button'; // Corrected path to src/components/common
+import Badge from '../../../common/Feedback/Badge';
+import Button from '../../../common/Buttons/Button';
 import { Link } from 'react-router-dom';
 
-const RecentBookingsTable = ({ bookings, onManage }) => {
+const RecentBookingsTable = ({ bookings, onManage, title }) => {
     return (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
             <div className="p-6 flex items-center justify-between border-b border-gray-100">
-                <h3 className="text-lg font-bold text-gray-900">Upcoming Bookings</h3>
+                <h3 className="text-lg font-bold text-gray-900">{title || "Upcoming Bookings"}</h3>
                 <Link to="/provider/bookings" className="text-sm font-medium text-gray-500 hover:text-brand-primary">
                     View All
                 </Link>
@@ -33,12 +33,12 @@ const RecentBookingsTable = ({ bookings, onManage }) => {
                                             <span className="text-xs text-gray-500">{booking.pet?.name} ({booking.pet?.species})</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-gray-700 font-medium">
+                                    <td className="px-6 py-4 text-sm text-gray-600 font-medium">
                                         {booking.service_option?.name || 'General Checkup'}
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-gray-700">
+                                    <td className="px-6 py-4 text-sm text-gray-600">
                                         {new Date(booking.booking_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                        {booking.booking_time && <span className="block text-xs text-gray-500">{booking.booking_time}</span>}
+                                        {booking.booking_time && <span className="block text-xs text-gray-400">{booking.booking_time}</span>}
                                     </td>
                                     <td className="px-6 py-4">
                                         <Badge variant={booking.status === 'confirmed' ? 'primary' : booking.status === 'pending' ? 'warning' : 'default'} className="rounded-md px-2.5 py-1">

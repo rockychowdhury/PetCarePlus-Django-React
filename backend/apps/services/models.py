@@ -88,11 +88,11 @@ class ServiceProvider(models.Model):
     website = models.URLField(blank=True, null=True)
     
     # Address
-    address_line1 = models.CharField(max_length=255)
+    address_line1 = models.CharField(max_length=255, blank=True)
     address_line2 = models.CharField(max_length=255, blank=True)
-    city = models.CharField(max_length=100)
-    state = models.CharField(max_length=100)
-    zip_code = models.CharField(max_length=10)
+    city = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=100, blank=True)
+    zip_code = models.CharField(max_length=10, blank=True)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     
@@ -113,6 +113,13 @@ class ServiceProvider(models.Model):
         max_length=20,
         choices=APPLICATION_STATUS_CHOICES,
         default='draft'
+    )
+    
+    # Settings (JSON for flexible preferences)
+    settings = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Provider preferences (notifications, auto-reply, etc.)"
     )
     
     created_at = models.DateTimeField(auto_now_add=True)
@@ -623,6 +630,7 @@ class ServiceReview(models.Model):
     """
     provider = models.ForeignKey(ServiceProvider, on_delete=models.CASCADE, related_name='reviews')
     reviewer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='service_reviews')
+    booking = models.OneToOneField('ServiceBooking', on_delete=models.CASCADE, related_name='review', null=True, blank=True)
     
     # Overall + Specific Ratings (1-5 stars each)
     rating_overall = models.IntegerField(choices=[(i, f"{i} Stars") for i in range(1, 6)])
@@ -667,7 +675,6 @@ class ServiceReview(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ('provider', 'reviewer')
         verbose_name = "Service Review"
         verbose_name_plural = "Service Reviews"
         ordering = ['-created_at']

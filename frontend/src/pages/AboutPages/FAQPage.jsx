@@ -54,21 +54,21 @@ const FAQPage = () => {
     ];
 
     return (
-        <div className="bg-bg-primary min-h-screen  text-text-primary py-12">
+        <div className="bg-[#FEF9ED] min-h-screen text-themev2-text py-12">
             <div className="max-w-3xl mx-auto px-6">
                 <div className="text-center mb-12">
-                    <p className="text-brand-primary font-bold uppercase tracking-widest mb-2 text-sm">Support</p>
-                    <h1 className="text-4xl font-bold mb-4">Frequently Asked Questions</h1>
-                    <p className="text-text-secondary">Find answers to common questions about adopting and rehoming.</p>
+                    <p className="text-[#C48B28] font-bold uppercase tracking-widest mb-2 text-sm">Support</p>
+                    <h1 className="text-4xl font-bold mb-4 font-serif">Frequently Asked Questions</h1>
+                    <p className="text-themev2-text/60">Find answers to common questions about adopting and rehoming.</p>
                 </div>
 
                 <div className="space-y-8">
                     {faqs.map((section, idx) => (
-                        <div key={idx} className="bg-white rounded-2xl shadow-sm border border-border overflow-hidden">
-                            <div className="bg-gray-50 px-6 py-4 border-b border-border">
-                                <h2 className="font-bold text-lg text-text-primary">{section.category}</h2>
+                        <div key={idx} className="bg-white rounded-2xl shadow-sm border border-[#EBC176]/20 overflow-hidden">
+                            <div className="bg-[#FEF9ED]/50 px-6 py-4 border-b border-[#EBC176]/20">
+                                <h2 className="font-bold text-lg text-themev2-text">{section.category}</h2>
                             </div>
-                            <div className="divide-y divide-border">
+                            <div className="divide-y divide-[#EBC176]/10">
                                 {section.items.map((item, i) => (
                                     <FAQItem key={i} question={item.q} answer={item.a} />
                                 ))}
@@ -77,11 +77,11 @@ const FAQPage = () => {
                     ))}
                 </div>
 
-                <div className="mt-16 text-center bg-brand-primary/5 rounded-2xl p-8 border border-brand-primary/10">
-                    <HelpCircle className="mx-auto text-brand-primary mb-4" size={40} />
-                    <h3 className="text-xl font-bold mb-2">Still have questions?</h3>
-                    <p className="text-text-secondary mb-6">We're here to help you every step of the way.</p>
-                    <Link to="/contact" className="px-6 py-3 bg-brand-primary text-white rounded-lg font-bold hover:bg-brand-primary/90 transition inline-block">
+                <div className="mt-16 text-center bg-[#C48B28]/5 rounded-2xl p-8 border border-[#C48B28]/10">
+                    <HelpCircle className="mx-auto text-[#C48B28] mb-4" size={40} />
+                    <h3 className="text-xl font-bold mb-2 text-themev2-text">Still have questions?</h3>
+                    <p className="text-themev2-text/60 mb-6">We're here to help you every step of the way.</p>
+                    <Link to="/contact" className="px-6 py-3 bg-[#C48B28] text-white rounded-lg font-bold hover:bg-[#B07212] transition inline-block">
                         Contact Support
                     </Link>
                 </div>
@@ -97,16 +97,16 @@ const FAQItem = ({ question, answer }) => {
         <div className="bg-white">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition focus:outline-none"
+                className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-[#FEF9ED]/30 transition focus:outline-none"
             >
-                <span className="font-medium text-text-primary pr-4">{question}</span>
-                {isOpen ? <ChevronUp size={20} className="text-brand-primary" /> : <ChevronDown size={20} className="text-gray-400" />}
+                <span className="font-medium text-themev2-text pr-4">{question}</span>
+                {isOpen ? <ChevronUp size={20} className="text-[#C48B28]" /> : <ChevronDown size={20} className="text-[#C48B28]/40" />}
             </button>
             <div
                 className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'
                     }`}
             >
-                <div className="px-6 pb-4 pt-0 text-text-secondary leading-relaxed">
+                <div className="px-6 pb-4 pt-0 text-themev2-text/70 leading-relaxed">
                     {answer}
                 </div>
             </div>

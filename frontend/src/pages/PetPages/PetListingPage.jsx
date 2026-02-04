@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Search, List as ListIcon, Loader2, X, MapPin, ChevronLeft, ChevronRight, Plus
+    Search, List as ListIcon, Loader2, X, MapPin, ChevronLeft, ChevronRight, Plus, LayoutGrid, Filter
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,403 +10,303 @@ import NoResults from '../../components/common/Feedback/NoResults';
 import CreatePetModal from '../../components/Pet/CreatePetModal';
 import FilterSidebar from '../../components/Pet/FilterSidebar';
 import PetCard from '../../components/Pet/PetCard';
-import LocationPickerModal from '../../components/Pet/LocationPickerModal';
+import LocationMapModal from '../../components/Services/LocationMapModal';
+import SortDropdown from '../../components/Pet/SortDropdown';
 
 const PetListingPage = () => {
     const { user } = useAuth();
-    const { useGetListings } = useRehoming();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [viewMode, setViewMode] = useState('grid');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-    // Unified Filter Drawer State (Mobile & Desktop)
-    const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+    const {
+        useGetListings
+    } = useRehoming();
 
-    const [page, setPage] = useState(1);
-    const [searchParams, setSearchParams] = useSearchParams();
+    // --- State Derived from URL ---
+    const page = parseInt(searchParams.get('page')) || 1;
+    const nearby = searchParams.get('nearby'); // lat,lng,radius
 
-    // IP Location State
-    const [suggestedLocation, setSuggestedLocation] = useState(null);
-    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
-
-    // Initial Filter State from URL
-    const [filters, setFilters] = useState({
+    const filters = {
         search: searchParams.get('search') || '',
-        species: '',
-        breed: '',
-        gender: '',
-        age_range: '',
-        size: '',
-        urgency_level: '',
-        good_with_cats: '',
-        good_with_dogs: '',
-        good_with_children: '',
-        house_trained: '',
-        verified_owner: '',
-        verified_identity: '',
+        species: searchParams.get('species') || '',
+        gender: searchParams.get('gender') || '',
+        age_range: searchParams.get('age_range') || '',
+        size: searchParams.get('size') || '',
         location: searchParams.get('location') || '',
         radius: parseInt(searchParams.get('radius')) || 50,
-        // Backend expects 'lat'/'lng'
-        ordering: '-published_at'
+        nearby: searchParams.get('nearby') || '',
+        verified_owner: searchParams.get('verified_owner') || '',
+        ordering: searchParams.get('ordering') || '-published_at'
+    };
+
+    // Add compatibility flags
+    ['good_with_cats', 'good_with_dogs', 'good_with_children', 'house_trained'].forEach(key => {
+        if (searchParams.get(key)) filters[key] = searchParams.get(key);
     });
 
-    const [allPets, setAllPets] = useState([]);
-
-    // Filter out radius if no location is provided
-    const fetchFilters = { ...filters };
-    if (!fetchFilters.location) {
-        delete fetchFilters.radius;
-    }
-
-    const { data, isLoading: loading, refetch } = useGetListings({ ...fetchFilters, page });
+    const { data, isLoading, refetch } = useGetListings({ ...filters, page, nearby });
+    const pets = data?.results || [];
     const totalCount = data?.count || 0;
     const hasNextPage = !!data?.next;
 
-    // IP-Based Location Detection
-    useEffect(() => {
-        const detectLocation = async () => {
-            if (!filters.location && !searchParams.get('location')) {
-                try {
-                    const response = await fetch('https://ipwho.is/');
-                    if (!response.ok) throw new Error('Location detection failed');
-                    const data = await response.json();
-                    if (data.success && data.city && data.region_code) {
-                        setSuggestedLocation(`${data.city}, ${data.region_code}`);
+    const setPage = (newPage) => {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('page', newPage.toString());
+        setSearchParams(newParams);
+    };
+
+    // --- Refined Filter Handler ---
+    const handleFilterChange = (nameOrEvent, value) => {
+        if (typeof nameOrEvent === 'string') {
+            const newParams = new URLSearchParams(searchParams);
+
+            if (nameOrEvent === 'updateLocation') {
+                const { lat, lng, radius, name } = value;
+                newParams.set('nearby', `${lat},${lng},${radius}`);
+                newParams.set('location', name);
+                newParams.delete('radius'); // Prefer nearby param
+            } else if (nameOrEvent === 'openLocationPicker') {
+                setIsLocationModalOpen(true);
+                return;
+            } else {
+                if (value === '' || value === null || value === undefined) {
+                    newParams.delete(nameOrEvent);
+                    if (nameOrEvent === 'location') {
+                        newParams.delete('nearby');
                     }
-                } catch (error) {
-                    // Silent fail
+                } else {
+                    newParams.set(nameOrEvent, value);
                 }
             }
-        };
-        detectLocation();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
-    const handleLocationSelect = (locationData) => {
-        const { name, radius, lat, lng } = locationData;
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('location', name);
-        newParams.set('radius', radius);
-        if (lat) newParams.set('lat', lat);
-        if (lng) newParams.set('lng', lng);
-
-        setSearchParams(newParams);
-        setIsLocationModalOpen(false);
-
-        setFilters(prev => ({
-            ...prev,
-            location: name,
-            radius: radius,
-            lat: lat,
-            lng: lng
-        }));
-    };
-
-    // Data Sync
-    useEffect(() => {
-        if (data?.results) {
-            setAllPets(data.results);
-        } else if (!loading && page === 1) {
-            setAllPets([]);
-        }
-    }, [data, page, loading]);
-
-    // URL Sync
-    useEffect(() => {
-        const search = searchParams.get('search') || '';
-        const location = searchParams.get('location') || '';
-        const radius = parseInt(searchParams.get('radius')) || 50;
-        const lat = searchParams.get('lat');
-        const lng = searchParams.get('lng');
-
-        if (search !== filters.search || location !== filters.location || radius !== filters.radius) {
-            setFilters(prev => ({ ...prev, search, location, radius, lat, lng }));
-            setAllPets([]);
-            setPage(1);
-        }
-    }, [searchParams]);
-
-    const handleSortChange = (value) => {
-        setFilters(prev => ({ ...prev, ordering: value }));
-        setAllPets([]);
-        setPage(1);
-    };
-
-    const handleFilterChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        const val = type === 'checkbox' ? (checked ? 'true' : '') : (filters[name] === value && type === 'radio' ? '' : value);
-
-        setFilters(prev => ({ ...prev, [name]: val }));
-        setAllPets([]);
-        setPage(1);
-
-        if (['search'].includes(name)) {
-            const newParams = new URLSearchParams(searchParams);
-            if (val) newParams.set(name, val); else newParams.delete(name);
+            newParams.set('page', '1');
             setSearchParams(newParams);
         }
+    };
+
+    const handleSearchInput = (e) => {
+        const val = e.target.value;
+        const newParams = new URLSearchParams(searchParams);
+        if (val) newParams.set('search', val);
+        else newParams.delete('search');
+        newParams.set('page', '1');
+        setSearchParams(newParams);
     };
 
     const clearFilters = () => {
         setSearchParams({});
     };
 
-    const removeFilter = (key) => {
-        if (['search', 'location', 'radius'].includes(key)) {
-            const newParams = new URLSearchParams(searchParams);
-            newParams.delete(key);
-            if (key === 'location') {
-                newParams.delete('lat');
-                newParams.delete('lng');
-                newParams.delete('radius');
-            }
-            setSearchParams(newParams);
-        } else {
-            setFilters(prev => ({ ...prev, [key]: '' }));
-            setAllPets([]);
-            setPage(1);
-        }
-    };
-
-    // Derived Active Filters for Chips
-    const getActiveFilters = () => {
-        const active = [];
-        if (filters.species) active.push({ key: 'species', label: `Species: ${filters.species} ` });
-        if (filters.gender) active.push({ key: 'gender', label: `Gender: ${filters.gender} ` });
-        if (filters.urgency_level) active.push({ key: 'urgency_level', label: `Urgency: ${filters.urgency_level} ` });
-        if (filters.search) active.push({ key: 'search', label: `Search: "${filters.search}"` });
-        if (filters.location) active.push({ key: 'location', label: `Near: ${filters.location} (${filters.radius}mi)` });
-        if (filters.verified_owner === 'true') active.push({ key: 'verified_owner', label: 'Verified Owner' });
-        return active;
-    };
-    const activeFilters = getActiveFilters();
-
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
-    };
-
-    // Quick Species Select Helper
-    const toggleSpecies = (speciesId) => {
-        const newVal = filters.species === speciesId ? '' : speciesId;
-        setFilters(prev => ({ ...prev, species: newVal }));
-        setAllPets([]);
-        setPage(1);
-    };
-
     return (
-        <div className="min-h-screen bg-gray-50 ">
-            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="min-h-screen bg-[#FEF9ED]">
 
-                {/* Search & Toolbar Row */}
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
-                    {/* Search Input - Left Aligned & Wide */}
-                    {/* Search Input - Left Aligned & Compact */}
-                    <div className="relative flex-1 w-full max-w-md"> {/* Reduced width from max-w-2xl */}
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                        <input
-                            type="text"
-                            placeholder="Search by breed, name..."
-                            value={filters.search}
-                            onChange={(e) => handleFilterChange({ target: { name: 'search', value: e.target.value } })}
-                            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:ring-1 focus:ring-brand-primary focus:border-brand-primary outline-none transition-all"
-                        />
-                    </div>
+            <div className="max-w-[1600px] mx-auto px-10 py-12">
 
-                    {/* Right Side Stats & Toggles */}
-                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                        <span className="text-xs font-bold text-gray-500 hidden xl:block">
-                            Showing {totalCount} pets
-                        </span>
-
-                        {/* Sort Dropdown */}
-                        <div className="relative">
-                            <select
-                                value={filters.ordering}
-                                onChange={(e) => handleSortChange(e.target.value)}
-                                className="appearance-none bg-white border border-gray-200 text-gray-700 text-sm font-bold px-4 py-2.5 pr-8 rounded-xl shadow-sm outline-none hover:border-gray-300 cursor-pointer focus:ring-2 focus:ring-brand-primary/10"
-                            >
-                                <option value="-published_at">Newest First</option>
-                                <option value="created_at">Oldest First</option>
-                                <option value="name">Name (A-Z)</option>
-                            </select>
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                                <ChevronRight size={14} className="rotate-90" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Main Content Layout */}
-                <div className="flex gap-8 items-start">
-
-                    {/* Left Sidebar - Persistent (Desktop) */}
-                    <div className="w-64 shrink-0 hidden lg:block sticky top-28">
+                <div className="flex flex-col lg:flex-row gap-12">
+                    {/* Sidebar Container - Top Aligned */}
+                    <aside className="w-full lg:w-[320px] shrink-0 sticky top-8 h-fit">
                         <FilterSidebar
                             filters={filters}
                             onFilterChange={handleFilterChange}
                             onClearFilters={clearFilters}
                         />
-                    </div>
+                    </aside>
 
-                    {/* Right Content - Grid */}
-                    <div className="flex-1 min-w-0">
+                    {/* Main Content Area */}
+                    <main className="flex-1 min-w-0 flex flex-col min-h-[calc(100vh-80px)]">
+                        {/* --- Hero Section --- */}
+                        <div className="mb-10">
+                            <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-8">
+                                <div className="max-w-2xl">
+                                    <span className="text-[10px] font-black text-[#C48B28] uppercase tracking-[0.2em] mb-4 block">Pet Adoption</span>
+                                    <h1 className="text-3xl font-black text-themev2-text tracking-tighter mb-2 leading-none">Find your new best friend</h1>
+                                    <p className="text-xs font-bold text-themev2-text/40 max-w-lg leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis">
+                                        Connect with verified owners and give a loving home to {totalCount || 0} pets waiting for you.
+                                    </p>
+                                </div>
 
-                        {/* Mobile Filter Trigger */}
-                        <div className="lg:hidden mb-4">
-                            <button
-                                onClick={() => setIsFilterDrawerOpen(true)}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold shadow-sm"
-                            >
-                                <ListIcon size={18} />
-                                <span>Filters & Location</span>
-                                {activeFilters.length > 0 && (
-                                    <span className="ml-1 bg-brand-primary text-white px-2 py-0.5 rounded-full text-xs">{activeFilters.length}</span>
-                                )}
-                            </button>
-                        </div>
-
-                        {/* Active Filter Chips */}
-                        {activeFilters.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-6">
-                                {activeFilters.map(filter => (
-                                    <span key={filter.key} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-700 shadow-sm">
-                                        {filter.label}
-                                        <button onClick={() => removeFilter(filter.key)} className="hover:text-red-500 ml-1"><X size={14} /></button>
-                                    </span>
-                                ))}
-                                <button onClick={clearFilters} className="text-xs text-status-error font-bold hover:underline px-2">Clear All</button>
+                                {/* Matches Badge */}
+                                <div className="hidden md:block">
+                                    <div className="px-6 py-3 bg-[#FEF2D5] border border-[#EBC176]/30 rounded-2xl flex items-center gap-3">
+                                        <span className="text-[10px] font-black text-[#C48B28] whitespace-nowrap uppercase tracking-widest">{totalCount} matches found</span>
+                                    </div>
+                                </div>
                             </div>
-                        )}
 
+                            {/* --- Search & Controls Bar --- */}
+                            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                                <div className="relative flex-1 w-full">
+                                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-themev2-text/30" size={18} />
+                                    <input
+                                        type="text"
+                                        placeholder="Search by breed, name or personality..."
+                                        value={filters.search}
+                                        onChange={handleSearchInput}
+                                        className="w-full pl-16 pr-8 py-4 bg-white border border-[#EBC176]/20 rounded-2xl text-sm font-bold text-themev2-text placeholder:text-themev2-text/20 shadow-sm focus:border-[#C48B28] outline-none transition-all"
+                                    />
+                                </div>
 
-                        {/* Results Grid - Full Width 4 Columns */}
-                        {loading && allPets.length === 0 ? (
-                            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-                                    <div key={i} className="bg-white h-[300px] rounded-2xl animate-pulse border border-gray-100 shadow-sm"></div>
-                                ))}
-                            </div>
-                        ) : allPets.length > 0 ? (
-                            <>
-                                <motion.div
-                                    variants={containerVariants}
-                                    initial="hidden"
-                                    animate="visible"
-                                    className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                                >
-                                    {allPets.map(pet => (
-                                        <PetCard key={pet.id} pet={pet} viewMode="grid" variant="compact-listing" />
-                                    ))}
-                                </motion.div>
+                                <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+                                    <button
+                                        onClick={() => setIsSidebarOpen(true)}
+                                        className="lg:hidden flex items-center gap-3 px-6 py-4 bg-white border border-[#EBC176]/20 rounded-2xl text-[10px] font-black text-themev2-text uppercase tracking-widest shadow-sm active:scale-95 whitespace-nowrap"
+                                    >
+                                        <Filter size={14} className="text-[#C48B28]" />
+                                        Filters
+                                    </button>
 
-                                {/* Pagination */}
-                                {/* Pagination */}
-                                {totalCount > 0 && (
-                                    <div className="mt-16 flex items-center justify-center gap-2">
+                                    <SortDropdown
+                                        currentSort={filters.ordering}
+                                        onSortChange={(val) => handleFilterChange('ordering', val)}
+                                        options={[
+                                            { value: '-published_at', label: 'Newest First' },
+                                            { value: 'created_at', label: 'Oldest First' },
+                                            ...(filters.nearby ? [{ value: 'distance', label: 'Nearest to Me' }] : [])
+                                        ]}
+                                    />
+
+                                    <div className="hidden sm:flex items-center gap-1 bg-white border border-[#EBC176]/20 rounded-2xl p-1 shadow-sm">
                                         <button
-                                            onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                                            disabled={page === 1 || loading}
-                                            className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all font-bold bg-white"
+                                            onClick={() => setViewMode('grid')}
+                                            className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-[#FAF3E0] text-[#C48B28]' : 'text-[#EBC176] hover:text-[#C48B28]'}`}
                                         >
-                                            <ChevronLeft size={18} />
+                                            <LayoutGrid size={18} />
                                         </button>
-
-                                        {/* Simple Numbered Pagination Logic */}
-                                        {Array.from({ length: Math.min(5, Math.ceil(totalCount / 24)) }, (_, i) => {
-                                            const p = i + 1; // 1-based index
-                                            // TODO: Make this smarter for large page counts (dots), simply showing first 5 for now as dummy or active window
-                                            // Better logic: show active, neighbors, first, last.
-                                            // For MVP/Demo: Just standard simple list if pages < 7, else complex. Assuming low data count for now.
-                                            return (
-                                                <button
-                                                    key={p}
-                                                    onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                                                    className={`w-10 h-10 flex items-center justify-center rounded-lg font-bold transition-all ${page === p
-                                                        ? 'bg-brand-primary text-white shadow-md shadow-brand-primary/30'
-                                                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                                                        }`}
-                                                >
-                                                    {p}
-                                                </button>
-                                            );
-                                        })}
-
                                         <button
-                                            onClick={() => { setPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                                            disabled={!hasNextPage || loading}
-                                            className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all font-bold bg-white"
+                                            onClick={() => setViewMode('list')}
+                                            className={`p-2.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-[#FAF3E0] text-[#C48B28]' : 'text-[#EBC176] hover:text-[#C48B28]'}`}
                                         >
-                                            <ChevronRight size={18} />
+                                            <ListIcon size={18} />
                                         </button>
                                     </div>
-                                )}
-                            </>
-                        ) : (
-                            <div className="py-20">
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Status Bar Row */}
+                        <div className="mb-10 h-px bg-[#EBC176]/10" />
+
+                        {/* Results Section - Flex-1 to push pagination down */}
+                        <div className="flex-1">
+                            {isLoading ? (
+                                <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
+                                    {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                                        <div key={i} className="bg-white rounded-[2rem] h-[320px] animate-pulse border border-[#EBC176]/10 shadow-sm" />
+                                    ))}
+                                </div>
+                            ) : pets.length > 0 ? (
+                                <div className={`grid gap-8 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
+                                    <AnimatePresence mode="popLayout">
+                                        {pets.map((pet) => (
+                                            <PetCard
+                                                key={pet.id}
+                                                pet={pet}
+                                                variant="listing"
+                                                viewMode={viewMode}
+                                            />
+                                        ))}
+                                    </AnimatePresence>
+                                </div>
+                            ) : (
                                 <NoResults
-                                    title="No matching companions found"
-                                    description="Try adjusting your filters or expanding your search radius."
+                                    title="No pets found"
+                                    description="Try broadening your search or adjusting your area."
                                     onReset={clearFilters}
-                                    icon={Search}
                                 />
+                            )}
+                        </div>
+
+                        {/* Pagination */}
+                        {!isLoading && totalCount > 0 && (
+                            <div className="pt-20 pb-12 flex items-center justify-center gap-3">
+                                <button
+                                    onClick={() => { setPage(Math.max(1, page - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                    disabled={page === 1}
+                                    className="w-12 h-12 flex items-center justify-center rounded-full border border-[#EBC176]/30 text-themev2-text/40 hover:bg-white hover:text-[#C48B28] disabled:opacity-20 transition-all bg-transparent disabled:cursor-not-allowed"
+                                >
+                                    <ChevronRight className="rotate-180" size={20} />
+                                </button>
+
+                                {Array.from({ length: Math.ceil(totalCount / 12) }, (_, i) => i + 1).map(p => (
+                                    <button
+                                        key={p}
+                                        onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                        className={`w-12 h-12 flex items-center justify-center rounded-full font-black text-sm transition-all ${page === p
+                                            ? 'bg-[#C48B28] text-white shadow-xl shadow-[#C48B28]/20'
+                                            : 'bg-white border border-[#EBC176]/30 text-themev2-text/40 hover:border-[#C48B28] hover:text-[#C48B28]'
+                                            }`}
+                                    >
+                                        {p}
+                                    </button>
+                                ))}
+
+                                <button
+                                    onClick={() => { setPage(page + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                    disabled={!hasNextPage}
+                                    className="w-12 h-12 flex items-center justify-center rounded-full border border-[#EBC176]/30 text-themev2-text/40 hover:bg-white hover:text-[#C48B28] disabled:opacity-20 transition-all bg-transparent disabled:cursor-not-allowed"
+                                >
+                                    <ChevronRight size={20} />
+                                </button>
                             </div>
                         )}
-                    </div>
+                    </main>
                 </div>
             </div>
 
-            {/* Filter Drawer (Mobile) */}
+            {/* Mobile Sidebar Overlay */}
             <AnimatePresence>
-                {isFilterDrawerOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] lg:hidden"
-                    >
-                        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsFilterDrawerOpen(false)} />
+                {isSidebarOpen && (
+                    <>
                         <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsSidebarOpen(false)}
+                            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] lg:hidden"
+                        />
+                        <motion.aside
                             initial={{ x: '100%' }}
                             animate={{ x: 0 }}
                             exit={{ x: '100%' }}
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className="absolute right-0 top-0 bottom-0 w-full max-w-xs bg-white shadow-2xl flex flex-col"
+                            className="fixed right-0 top-0 bottom-0 w-[320px] bg-[#FEF9ED] z-[101] overflow-y-auto lg:hidden"
                         >
-                            <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-white z-20">
-                                <h2 className="text-lg font-bold text-gray-900">Filters</h2>
-                                <button onClick={() => setIsFilterDrawerOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                            <div className="flex items-center justify-between p-6 border-b border-[#EBC176]/10">
+                                <h3 className="font-black text-themev2-text uppercase tracking-widest text-sm">Filters</h3>
+                                <button onClick={() => setIsSidebarOpen(false)} className="p-2 text-themev2-text/40 hover:text-themev2-text">
                                     <X size={20} />
                                 </button>
                             </div>
-
-                            <div className="flex-1 overflow-y-auto p-5">
+                            <div className="p-4">
                                 <FilterSidebar
                                     filters={filters}
                                     onFilterChange={handleFilterChange}
-                                    onClearFilters={() => { clearFilters(); setIsFilterDrawerOpen(false); }}
+                                    onClearFilters={() => { clearFilters(); setIsSidebarOpen(false); }}
                                 />
                             </div>
-
-                            <div className="p-5 border-t border-gray-100 bg-gray-50">
-                                <button
-                                    onClick={() => setIsFilterDrawerOpen(false)}
-                                    className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-all shadow-lg active:scale-[0.98]"
-                                >
-                                    Show {totalCount} Results
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
+                        </motion.aside>
+                    </>
                 )}
             </AnimatePresence>
 
-            {/* Admin Create Action */}
+            <LocationMapModal
+                isOpen={isLocationModalOpen}
+                onClose={() => setIsLocationModalOpen(false)}
+                onConfirm={(location) => {
+                    handleFilterChange('updateLocation', { ...location, radius: filters.radius });
+                    setIsLocationModalOpen(false);
+                }}
+            />
+
             {(user?.role === 'shelter' || user?.role === 'admin') && (
                 <div className="fixed bottom-8 left-8 z-40">
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="w-14 h-14 bg-brand-primary text-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform"
+                        className="w-16 h-16 bg-[#C48B28] text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all group"
                     >
-                        <Plus size={28} />
+                        <Plus size={32} className="group-hover:rotate-90 transition-transform duration-300" />
                     </button>
                 </div>
             )}
@@ -417,12 +317,12 @@ const PetListingPage = () => {
                 onSuccess={refetch}
             />
 
-            <LocationPickerModal
-                isOpen={isLocationModalOpen}
-                onClose={() => setIsLocationModalOpen(false)}
-                onSelect={handleLocationSelect}
-                initialRadius={filters.radius}
-            />
+
+            <style>{`
+                ::placeholder { color: rgba(90, 60, 11, 0.2) !important; }
+                .no-scrollbar::-webkit-scrollbar { display: none; }
+                .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+            `}</style>
         </div>
     );
 };

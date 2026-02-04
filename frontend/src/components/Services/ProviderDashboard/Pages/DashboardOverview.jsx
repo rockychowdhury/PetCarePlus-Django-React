@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     Calendar,
     Clock,
     DollarSign,
     Star,
-    User,
     ShieldCheck,
     Plus,
     UserPlus,
@@ -12,32 +11,75 @@ import {
     Edit,
     FileText
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import Button from '../../../common/Buttons/Button'; // Corrected path to src/components/common
+import Button from '../../../common/Buttons/Button';
 import StatsCard from '../components/StatsCard';
 import QuickActionCard from '../components/QuickActionCard';
 import RecentBookingsTable from '../components/RecentBookingsTable';
 import RecentReviewsList from '../components/RecentReviewsList';
+import useServices from '../../../../hooks/useServices';
+import useAPI from '../../../../hooks/useAPI';
+import { toast } from 'react-hot-toast';
 
-const DashboardOverview = ({ provider, stats, onNavigate }) => {
-    // Use stats directly
-    const totalBookings = stats?.total_bookings || 0;
-    const pendingBookings = stats?.pending_bookings || 0;
-    const earnings = stats?.this_month?.earnings || 0;
-    const rating = stats?.rating || 0;
-    const todaySchedule = stats?.today_schedule || []; // Assuming backend provides this, or use similar logic
+const DashboardOverview = ({ provider, onNavigate }) => {
+    const api = useAPI();
+    const { useGetDashboardStats } = useServices();
+    const { data: stats, isLoading } = useGetDashboardStats();
 
-    const handleQuickAction = (action) => {
-        // Map actions to navigation or modals
+    if (isLoading) {
+        return <div className="min-h-[400px] flex items-center justify-center text-gray-400">Loading dashboard data...</div>;
+    }
+
+    // Stats structure from new ProviderDashboardViewSet
+    // stats = { metrics: { ... }, recent_pending: [ ... ] }
+    const metrics = stats?.metrics || {};
+    const recentPending = stats?.recent_pending || [ // Fallback to stats?.recent_bookings if mixed
+        ...(stats?.recent_bookings?.filter(b => b.status === 'pending') || [])
+    ];
+
+    // Safely fallback or use metrics
+    const totalBookings = metrics.total_bookings ?? 0;
+    const pendingRequests = metrics.pending_requests ?? 0;
+    const monthEarnings = metrics.month_earnings ?? 0;
+    // const rating = provider?.avg_rating || 0; // Provider object has rating
+    const pendingReviews = stats?.pending_reviews_count ?? 0; // Not in metrics yet? Check backend.
+    // Backward compatibility: backend 'dashboard_stats' in step 384 returned metrics + pending_reviews_count?
+    // Wait, step 384 code:
+    // return Response({ metrics: { ... }, recent_pending: ... }) 
+    // It did NOT return 'pending_reviews_count' at top level. 
+    // I should add it to metrics in backend or assume 0 for now.
+    // Let's use 0 or provider.reviews_count logic if available.
+
+    const todaysBookingsCount = metrics.todays_bookings ?? 0;
+
+    const handleQuickAction = async (action) => {
         switch (action) {
             case 'new_booking':
                 // Open new booking modal or navigate
+                toast.success("Feature coming soon!");
                 break;
             case 'availability':
-                onNavigate('calender'); // Assuming calendar/availability view
+                onNavigate('availability');
                 break;
             case 'edit_profile':
                 onNavigate('profile');
+                break;
+            case 'reports':
+                try {
+                    toast.loading('Generating report...', { id: 'reportGen' });
+                    // Provide correct endpoint
+                    const response = await api.get('/services/bookings/export_csv/', { responseType: 'blob' });
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', `bookings_report_${new Date().toISOString().split('T')[0]}.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    link.parentNode.removeChild(link);
+                    toast.success('Report downloaded', { id: 'reportGen' });
+                } catch (error) {
+                    console.error("Download failed", error);
+                    toast.error('Failed to download report', { id: 'reportGen' });
+                }
                 break;
             default:
                 break;
@@ -54,7 +96,7 @@ const DashboardOverview = ({ provider, stats, onNavigate }) => {
                     <h1 className="text-2xl font-bold text-gray-900">Welcome back, {businessName}!</h1>
                     <p className="text-gray-500 text-sm mt-1">Here's what's happening with your business today.</p>
                 </div>
-                <Button variant="primary" className="bg-teal-600 hover:bg-teal-700 text-white shadow-soft">
+                <Button variant="primary" className="bg-brand-primary hover:bg-brand-primary/90 text-white shadow-soft rounded-xl px-6">
                     New Booking
                 </Button>
             </div>
@@ -66,7 +108,7 @@ const DashboardOverview = ({ provider, stats, onNavigate }) => {
                     badge={provider?.verification_status === 'verified' ? "Verified Business" : "Pending Verification"}
                     badgeColor={provider?.verification_status === 'verified' ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}
                     subtext={provider?.verification_status === 'verified' ? "Your profile is fully visible" : "Complete steps to go live"}
-                    subtextClass="text-gray-500"
+                    subtextClass="text-gray-400"
                     icon={ShieldCheck}
                     iconColor={provider?.verification_status === 'verified' ? "bg-green-50 text-green-600" : "bg-yellow-50 text-yellow-600"}
                 />
@@ -76,74 +118,47 @@ const DashboardOverview = ({ provider, stats, onNavigate }) => {
                     actionLabel="View all bookings"
                     onClick={() => onNavigate('bookings')}
                     icon={Calendar}
-                    iconColor="bg-blue-50 text-blue-600"
+                    iconColor="bg-brand-primary/10 text-brand-primary"
                 />
                 <StatsCard
-                    title="Pending Reviews"
-                    value={stats?.pending_reviews_count || 0}
-                    actionLabel="Respond now"
-                    onClick={() => onNavigate('reviews')}
-                    icon={Star} // Or MessageSquare
-                    iconColor="bg-yellow-50 text-yellow-600"
+                    title="Pending Requests"
+                    value={pendingRequests}
+                    actionLabel="Manage requests"
+                    onClick={() => onNavigate('bookings')}
+                    icon={Clock}
+                    iconColor="bg-orange-50 text-orange-600"
+                    // Highlight if > 0
+                    highlight={pendingRequests > 0}
                 />
                 <StatsCard
                     title="Revenue (Month)"
-                    value={`$${earnings.toLocaleString()}`}
-                    subtext="vs last month"
+                    value={`$${monthEarnings.toLocaleString()}`}
+                    subtext="Realized earnings"
                     subtextClass="text-green-600"
                     icon={DollarSign}
-                    iconColor="bg-gray-100 text-gray-600"
+                    iconColor="bg-green-50 text-green-600"
                 />
             </div>
 
-            {/* 3. Today's Schedule */}
-            {stats?.today_schedule && stats.today_schedule.length > 0 ? (
-                <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-900 mb-1">Today's Schedule</h3>
-                        <p className="text-sm text-gray-500">
-                            Open • {provider?.hours?.[0]?.open_time || '08:00 AM'} - {provider?.hours?.[0]?.close_time || '08:00 PM'}
-                        </p>
-                    </div>
-
-                    <div className="flex-1 w-full md:w-auto">
-                        <div className="bg-blue-50/50 rounded-lg p-3 flex items-center gap-4 border border-blue-100">
-                            <div className="flex-1">
-                                <div className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-0.5">NEXT APPOINTMENT IN 15 MIN</div>
-                                <div className="font-semibold text-gray-900 text-sm">
-                                    {stats.today_schedule[0].client?.first_name} ({stats.today_schedule[0].pet?.species || 'Pet'}) - {stats.today_schedule[0].service_option?.name || 'Service'}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <button
-                            onClick={() => onNavigate('calendar')}
-                            className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                        >
-                            View Calendar
-                        </button>
-                    </div>
+            {/* 3. Today's Summary (Simplified for Phase 1) */}
+            <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex-1">
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">Today's Schedule</h3>
+                    <p className="text-sm text-gray-500">
+                        {todaysBookingsCount} bookings scheduled for today.
+                        {/* Open • {provider?.hours?.[0]?.open_time || '08:00 AM'} - {provider?.hours?.[0]?.close_time || '08:00 PM'} */}
+                    </p>
                 </div>
-            ) : (
-                <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-900 mb-1">Today's Schedule</h3>
-                        <p className="text-sm text-gray-500">
-                            Open • {provider?.hours?.[0]?.open_time || '08:00 AM'} - {provider?.hours?.[0]?.close_time || '08:00 PM'}
-                        </p>
-                    </div>
-                    <div>
-                        <button
-                            onClick={() => onNavigate('calendar')}
-                            className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                        >
-                            View Calendar
-                        </button>
-                    </div>
+                <div>
+                    <Button
+                        variant="outline"
+                        onClick={() => onNavigate('calendar')}
+                        className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                    >
+                        View Calendar
+                    </Button>
                 </div>
-            )}
+            </div>
 
             {/* 4. Quick Actions */}
             <section>
@@ -162,13 +177,16 @@ const DashboardOverview = ({ provider, stats, onNavigate }) => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">
                     <RecentBookingsTable
-                        bookings={stats?.recent_bookings} // Pass real data if avail
+                        bookings={recentPending}
+                        // If no pending, maybe show recent bookings general?
+                        title="Pending Requests"
                         onManage={(id) => onNavigate('bookings')}
                     />
                 </div>
                 <div className="lg:col-span-1">
                     <RecentReviewsList
-                        reviews={stats?.recent_reviews} // Pass real data if avail
+                        // Pass dummy or real reviews if available in provider object
+                        reviews={provider?.reviews?.slice(0, 5) || []}
                     />
                 </div>
             </div>

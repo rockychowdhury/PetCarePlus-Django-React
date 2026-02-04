@@ -101,19 +101,20 @@ const PrivacyPolicyPage = () => {
     }, []);
 
     return (
-        <div className="bg-bg-primary min-h-screen  text-text-primary">
+        <div className="bg-[#FEF9ED] min-h-screen text-themev2-text pt-20">
             {/* Header */}
-            <div className="bg-bg-surface border-b border-border">
-                <div className="max-w-7xl mx-auto px-6 py-12 md:py-16">
+            <div className="bg-[#C48B28] relative overflow-hidden">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                <div className="max-w-7xl mx-auto px-6 py-12 md:py-20 relative z-10">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                         <div>
-                            <p className="text-brand-primary font-bold uppercase tracking-widest mb-3 text-sm flex items-center gap-2">
-                                <Lock size={16} /> Data Protection
+                            <p className="text-white/80 font-bold uppercase tracking-widest mb-3 text-sm flex items-center gap-2">
+                                <Lock size={16} className="text-white" /> Data Protection
                             </p>
-                            <h1 className="text-4xl md:text-5xl font-black mb-4 font-logo tracking-tight">
+                            <h1 className="text-4xl md:text-5xl font-black mb-4 font-logo tracking-tight text-white">
                                 Privacy Policy
                             </h1>
-                            <p className="text-text-secondary text-lg">
+                            <p className="text-white/80 text-lg font-medium">
                                 Last Updated: December 16, 2025
                             </p>
                         </div>
@@ -121,9 +122,9 @@ const PrivacyPolicyPage = () => {
                             <button
                                 onClick={handleDownloadPDF}
                                 disabled={isDownloading}
-                                className="flex items-center gap-2 px-5 py-2.5 bg-bg-secondary hover:bg-bg-secondary/80 text-text-secondary rounded-xl transition-all font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center gap-2 px-6 py-3 bg-white hover:bg-white/90 text-[#C48B28] rounded-full transition-all font-black uppercase tracking-widest text-xs disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                             >
-                                <Download size={18} />
+                                <Download size={16} />
                                 {isDownloading ? 'Generating...' : 'Download PDF'}
                             </button>
                         </div>
@@ -146,8 +147,8 @@ const PrivacyPolicyPage = () => {
                                         key={section.id}
                                         onClick={() => scrollToSection(section.id)}
                                         className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 border-l-2 ${activeSection === section.id
-                                            ? 'bg-brand-primary/10 text-brand-primary border-brand-primary'
-                                            : 'text-text-secondary hover:bg-bg-secondary border-transparent hover:text-text-primary'
+                                            ? 'bg-[#C48B28]/10 text-[#C48B28] border-[#C48B28]'
+                                            : 'text-themev2-text/60 hover:bg-[#FEF9ED] border-transparent hover:text-themev2-text'
                                             }`}
                                     >
                                         {section.title}
@@ -162,32 +163,32 @@ const PrivacyPolicyPage = () => {
 
                         {/* 1. Collection */}
                         <section id="collection" className="scroll-mt-32">
-                            <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                                <div className="p-2 bg-bg-secondary rounded-lg text-text-secondary">
+                            <h2 className="text-2xl font-bold mb-6 flex items-center gap-3 text-themev2-text">
+                                <div className="p-2 bg-[#FEF9ED] rounded-lg text-[#C48B28] border border-[#EBC176]/20">
                                     <Database size={24} />
                                 </div>
                                 1. Information We Collect
                             </h2>
-                            <div className="bg-bg-surface p-8 rounded-2xl shadow-sm border border-border space-y-6">
-                                <p className="text-text-secondary">
+                            <div className="bg-white p-8 rounded-2xl shadow-sm border border-[#EBC176]/20 space-y-6">
+                                <p className="text-themev2-text/70">
                                     We collect information necessary to facilitate responsible rehoming and ensure platform safety. This includes:
                                 </p>
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <div>
-                                        <h4 className="font-bold text-text-primary mb-2">Personal Identity</h4>
-                                        <p className="text-sm text-text-secondary">Name, email address, phone number, and government ID (for identity verification).</p>
+                                        <h4 className="font-bold text-themev2-text mb-2">Personal Identity</h4>
+                                        <p className="text-sm text-themev2-text/70">Name, email address, phone number, and government ID (for identity verification).</p>
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-text-primary mb-2">Pet Data</h4>
-                                        <p className="text-sm text-text-secondary">Photos, medical records (vaccinations, vet history), and behavioral profiles.</p>
+                                        <h4 className="font-bold text-themev2-text mb-2">Pet Data</h4>
+                                        <p className="text-sm text-themev2-text/70">Photos, medical records (vaccinations, vet history), and behavioral profiles.</p>
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-text-primary mb-2">Adopter Profile</h4>
-                                        <p className="text-sm text-text-secondary">Housing details, family composition, lifestyle information, and references.</p>
+                                        <h4 className="font-bold text-themev2-text mb-2">Adopter Profile</h4>
+                                        <p className="text-sm text-themev2-text/70">Housing details, family composition, lifestyle information, and references.</p>
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-text-primary mb-2">Communications</h4>
-                                        <p className="text-sm text-text-secondary">Messages sent between users are encrypted and stored for safety monitoring.</p>
+                                        <h4 className="font-bold text-themev2-text mb-2">Communications</h4>
+                                        <p className="text-sm text-themev2-text/70">Messages sent between users are encrypted and stored for safety monitoring.</p>
                                     </div>
                                 </div>
                             </div>
@@ -195,22 +196,22 @@ const PrivacyPolicyPage = () => {
 
                         {/* 2. Usage */}
                         <section id="usage" className="scroll-mt-32">
-                            <h2 className="text-2xl font-bold mb-6">2. How We Use Your Data</h2>
-                            <ul className="space-y-4 text-text-secondary">
+                            <h2 className="text-2xl font-bold mb-6 text-themev2-text">2. How We Use Your Data</h2>
+                            <ul className="space-y-4 text-themev2-text/70">
                                 <li className="flex items-start gap-3">
-                                    <UserCheck className="text-brand-primary mt-1 shrink-0" size={18} />
+                                    <UserCheck className="text-[#C48B28] mt-1 shrink-0" size={18} />
                                     <span>To facilitate adoption connections and verify user identities.</span>
                                 </li>
                                 <li className="flex items-start gap-3">
-                                    <UserCheck className="text-brand-primary mt-1 shrink-0" size={18} />
+                                    <UserCheck className="text-[#C48B28] mt-1 shrink-0" size={18} />
                                     <span>To process rehoming applications and generate adoption agreements.</span>
                                 </li>
                                 <li className="flex items-start gap-3">
-                                    <UserCheck className="text-brand-primary mt-1 shrink-0" size={18} />
+                                    <UserCheck className="text-[#C48B28] mt-1 shrink-0" size={18} />
                                     <span>To detect and prevent fraud, scams, and animal welfare violations.</span>
                                 </li>
                                 <li className="flex items-start gap-3">
-                                    <UserCheck className="text-brand-primary mt-1 shrink-0" size={18} />
+                                    <UserCheck className="text-[#C48B28] mt-1 shrink-0" size={18} />
                                     <span>To send critical notifications (e.g., application updates, safety alerts).</span>
                                 </li>
                             </ul>
@@ -218,8 +219,8 @@ const PrivacyPolicyPage = () => {
 
                         {/* 3. Sharing */}
                         <section id="sharing" className="scroll-mt-32">
-                            <h2 className="text-2xl font-bold mb-6">3. Data Sharing & Disclosure</h2>
-                            <div className="prose max-w-none text-text-secondary leading-relaxed">
+                            <h2 className="text-2xl font-bold mb-6 text-themev2-text">3. Data Sharing & Disclosure</h2>
+                            <div className="prose max-w-none text-themev2-text/70 leading-relaxed">
                                 <p className="mb-4">
                                     <strong>We do NOT sell your personal data.</strong> Your information is shared only in specific contexts:
                                 </p>
@@ -233,26 +234,26 @@ const PrivacyPolicyPage = () => {
 
                         {/* 4. Security */}
                         <section id="security" className="scroll-mt-32">
-                            <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                                <Shield className="text-status-success" size={24} />
+                            <h2 className="text-2xl font-bold mb-6 flex items-center gap-3 text-themev2-text">
+                                <Shield className="text-[#C48B28]" size={24} />
                                 4. Data Security
                             </h2>
-                            <div className="bg-status-success/5 p-8 rounded-2xl border border-status-success/20">
-                                <p className="text-text-secondary mb-6">
+                            <div className="bg-white p-8 rounded-2xl border border-[#C48B28]/20">
+                                <p className="text-themev2-text/70 mb-6">
                                     We employ industry-standard security measures to protect your sensitive information:
                                 </p>
                                 <div className="grid gap-4">
-                                    <div className="flex items-center gap-3 bg-bg-surface p-4 rounded-xl border border-status-success/20">
-                                        <Lock className="text-status-success" size={20} />
-                                        <span className="text-text-secondary text-sm"><strong>Encryption:</strong> Data is encrypted in transit (TLS) and at rest (AES-256).</span>
+                                    <div className="flex items-center gap-3 bg-[#FEF9ED] p-4 rounded-xl border border-[#EBC176]/20">
+                                        <Lock className="text-[#C48B28]" size={20} />
+                                        <span className="text-themev2-text/80 text-sm"><strong>Encryption:</strong> Data is encrypted in transit (TLS) and at rest (AES-256).</span>
                                     </div>
-                                    <div className="flex items-center gap-3 bg-bg-surface p-4 rounded-xl border border-status-success/20">
-                                        <FileKey className="text-status-success" size={20} />
-                                        <span className="text-text-secondary text-sm"><strong>Sensitive Data:</strong> Vet records and IDs are stored in secure, restricted buckets.</span>
+                                    <div className="flex items-center gap-3 bg-[#FEF9ED] p-4 rounded-xl border border-[#EBC176]/20">
+                                        <FileKey className="text-[#C48B28]" size={20} />
+                                        <span className="text-themev2-text/80 text-sm"><strong>Sensitive Data:</strong> Vet records and IDs are stored in secure, restricted buckets.</span>
                                     </div>
-                                    <div className="flex items-center gap-3 bg-bg-surface p-4 rounded-xl border border-status-success/20">
-                                        <CreditCard className="text-status-success" size={20} />
-                                        <span className="text-text-secondary text-sm"><strong>Payments:</strong> Payment info is tokenized via Stripe; we never store card numbers.</span>
+                                    <div className="flex items-center gap-3 bg-[#FEF9ED] p-4 rounded-xl border border-[#EBC176]/20">
+                                        <CreditCard className="text-[#C48B28]" size={20} />
+                                        <span className="text-themev2-text/80 text-sm"><strong>Payments:</strong> Payment info is tokenized via Stripe; we never store card numbers.</span>
                                     </div>
                                 </div>
                             </div>
@@ -260,24 +261,24 @@ const PrivacyPolicyPage = () => {
 
                         {/* 5. Rights */}
                         <section id="rights" className="scroll-mt-32">
-                            <h2 className="text-2xl font-bold mb-6">5. Your Rights (GDPR/CCPA)</h2>
-                            <div className="space-y-6 text-text-secondary">
+                            <h2 className="text-2xl font-bold mb-6 text-themev2-text">5. Your Rights (GDPR/CCPA)</h2>
+                            <div className="space-y-6 text-themev2-text/70">
                                 <p>Whether you are in the EU, California, or elsewhere, we respect your data rights:</p>
                                 <div className="grid md:grid-cols-2 gap-6">
-                                    <div className="p-6 bg-bg-secondary rounded-xl">
-                                        <h4 className="font-bold text-text-primary mb-2">Access & Portability</h4>
+                                    <div className="p-6 bg-[#FEF9ED] rounded-xl border border-[#EBC176]/20">
+                                        <h4 className="font-bold text-themev2-text mb-2">Access & Portability</h4>
                                         <p className="text-sm">Request a copy of your personal data in a portable (JSON) format.</p>
                                     </div>
-                                    <div className="p-6 bg-bg-secondary rounded-xl">
-                                        <h4 className="font-bold text-text-primary mb-2">Right to Erasure</h4>
+                                    <div className="p-6 bg-[#FEF9ED] rounded-xl border border-[#EBC176]/20">
+                                        <h4 className="font-bold text-themev2-text mb-2">Right to Erasure</h4>
                                         <p className="text-sm">Request deletion of your account. Note: Some legal records (adoption contracts) must be retained for 7 years.</p>
                                     </div>
-                                    <div className="p-6 bg-bg-secondary rounded-xl">
-                                        <h4 className="font-bold text-text-primary mb-2">Correction</h4>
+                                    <div className="p-6 bg-[#FEF9ED] rounded-xl border border-[#EBC176]/20">
+                                        <h4 className="font-bold text-themev2-text mb-2">Correction</h4>
                                         <p className="text-sm">Update or correct inaccurate information directly from your profile settings.</p>
                                     </div>
-                                    <div className="p-6 bg-bg-secondary rounded-xl">
-                                        <h4 className="font-bold text-text-primary mb-2">CCPA Notice</h4>
+                                    <div className="p-6 bg-[#FEF9ED] rounded-xl border border-[#EBC176]/20">
+                                        <h4 className="font-bold text-themev2-text mb-2">CCPA Notice</h4>
                                         <p className="text-sm">We do not sell personal information. You have the right to non-discrimination for exercising your privacy rights.</p>
                                     </div>
                                 </div>
@@ -286,18 +287,18 @@ const PrivacyPolicyPage = () => {
 
                         {/* 6. Retention */}
                         <section id="retention" className="scroll-mt-32">
-                            <h2 className="text-2xl font-bold mb-6">6. Data Retention</h2>
-                            <p className="text-text-secondary leading-relaxed">
+                            <h2 className="text-2xl font-bold mb-6 text-themev2-text">6. Data Retention</h2>
+                            <p className="text-themev2-text/70 leading-relaxed">
                                 We retain personal data only as long as an account is active or as needed to provide services. Upon account deletion, identifiers are pseudonymized immediately. However, financial records and signed adoption agreements are retained for 7 years as required by law.
                             </p>
                         </section>
 
                         {/* 7. Cookies */}
                         <section id="cookies" className="scroll-mt-32">
-                            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                                <Cookie size={24} /> 7. Cookies & Tracking
+                            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-themev2-text">
+                                <Cookie size={24} className="text-[#C48B28]" /> 7. Cookies & Tracking
                             </h2>
-                            <p className="text-text-secondary leading-relaxed">
+                            <p className="text-themev2-text/70 leading-relaxed">
                                 We use essential cookies to maintain your session and security. We may use analytics cookies (with your consent) to understand platform usage. You can control cookie preferences through your browser settings.
                             </p>
                         </section>
@@ -328,12 +329,12 @@ const PrivacyPolicyPage = () => {
 
                         {/* 11. Contact */}
                         <section id="contact" className="scroll-mt-32 mb-20">
-                            <h2 className="text-2xl font-bold mb-6">11. Contact Us</h2>
-                            <p className="text-text-secondary leading-relaxed mb-6">
+                            <h2 className="text-2xl font-bold mb-6 text-themev2-text">11. Contact Us</h2>
+                            <p className="text-themev2-text/70 leading-relaxed mb-6">
                                 If you have questions about your data privacy or wish to exercise your rights, please contact our Data Protection Officer (DPO).
                             </p>
-                            <div className="flex items-center gap-3 text-text-secondary bg-bg-secondary px-6 py-4 rounded-xl border border-border inline-flex">
-                                <Mail className="text-brand-primary" size={20} />
+                            <div className="flex items-center gap-3 text-themev2-text/80 bg-[#FEF9ED] px-6 py-4 rounded-xl border border-[#EBC176]/20 inline-flex">
+                                <Mail className="text-[#C48B28]" size={20} />
                                 <span className="font-medium">privacy@petcircle.com</span>
                             </div>
                         </section>

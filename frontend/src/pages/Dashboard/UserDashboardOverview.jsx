@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import useAPI from '../../hooks/useAPI';
 import useAuth from '../../hooks/useAuth';
-import useServices from '../../hooks/useServices';
 import {
     LayoutDashboard,
     Plus,
@@ -22,378 +21,386 @@ import {
     AlertCircle,
     Briefcase,
     ArrowRight,
-    CheckCircle
+    CheckCircle,
+    BarChart3,
+    Sparkles,
+    CalendarDays,
+    MessageSquare,
+    Star,
+    ShieldCheck,
+    ArrowUpRight
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { format } from 'date-fns';
 
 const UserDashboardOverview = () => {
     const api = useAPI();
     const { user } = useAuth();
-    const navigate = useNavigate();
-    const [appTab, setAppTab] = useState('received'); // 'received' | 'submitted'
+    const [inquiryTab, setInquiryTab] = useState('received'); // 'received' | 'sent'
 
-    const { useGetMyProviderProfile } = useServices();
-    const { data: providerProfile, isLoading: isProviderLoading } = useGetMyProviderProfile();
-
-    // Redirect based on role
-    useEffect(() => {
-        if (user?.role === 'admin') {
-            navigate('/admin', { replace: true });
-        } else if (user?.role === 'service_provider') {
-            navigate('/provider/dashboard', { replace: true });
+    // Fetch Unified Overview Data
+    const { data: overview, isLoading } = useQuery({
+        queryKey: ['user-overview'],
+        queryFn: async () => {
+            const res = await api.get('/analytics/user-overview/');
+            return res.data;
         }
-    }, [user, navigate]);
-
-    // Only fetch data for regular users (not admins or providers)
-    const isRegularUser = user?.role !== 'admin' && user?.role !== 'service_provider';
-
-    // Fetch My Pets
-    const { data: myPets = [] } = useQuery({
-        queryKey: ['my-pets'],
-        queryFn: async () => {
-            const res = await api.get('/pets/profiles/');
-            return res.data.results || res.data;
-        },
-        enabled: isRegularUser,
     });
 
-    // Fetch My Listings
-    const { data: myListings = [] } = useQuery({
-        queryKey: ['my-listings'],
-        queryFn: async () => {
-            const res = await api.get('/rehoming/my-listings/');
-            return res.data.results || res.data;
-        },
-        enabled: isRegularUser,
-    });
-
-    // Fetch Inquiries (Applications)
-    const { data: allInquiries = [] } = useQuery({
-        queryKey: ['my-inquiries'],
-        queryFn: async () => {
-            const res = await api.get('/rehoming/inquiries/');
-            return res.data.results || res.data;
-        },
-        enabled: isRegularUser,
-    });
-
-    // Fetch Notifications
-    const { data: notifications = [] } = useQuery({
-        queryKey: ['notifications'],
-        queryFn: async () => {
-            const res = await api.get('/notifications/');
-            return res.data.results || res.data;
-        },
-        enabled: isRegularUser,
-    });
-
-    // Process Listings
-    const activeListings = myListings.filter(l => l.status === 'active');
-
-    // Process Inquiries
-    // Check serializer: inquiry has 'listing' object (with owner) and 'requester' object.
-    const submittedApplications = allInquiries.filter(app => (app.requester_id || app.requester) === user?.id);
-    const receivedApplications = allInquiries.filter(app => app.pet_owner_id === user?.id);
-
-    // Process Notifications
-    const unreadCount = notifications.filter(n => !n.is_read).length;
+    const services = overview?.services || {};
+    const rehoming = overview?.rehoming || {};
+    const nextVisit = services.next_visit;
 
     const stats = [
-        { label: 'My Pets', value: myPets.length, icon: PawPrint, color: 'text-brand-primary', bg: 'bg-brand-primary/10' },
-        { label: 'Active Listings', value: activeListings.length, icon: Eye, color: 'text-blue-600', bg: 'bg-blue-100' },
-        { label: 'Apps Received', value: receivedApplications.length, icon: FileText, color: 'text-purple-600', bg: 'bg-purple-100' },
-        { label: 'Apps Submitted', value: submittedApplications.length, icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-100' },
+        { label: 'Upcoming Visit', value: nextVisit ? format(new Date(nextVisit.start_datetime), 'MMM dd') : 'None', icon: CalendarDays, color: 'text-[#C48B28]', bg: 'bg-[#C48B28]/10' },
+        { label: 'Total Services', value: services.stats?.total_bookings || 0, icon: Clock, color: 'text-[#C48B28]', bg: 'bg-[#C48B28]/10' },
+        { label: 'Pet Profiles', value: rehoming.stats?.my_pets_count || 0, icon: PawPrint, color: 'text-[#C48B28]', bg: 'bg-[#C48B28]/10' },
+        { label: 'Active Listings', value: rehoming.stats?.active_listings_count || 0, icon: ShieldCheck, color: 'text-green-600', bg: 'bg-green-50' },
     ];
 
-    const quickActions = [
-        { label: 'Start Rehoming', icon: Plus, to: '/rehoming/start', desc: 'Create a listing' },
-        { label: 'Browse Pets', icon: Search, to: '/pets', desc: 'Find a friend' },
-        { label: 'Services', icon: MapPin, to: '/services', desc: 'Find vets & more' },
-        { label: 'My Pets', icon: PawPrint, to: '/dashboard/my-pets', desc: 'Manage profiles' },
-        { label: 'My Pets', icon: PawPrint, to: '/dashboard/my-pets', desc: 'Manage profiles' },
-    ];
+    const providerStatus = overview?.user?.provider_status;
+    const isProvider = overview?.user?.is_service_provider;
 
-    const getStatusColor = (status) => {
-        switch (status?.toLowerCase()) {
-            case 'accepted': return 'bg-green-100 text-green-700 border-green-200';
-            case 'declined':
-            case 'rejected': return 'bg-red-100 text-red-700 border-red-200';
-            case 'pending': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-            case 'withdrawn': return 'bg-gray-100 text-gray-700 border-gray-200';
-            default: return 'bg-gray-100 text-gray-700 border-gray-200';
+    const getProviderAction = () => {
+        if (isProvider) return { label: 'Provider Portal', icon: LayoutDashboard, to: '/provider/dashboard', desc: 'Manage business' };
+
+        switch (providerStatus) {
+            case 'submitted':
+                return { label: 'Pending App', icon: Clock, to: '/become-provider', desc: 'Under review', isHighlighted: true };
+            case 'rejected':
+                return { label: 'Apply Again', icon: AlertTriangle, to: '/service-provider/register', desc: 'Application rejected', isHighlighted: true, variant: 'error' };
+            case 'draft':
+                return { label: 'Resume App', icon: FileText, to: '/service-provider/register', desc: 'Finish application', isHighlighted: true };
+            default:
+                return { label: 'Become Provider', icon: Briefcase, to: '/become-provider', desc: 'Join community' };
         }
     };
 
-    return (
-        <div className="space-y-8  text-text-primary">
+    const quickActions = [
+        { label: 'Find Service', icon: Search, to: '/services', desc: 'Vets, Trainers...' },
+        { label: 'New Booking', icon: Plus, to: '/services', desc: 'Schedule visit' },
+        { label: 'Manage Pets', icon: PawPrint, to: '/dashboard/my-pets', desc: 'Health & Info' },
+        { label: 'Reviews', icon: Star, to: '/dashboard/reviews', desc: 'Rate experience' },
+        { label: 'Rehoming', icon: Eye, to: '/rehoming', desc: 'Create listing' },
+        getProviderAction(),
+    ];
 
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 pb-4">
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh] bg-[#FEF9ED]/30">
+                <div className="w-12 h-12 rounded-full border-4 border-[#C48B28]/10 border-t-[#C48B28] animate-spin" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full md:p-12 lg:p-20 space-y-12 bg-[#FEF9ED]/30 min-h-screen">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div>
-                    <h1 className="text-3xl font-black text-text-primary tracking-tight mb-2">
-                        Welcome back, {user?.first_name || 'Friend'}!
+                    <span className="text-[10px] font-black text-[#C48B28] uppercase tracking-[0.4em] mb-4 block">Dashboard Center</span>
+                    <h1 className="text-5xl font-black text-[#402E11] tracking-tighter mb-4">
+                        Hi, {overview?.user?.first_name || 'Friend'}!
                     </h1>
-                    <p className="text-text-secondary font-medium">Here's what's happening with your pets and applications today.</p>
+                    <div className="flex items-center gap-4">
+                        <p className="text-[#402E11]/60 font-bold text-sm">Your pet's care journey at a glance.</p>
+                        <div className="flex items-center gap-2.5 px-4 py-2 bg-white/60 backdrop-blur-md rounded-full border border-[#EBC176]/20 shadow-sm">
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                            <span className="text-[10px] font-black text-[#402E11]/40 uppercase tracking-widest leading-none">{format(new Date(), 'EEEE, MMMM dd')}</span>
+                        </div>
+                    </div>
                 </div>
-                <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-text-secondary bg-bg-secondary px-3 py-1 rounded-full">
-                        {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
-                    </span>
+                <div className="flex gap-4">
+                    <Link to="/services">
+                        <button className="flex items-center gap-3 bg-[#C48B28] text-white px-8 py-[18px] rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-[#C48B28]/25 hover:scale-105 active:scale-95 transition-all">
+                            <Plus size={18} strokeWidth={3} />
+                            Book Service
+                        </button>
+                    </Link>
                 </div>
             </div>
 
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Quick Stats Banner */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                 {stats.map((stat, i) => (
                     <motion.div
                         key={i}
-                        whileHover={{ y: -2 }}
-                        className="bg-bg-surface p-5 rounded-3xl border border-border shadow-sm flex items-center gap-4"
+                        whileHover={{ y: -6, scale: 1.02 }}
+                        className="bg-white/80 backdrop-blur-md p-7 rounded-[2.5rem] border border-[#EBC176]/20 shadow-xl shadow-[#402E11]/5 flex items-center gap-6 group relative overflow-hidden"
                     >
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${stat.bg} ${stat.color}`}>
-                            <stat.icon size={24} strokeWidth={2.5} />
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-[#FAF3E0]/40 rounded-bl-full -mr-8 -mt-8 pointer-events-none transition-transform group-hover:scale-110" />
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${stat.bg} ${stat.color} group-hover:scale-110 transition-transform shadow-sm relative z-10`}>
+                            <stat.icon size={26} strokeWidth={2.5} />
                         </div>
-                        <div>
-                            <div className="text-2xl font-black text-text-primary">{stat.value}</div>
-                            <div className="text-xs font-bold uppercase tracking-wider text-text-secondary">{stat.label}</div>
+                        <div className="relative z-10">
+                            <div className="text-3xl font-black text-[#402E11] tracking-tighter leading-none mb-1.5">{stat.value}</div>
+                            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[#402E11]/40 group-hover:text-[#402E11]/60 transition-colors">{stat.label}</div>
                         </div>
                     </motion.div>
                 ))}
             </div>
 
-            {/* Main Content Grid */}
-            <div className="grid lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                {/* Left Column: Primary Services - 8 cols */}
+                <div className="lg:col-span-8 space-y-10">
 
-                {/* Left Column (2/3) */}
-                <div className="lg:col-span-2 space-y-8">
+                    {/* Next Visit Prominent Card */}
+                    <div className="relative group overflow-hidden bg-[#FAF3E0] rounded-[3rem] border border-[#EBC176]/30 shadow-2xl shadow-[#C48B28]/5 mt-2">
+                        {/* Shimmer Effect */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-[45deg] -translate-x-full group-hover:translate-x-[250%] transition-transform duration-[2000ms] ease-in-out pointer-events-none opacity-60 z-20" />
 
-                    {/* Quick Actions */}
-                    <div className="bg-bg-surface rounded-[2rem] p-8 border border-border shadow-sm">
-                        <h2 className="text-xl font-black mb-6 flex items-center gap-2">
-                            <LayoutDashboard className="text-brand-primary" size={24} />
-                            Quick Actions
-                        </h2>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            {quickActions.map((action, i) => (
-                                <Link to={action.to} key={i}>
-                                    <motion.div
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        className="bg-bg-secondary p-4 rounded-2xl border border-border hover:border-brand-primary/30 hover:bg-brand-primary/5 transition-colors group h-full"
-                                    >
-                                        <div className="mb-3 w-10 h-10 bg-bg-surface rounded-xl flex items-center justify-center shadow-sm text-text-primary group-hover:text-brand-primary transition-colors">
-                                            <action.icon size={20} />
+                        <div className="p-12 relative z-10">
+                            <div className="flex flex-col md:flex-row justify-between gap-10">
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-4 mb-8">
+                                        <div className="px-5 py-2 bg-[#C48B28] text-white rounded-full text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2.5 shadow-lg shadow-[#C48B28]/20 animate-bounce">
+                                            <CalendarDays size={14} strokeWidth={3} />
+                                            Upcoming Visit
                                         </div>
-                                        <div className="font-bold text-text-primary">{action.label}</div>
-                                        <div className="text-xs text-text-secondary">{action.desc}</div>
-                                    </motion.div>
-                                </Link>
-                            ))}
-
-                            {/* --- Provider Status or Call to Action --- */}
-                            {isProviderLoading ? (
-                                <div className="bg-bg-secondary p-4 rounded-2xl border border-border animate-pulse h-full"></div>
-                            ) : providerProfile ? (
-                                <div className="bg-bg-secondary p-4 rounded-2xl border border-border hover:border-brand-primary/30 hover:bg-brand-primary/5 transition-colors group h-full relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-brand-secondary/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-
-                                    <div className="flex justify-between items-start mb-3 relative z-10">
-                                        <div className="mb-3 w-10 h-10 bg-bg-surface rounded-xl flex items-center justify-center shadow-sm text-text-primary group-hover:text-brand-primary transition-colors">
-                                            {providerProfile.is_verified ? <CheckCircle size={20} /> : <Clock size={20} />}
-                                        </div>
-                                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${providerProfile.is_verified ? 'bg-green-100 text-green-700' :
-                                            providerProfile.verification_status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                'bg-gray-100 text-gray-600'
-                                            }`}>
-                                            {providerProfile.verification_status || 'Draft'}
-                                        </span>
+                                        {nextVisit && (
+                                            <span className="text-[10px] font-black text-[#C48B28]/50 uppercase tracking-[0.2em]">
+                                                Next scheduled {format(new Date(nextVisit.start_datetime), 'HH:mm aaa')}
+                                            </span>
+                                        )}
                                     </div>
 
-                                    <div className="font-bold text-text-primary relative z-10">Provider Profile</div>
-                                    <p className="text-xs text-text-secondary mb-2 relative z-10">
-                                        {providerProfile.is_verified
-                                            ? "Manage your services and bookings."
-                                            : "Your application status."}
-                                    </p>
+                                    {nextVisit ? (
+                                        <div className="space-y-8">
+                                            <div>
+                                                <h2 className="text-5xl font-black text-[#402E11] tracking-tight mb-3 group-hover:text-[#C48B28] transition-colors leading-tight truncate">
+                                                    {nextVisit.provider?.business_name}
+                                                </h2>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="px-3.5 py-1.5 bg-white/80 backdrop-blur-sm text-[#C48B28] rounded-xl text-[10px] font-black uppercase tracking-[0.1em] border border-[#EBC176]/20 shadow-sm">
+                                                        {nextVisit.provider?.category?.name}
+                                                    </span>
+                                                    <div className="flex items-center gap-1.5 text-[#402E11]/50 bg-white/40 px-3 py-1.5 rounded-xl border border-white/50">
+                                                        <MapPin size={12} strokeWidth={2.5} />
+                                                        <span className="text-[10px] font-black tracking-tight uppercase leading-none">{nextVisit.provider?.address?.city || 'Location TBD'}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                                    {providerProfile.is_verified ? (
-                                        <Link to="/provider/dashboard" className="text-brand-primary font-semibold text-xs hover:underline flex items-center relative z-10">
-                                            Go to Dashboard <ArrowRight size={14} className="ml-1" />
-                                        </Link>
-                                    ) : providerProfile.verification_status === 'draft' ? (
-                                        <Link to="/become-provider" className="text-brand-primary font-semibold text-xs hover:underline flex items-center relative z-10">
-                                            Resume Application <ArrowRight size={14} className="ml-1" />
-                                        </Link>
+                                            <div className="flex items-center gap-5">
+                                                <div className="flex -space-x-4">
+                                                    <div className="w-16 h-16 rounded-[1.5rem] bg-white border-2 border-[#FAF3E0] p-1.5 shadow-lg relative z-20 overflow-hidden">
+                                                        {nextVisit.pet?.main_photo ? (
+                                                            <img src={nextVisit.pet.main_photo} alt="" className="w-full h-full object-cover rounded-2xl" />
+                                                        ) : <PawPrint className="w-full h-full text-[#C48B28]/20" />}
+                                                    </div>
+                                                    <div className="w-16 h-16 rounded-[1.5rem] bg-[#C48B28] text-white flex items-center justify-center font-black text-lg border-2 border-[#FAF3E0] shadow-lg relative z-10 translate-x-2">
+                                                        {nextVisit.pet?.name?.[0]}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[11px] font-black text-[#402E11]/30 uppercase tracking-[0.2em] mb-1">Patient Profile</p>
+                                                    <p className="text-xl font-black text-[#402E11] tracking-tight">{nextVisit.pet?.name}</p>
+                                                </div>
+                                            </div>
+                                        </div>
                                     ) : (
-                                        <span className="text-text-secondary text-xs flex items-center relative z-10 cursor-default">
-                                            Under Review
-                                        </span>
+                                        <div className="py-10">
+                                            <h2 className="text-4xl font-black text-[#402E11] tracking-tight mb-4">No upcoming visits</h2>
+                                            <p className="text-[#402E11]/50 font-bold text-base mb-10 max-w-sm leading-relaxed">Your professional pet care calendar is currently clear. Time to schedule a checkup?</p>
+                                            <Link to="/services">
+                                                <button className="flex items-center gap-3 bg-[#402E11] text-white px-10 py-[18px] rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-[#402E11]/20 hover:scale-105 active:scale-95 transition-all">
+                                                    Find New Services <ArrowRight size={16} strokeWidth={3} />
+                                                </button>
+                                            </Link>
+                                        </div>
                                     )}
                                 </div>
-                            ) : (
-                                <Link to="/become-provider">
-                                    <motion.div
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        className="bg-brand-primary text-white p-4 rounded-2xl shadow-sm hover:shadow-lg transition-all group h-full relative overflow-hidden"
-                                    >
-                                        <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-                                        <div className="mb-3 w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shadow-sm text-white">
-                                            <Briefcase size={20} />
-                                        </div>
-                                        <div className="font-bold text-white">Become a Provider</div>
-                                        <p className="text-brand-accent/90 text-xs mb-2">Offer services & earn money.</p>
-                                        <div className="flex items-center font-semibold text-xs">
-                                            Get Started <ArrowRight size={14} className="ml-1 group-hover:translate-x-1 transition-transform" />
-                                        </div>
-                                    </motion.div>
-                                </Link>
-                            )}
-                        </div>
-                    </div>
 
-                    {/* Active Listings */}
-                    <div>
-                        <div className="flex justify-between items-center mb-6 px-2">
-                            <h2 className="text-xl font-black flex items-center gap-2">
-                                <PawPrint className="text-brand-primary" size={24} />
-                                My Active Listings
-                            </h2>
-                            <Link to="/dashboard/rehoming?tab=Active" className="text-sm font-bold text-brand-primary hover:underline">View All</Link>
-                        </div>
-
-                        {activeListings.length > 0 ? (
-                            <div className="grid md:grid-cols-2 gap-4">
-                                {activeListings.slice(0, 4).map((listing) => (
-                                    <div key={listing.id} className="bg-bg-surface p-4 rounded-3xl border border-border flex gap-4 items-center hover:shadow-md transition-shadow">
-                                        <img
-                                            src={listing.pet?.main_photo || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80'}
-                                            alt={listing.pet?.name}
-                                            className="w-20 h-20 rounded-2xl object-cover bg-bg-secondary"
-                                        />
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="font-bold text-lg truncate">{listing.pet?.name}</h3>
-                                            <div className="flex items-center gap-2 text-xs text-text-secondary mb-2">
-                                                <span>{listing.pet?.species || 'Pet'}</span>
-                                                <span>•</span>
-                                                <span>{listing.location_city}</span>
+                                {nextVisit && (
+                                    <div className="w-full md:w-72 bg-white/60 backdrop-blur-xl rounded-[2.5rem] border border-white p-8 flex flex-col justify-between group-hover:shadow-3xl transition-all shadow-xl shadow-[#402E11]/5">
+                                        <div className="space-y-6">
+                                            <div className="flex justify-between items-center bg-[#FAF3E0]/40 p-4 rounded-2xl border border-[#EBC176]/10">
+                                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#402E11]/40">Booking Status</span>
+                                                <span className="text-[10px] font-black text-green-600 px-3 py-1 bg-green-50 rounded-lg border border-green-100 uppercase tracking-widest">{nextVisit.status}</span>
                                             </div>
-                                            <div className="flex gap-2">
-                                                <div className="flex items-center gap-1 text-xs font-medium text-text-secondary bg-bg-secondary px-2 py-1 rounded-lg">
-                                                    <Eye size={12} /> {listing.view_count || 0}
-                                                </div>
-                                                <div className="flex items-center gap-1 text-xs font-medium text-text-secondary bg-bg-secondary px-2 py-1 rounded-lg">
-                                                    <Mail size={12} /> {listing.application_count || 0}
-                                                </div>
+                                            <div className="flex justify-between items-center px-4">
+                                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#402E11]/40">Agreed Price</span>
+                                                <span className="text-2xl font-black text-[#402E11] tracking-tighter">${nextVisit.agreed_price}</span>
                                             </div>
                                         </div>
-                                        <Link to={`/pets/${listing.id}`}>
-                                            <button className="p-2 bg-bg-secondary rounded-full hover:bg-bg-surface text-text-primary">
-                                                <ChevronRight size={20} />
+                                        <Link to="/dashboard/bookings" className="mt-12">
+                                            <button className="w-full py-4 bg-[#402E11] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[#402E11]/20 hover:bg-[#C48B28] transition-all group-hover:scale-[1.02]">
+                                                Go to details
                                             </button>
                                         </Link>
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="bg-bg-surface rounded-3xl p-8 text-center border border-border border-dashed">
-                                <div className="w-16 h-16 bg-bg-secondary rounded-full flex items-center justify-center mx-auto mb-4 text-text-tertiary">
-                                    <PawPrint size={32} />
-                                </div>
-                                <h3 className="font-bold text-lg text-text-primary mb-2">No Active Listings</h3>
-                                <p className="text-text-secondary text-sm mb-6 max-w-sm mx-auto">
-                                    You don't have any pets listed for rehoming right now.
-                                </p>
-                                <Link to="/rehoming/start">
-                                    <button className="px-6 py-2 bg-bg-secondary border border-border text-text-primary font-bold rounded-full text-sm hover:bg-bg-surface transition-colors">
-                                        Create a Listing
-                                    </button>
-                                </Link>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Right Column (1/3) */}
-                <div className="space-y-8">
-
-                    {/* Recent Applications */}
-                    <div className="bg-bg-surface rounded-[2rem] border border-border shadow-sm overflow-hidden h-full flex flex-col">
-                        <div className="p-6 border-b border-border">
-                            <h2 className="text-xl font-black mb-4 flex items-center gap-2">
-                                <FileText className="text-brand-primary" size={24} />
-                                Recent Activity
-                            </h2>
-                            <div className="flex bg-bg-secondary p-1 rounded-xl">
-                                <button
-                                    onClick={() => setAppTab('received')}
-                                    className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${appTab === 'received' ? 'bg-bg-surface shadow-sm text-brand-primary' : 'text-text-secondary hover:text-text-primary'}`}
-                                >
-                                    Received
-                                </button>
-                                <button
-                                    onClick={() => setAppTab('submitted')}
-                                    className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${appTab === 'submitted' ? 'bg-bg-surface shadow-sm text-brand-primary' : 'text-text-secondary hover:text-text-primary'}`}
-                                >
-                                    Submitted
-                                </button>
+                                )}
                             </div>
                         </div>
+                    </div>
 
-                        <div className="flex-1 overflow-y-auto max-h-[500px] p-2">
-                            {(appTab === 'received' ? receivedApplications : submittedApplications).length > 0 ? (
-                                <div className="space-y-2">
-                                    {(appTab === 'received' ? receivedApplications : submittedApplications).slice(0, 5).map((app) => (
-                                        <div key={app.id} className="p-4 rounded-2xl hover:bg-bg-surface transition-colors border border-transparent hover:border-border cursor-pointer group">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary font-bold text-sm">
-                                                        {appTab === 'received' ? (app.requester_name?.[0] || 'A') : (app.listing_pet_name?.[0] || 'P')}
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="font-bold text-sm text-text-primary">
-                                                            {appTab === 'received' ? `Inquiry for ${app.listing_pet_name}` : `Inquiry for ${app.listing_pet_name}`}
-                                                        </h4>
-                                                        <p className="text-xs text-text-secondary">
-                                                            {appTab === 'received' ? `From ${app.requester_name || 'Adopter'}` : `To Owner`}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide border ${getStatusColor(app.status)}`}>
-                                                    {app.status}
-                                                </span>
+                    {/* Recent Service History */}
+                    <div className="space-y-8">
+                        <div className="flex justify-between items-end px-4">
+                            <div>
+                                <span className="text-[10px] font-black text-[#C48B28]/50 uppercase tracking-[0.3em] mb-2 block">Service Log</span>
+                                <h3 className="text-2xl font-black text-[#402E11] flex items-center gap-2.5">
+                                    <Clock size={22} className="text-[#C48B28]" />
+                                    Recent Activity
+                                </h3>
+                            </div>
+                            <Link to="/dashboard/bookings" className="text-[10px] font-black text-[#C48B28] uppercase tracking-[0.2em] hover:translate-x-1.5 transition-transform inline-flex items-center gap-2.5 leading-none">
+                                View Archive <ArrowRight size={14} />
+                            </Link>
+                        </div>
+
+                        <div className="grid gap-5">
+                            {services.recent_bookings?.length > 0 ? (
+                                services.recent_bookings.map((booking) => (
+                                    <div key={booking.id} className="bg-white p-6 rounded-[2.5rem] border border-[#EBC176]/10 flex items-center justify-between hover:shadow-2xl transition-all group shadow-xl shadow-[#402E11]/5">
+                                        <div className="flex items-center gap-6">
+                                            <div className="w-14 h-14 rounded-2xl bg-[#FAF3E0]/50 flex items-center justify-center text-[#402E11]/20 group-hover:bg-[#C48B28]/10 group-hover:text-[#C48B28] transition-all shadow-inner">
+                                                <Sparkles size={24} />
                                             </div>
-                                            <div className="flex items-center justify-between mt-3 text-xs text-text-secondary pl-13">
-                                                <span className="flex items-center gap-1">
-                                                    <Clock size={12} /> {new Date(app.created_at).toLocaleDateString()}
-                                                </span>
-                                                <Link to={`/dashboard/applications/${app.id}`} className="font-bold text-brand-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    View Details
-                                                </Link>
+                                            <div>
+                                                <h4 className="font-black text-[#402E11] text-base group-hover:text-[#C48B28] transition-colors leading-tight mb-1">{booking.provider?.business_name}</h4>
+                                                <p className="text-[10px] font-black text-[#402E11]/30 uppercase tracking-[0.2em]">
+                                                    {format(new Date(booking.start_datetime), 'MMM dd')} • {booking.booking_type}
+                                                </p>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center h-48 text-center px-6">
-                                    <div className="w-12 h-12 bg-bg-surface rounded-full flex items-center justify-center mb-3 text-text-tertiary">
-                                        <FileText size={20} />
+                                        <div className="flex items-center gap-10">
+                                            <div className="text-right">
+                                                <p className="text-lg font-black text-[#402E11] group-hover:text-[#C48B28] transition-colors leading-none mb-1">${booking.agreed_price}</p>
+                                                <p className="text-[8px] font-black text-[#402E11]/20 uppercase tracking-[0.2em]">{booking.status}</p>
+                                            </div>
+                                            <Link to="/dashboard/bookings">
+                                                <div className="w-10 h-10 bg-[#FAF3E0]/30 flex items-center justify-center text-[#402E11]/20 group-hover:bg-[#C48B28] group-hover:text-white transition-all rounded-xl">
+                                                    <ChevronRight size={20} />
+                                                </div>
+                                            </Link>
+                                        </div>
                                     </div>
-                                    <p className="text-sm font-bold text-text-secondary">No inquiries found</p>
-                                    <p className="text-xs text-text-tertiary mt-1">
-                                        {appTab === 'received' ? "You haven't received any inquiries yet." : "You haven't sent any inquiries yet."}
-                                    </p>
+                                ))
+                            ) : (
+                                <div className="p-12 text-center bg-white/40 rounded-[3rem] border-2 border-dashed border-[#EBC176]/20">
+                                    <p className="text-[11px] font-black text-[#402E11]/30 uppercase tracking-[0.3em]">No activity logs found</p>
                                 </div>
                             )}
                         </div>
+                    </div>
+                </div>
 
-                        <div className="p-4 border-t border-border bg-bg-surface/50">
-                            <Link to="/dashboard/applications" className="block w-full text-center py-3 bg-bg-surface border border-border rounded-xl text-sm font-bold text-text-primary hover:bg-bg-secondary transition-colors shadow-sm">
-                                View All Applications
+                {/* Right Column: Rehoming & Stats Sidebar - 4 cols */}
+                <div className="lg:col-span-4 space-y-10">
+
+                    {/* Rehoming Overview Card (Shiny Metallic Background) */}
+                    <div className="bg-gradient-to-br from-[#FDFBF7] via-white to-[#FAF3E0]/40 rounded-[3rem] p-10 border border-[#EBC176]/30 shadow-2xl shadow-[#402E11]/5 relative overflow-hidden group">
+                        {/* Dynamic Shine Sweep */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/80 to-transparent -skew-x-[35deg] -translate-x-full group-hover:translate-x-[250%] transition-transform duration-[2000ms] ease-in-out pointer-events-none opacity-60 z-20" />
+
+                        <div className="relative z-10">
+                            <h3 className="text-[10px] font-black text-[#C48B28] uppercase tracking-[0.4em] mb-10 flex items-center gap-2.5">
+                                <Sparkles size={16} className="animate-pulse" />
+                                Rehoming Activity
+                            </h3>
+
+                            <div className="space-y-5">
+                                <div className="flex items-center justify-between p-6 bg-white/60 backdrop-blur-sm rounded-[2rem] border border-white hover:bg-white transition-all shadow-sm">
+                                    <div className="flex items-center gap-5">
+                                        <div className="w-12 h-12 bg-[#C48B28]/10 rounded-2xl flex items-center justify-center text-[#C48B28] shadow-sm">
+                                            <FileText size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-[#402E11]/30 uppercase tracking-[0.2em] mb-0.5">Inbound</p>
+                                            <p className="text-2xl font-black text-[#402E11] tracking-tighter">{rehoming.stats?.apps_received_count}</p>
+                                        </div>
+                                    </div>
+                                    <Link to="/dashboard/applications?tab=received">
+                                        <button className="w-10 h-10 bg-[#C48B28]/10 rounded-full text-[#C48B28] hover:bg-[#C48B28] hover:text-white transition-all flex items-center justify-center">
+                                            <ArrowUpRight size={18} />
+                                        </button>
+                                    </Link>
+                                </div>
+
+                                <div className="flex items-center justify-between p-6 bg-white/60 backdrop-blur-sm rounded-[2rem] border border-white hover:bg-white transition-all shadow-sm">
+                                    <div className="flex items-center gap-5">
+                                        <div className="w-12 h-12 bg-[#402E11]/10 rounded-2xl flex items-center justify-center text-[#402E11] shadow-sm">
+                                            <Mail size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-[#402E11]/30 uppercase tracking-[0.2em] mb-0.5">Outbound</p>
+                                            <p className="text-2xl font-black text-[#402E11] tracking-tighter">{rehoming.stats?.apps_submitted_count}</p>
+                                        </div>
+                                    </div>
+                                    <Link to="/dashboard/applications?tab=submitted">
+                                        <button className="w-10 h-10 bg-[#402E11]/10 rounded-full text-[#402E11] hover:bg-[#402E11] hover:text-white transition-all flex items-center justify-center">
+                                            <ArrowUpRight size={18} />
+                                        </button>
+                                    </Link>
+                                </div>
+                            </div>
+
+                            <Link to="/rehoming/start">
+                                <button className="w-full mt-10 py-[18px] bg-[#C48B28] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[#C48B28]/25 hover:scale-105 active:scale-95 transition-all">
+                                    Create Listing
+                                </button>
                             </Link>
                         </div>
                     </div>
 
+                    {/* Quick Actions List */}
+                    <div className="bg-white rounded-[3rem] p-8 border border-[#EBC176]/10 shadow-2xl shadow-[#402E11]/5">
+                        <h3 className="text-[10px] font-black text-[#402E11]/30 uppercase tracking-[0.3em] mb-6">Navigation</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                            {quickActions.map((action, i) => (
+                                <Link to={action.to} key={i}>
+                                    <div className={`flex items-center gap-4 p-4 rounded-3xl transition-all border group ${action.isHighlighted
+                                        ? action.variant === 'error'
+                                            ? 'bg-status-error/5 border-status-error/20 shadow-sm ring-1 ring-status-error/10'
+                                            : 'bg-[#C48B28]/5 border-[#C48B28]/20 shadow-sm ring-1 ring-[#C48B28]/10'
+                                        : 'hover:bg-[#FAF3E0]/50 border-transparent hover:border-[#EBC176]/10'
+                                        }`}>
+                                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all shrink-0 ${action.isHighlighted
+                                            ? action.variant === 'error'
+                                                ? 'bg-status-error text-white shadow-lg'
+                                                : 'bg-[#C48B28] text-white shadow-lg'
+                                            : 'bg-[#FAF3E0]/60 text-[#402E11]/30 group-hover:bg-white group-hover:text-[#C48B28] group-hover:shadow-lg'
+                                            }`}>
+                                            <action.icon size={18} strokeWidth={2.5} className={action.isHighlighted ? 'animate-pulse' : ''} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className={`text-[13px] font-black leading-tight mb-0.5 truncate ${action.isHighlighted
+                                                ? action.variant === 'error'
+                                                    ? 'text-status-error'
+                                                    : 'text-[#C48B28]'
+                                                : 'text-[#402E11]'
+                                                }`}>{action.label}</p>
+                                            <p className={`text-[8px] font-black uppercase tracking-[0.1em] truncate ${action.isHighlighted
+                                                ? action.variant === 'error'
+                                                    ? 'text-status-error/60'
+                                                    : 'text-[#C48B28]/60'
+                                                : 'text-[#402E11]/30'
+                                                }`}>{action.desc}</p>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Become a Provider / Professional Tier */}
+                    <div className="p-10 bg-[#402E11] rounded-[3rem] text-white relative overflow-hidden group shadow-2xl shadow-[#402E11]/20">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-[4rem] group-hover:scale-110 transition-transform" />
+                        <h4 className="text-xl font-black tracking-tight mb-3">
+                            {isProvider ? 'Provider Standards' : 'Professional Tier'}
+                        </h4>
+                        <p className="text-xs text-white/50 font-bold leading-relaxed mb-8">
+                            {isProvider
+                                ? 'Maintain high service standards to keep your verified badge and attract more clients.'
+                                : 'Experience priority support and verified trust badges for your professional profile.'}
+                        </p>
+                        <Link to="/become-provider">
+                            <button className="text-[10px] font-black uppercase tracking-[0.3em] text-[#C48B28] hover:text-white transition-colors flex items-center gap-3">
+                                {isProvider ? 'Service Protocol' : 'Learn More'} <ArrowRight size={16} strokeWidth={3} />
+                            </button>
+                        </Link>
+                    </div>
                 </div>
             </div>
         </div>

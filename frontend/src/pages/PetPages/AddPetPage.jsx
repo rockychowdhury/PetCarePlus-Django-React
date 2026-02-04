@@ -14,6 +14,7 @@ import {
     Camera, Info, Dog, Cat, Rabbit, Bird, Plus, Check, Calendar, Sparkles
 } from 'lucide-react';
 import PetProfileStrengthCard from '../../components/Pet/PetProfileStrengthCard';
+import PetCard from '../../components/Pet/PetCard';
 
 const deepEqual = (obj1, obj2) => {
     if (obj1 === obj2) return true;
@@ -38,11 +39,11 @@ const SECTIONS = [
 ];
 
 const SPECIES_OPTIONS = [
-    { value: 'dog', label: 'Dog', icon: <Dog size={24} /> },
-    { value: 'cat', label: 'Cat', icon: <Cat size={24} /> },
-    { value: 'rabbit', label: 'Rabbit', icon: <Rabbit size={24} /> },
-    { value: 'bird', label: 'Bird', icon: <Bird size={24} /> },
-    { value: 'other', label: 'Other', icon: <Plus size={24} /> },
+    { value: 'dog', label: 'Dog', icon: <Dog size={20} /> },
+    { value: 'cat', label: 'Cat', icon: <Cat size={20} /> },
+    { value: 'rabbit', label: 'Rabbit', icon: <Rabbit size={20} /> },
+    { value: 'bird', label: 'Bird', icon: <Bird size={20} /> },
+    { value: 'other', label: 'Other', icon: <Plus size={20} /> },
 ];
 
 // PERSONALITY_TRAITS removed - fetched from API
@@ -94,7 +95,9 @@ const AddPetPage = () => {
     const watchedValues = watch();
 
     const getPayload = useCallback((data) => ({
+        id: petId || 'preview', // For PetCard mapping
         name: data.pet_name,
+        pet_name: data.pet_name, // Support both mappings
         species: data.species,
         breed: data.breed,
         birth_date: data.birth_date || null,
@@ -102,12 +105,14 @@ const AddPetPage = () => {
         size_category: data.size,
         weight_kg: parseFloat(data.weight) || 0,
         description: data.rehoming_story,
-        media_data: data.photos, // Send list of {url, delete_url} objects
+        media: data.photos?.map(p => ({ url: p.url })), // For PetCard mapping
+        media_data: data.photos, // Required by backend
+        photos: data.photos, // Backward compatibility
         traits: data.personality_traits,
-        status: 'active', // Default validation status
+        status: 'active',
         spayed_neutered: data.medical_history?.spayed_neutered,
         microchipped: data.medical_history?.microchipped,
-    }), []);
+    }), [petId]);
 
     // Load Existing Pet
     useEffect(() => {
@@ -261,6 +266,15 @@ const AddPetPage = () => {
         setValue('photos', currentPhotos.filter((_, i) => i !== index));
     };
 
+    const toggleTrait = (traitName) => {
+        const currentTraits = watch('personality_traits') || [];
+        if (currentTraits.includes(traitName)) {
+            setValue('personality_traits', currentTraits.filter(t => t !== traitName));
+        } else {
+            setValue('personality_traits', [...currentTraits, traitName].slice(0, 5)); // Limit to 5 traits
+        }
+    };
+
 
 
     // --- Render Sections ---
@@ -270,39 +284,39 @@ const AddPetPage = () => {
                 return (
                     <div className="space-y-8 animate-in slide-in-from-right-8 duration-500">
                         <div className="grid md:grid-cols-2 gap-8">
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-text-secondary ml-1">Pet Name <span className="text-brand-primary">*</span></label>
+                            <div className="space-y-2.5">
+                                <label className="text-[11px] font-black uppercase tracking-[0.15em] text-[#402E11]/40 ml-1">Pet Name <span className="text-[#C48B28]">*</span></label>
                                 <input
                                     {...register('pet_name', { required: "Name is required" })}
-                                    className={`w-full bg-bg-secondary/50 border-2 rounded-[1.25rem] px-6 py-4 outline-none transition-all duration-200 font-medium text-text-primary placeholder:text-text-tertiary ${errors.pet_name ? 'border-status-error/20 focus:border-status-error' : 'border-transparent focus:border-brand-primary/30 focus:bg-bg-surface'}`}
+                                    className={`w-full bg-[#FAF3E0]/50 border border-[#EBC176]/20 rounded-2xl px-6 py-4 outline-none transition-all duration-300 font-bold text-[#402E11] placeholder:text-[#402E11]/20 focus:border-[#C48B28]/40 focus:bg-white focus:shadow-inner ${errors.pet_name ? 'border-red-200 focus:border-red-400' : ''}`}
                                     placeholder="e.g. Luna"
                                 />
-                                {errors.pet_name && <p className="text-status-error text-xs font-bold ml-2">{errors.pet_name.message}</p>}
+                                {errors.pet_name && <p className="text-red-500 text-[10px] font-bold ml-2 uppercase tracking-wider">{errors.pet_name.message}</p>}
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-text-secondary ml-1">Breed</label>
+                            <div className="space-y-2.5">
+                                <label className="text-[11px] font-black uppercase tracking-[0.15em] text-[#402E11]/40 ml-1">Breed</label>
                                 <input
                                     {...register('breed')}
-                                    className="w-full bg-bg-secondary/50 border-2 border-transparent focus:border-brand-primary/30 focus:bg-bg-surface rounded-[1.25rem] px-6 py-4 outline-none transition-all duration-200 font-medium text-text-primary"
+                                    className="w-full bg-[#FAF3E0]/50 border border-[#EBC176]/20 focus:border-[#C48B28]/40 focus:bg-white focus:shadow-inner rounded-2xl px-6 py-4 outline-none transition-all duration-300 font-bold text-[#402E11] placeholder:text-[#402E11]/20"
                                     placeholder="e.g. Golden Retriever"
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-4">
-                            <label className="text-sm font-bold text-text-secondary ml-1">Species</label>
+                            <label className="text-[11px] font-black uppercase tracking-[0.15em] text-[#402E11]/40 ml-1">Species</label>
                             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                                 {SPECIES_OPTIONS.map(option => (
                                     <button
                                         key={option.value}
                                         type="button"
-                                        onClick={() => setValue('species', option.value)}
-                                        className={`flex flex-col items-center justify-center p-4 rounded-3xl border-2 transition-all group ${watch('species') === option.value ? 'border-brand-primary bg-brand-primary/10 text-brand-primary' : 'border-transparent bg-bg-secondary text-text-tertiary hover:bg-bg-secondary/80'}`}
+                                        onClick={() => setValue('species', option.value, { shouldValidate: true })}
+                                        className={`flex flex-col items-center justify-center p-4 rounded-[2rem] border transition-all duration-300 group ${watchedValues.species === option.value ? 'border-[#C48B28] bg-[#C48B28]/10 text-[#C48B28] shadow-sm' : 'border-transparent bg-[#FAF3E0]/50 text-[#402E11]/20 hover:bg-[#FAF3E0]'}`}
                                     >
-                                        <div className={`mb-2 transition-transform duration-300 ${watch('species') === option.value ? 'scale-110' : 'group-hover:scale-110'}`}>
+                                        <div className={`mb-2 transition-transform duration-500 ${watchedValues.species === option.value ? 'scale-110' : 'group-hover:scale-110'}`}>
                                             {option.icon}
                                         </div>
-                                        <span className="text-xs font-black uppercase tracking-wider">{option.label}</span>
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">{option.label}</span>
                                     </button>
                                 ))}
                             </div>
@@ -310,21 +324,28 @@ const AddPetPage = () => {
 
                         <div className="grid md:grid-cols-2 gap-8">
                             <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-text-secondary ml-1">Birth Date</label>
+                                <div className="space-y-2.5">
+                                    <label className="text-[11px] font-black uppercase tracking-[0.15em] text-[#402E11]/40 ml-1">Birth Date</label>
                                     <div className="relative group">
                                         <style>
                                             {`
                                                 input[type="date"]::-webkit-calendar-picker-indicator {
-                                                    display: none;
-                                                    -webkit-appearance: none;
+                                                    position: absolute;
+                                                    right: 0;
+                                                    top: 0;
+                                                    width: 100%;
+                                                    height: 100%;
+                                                    margin: 0;
+                                                    padding: 0;
+                                                    cursor: pointer;
+                                                    opacity: 0;
                                                 }
                                             `}
                                         </style>
                                         <input
                                             type="date"
                                             {...register('birth_date', {
-                                                required: "Birth date is required to calculate age",
+                                                required: "Birth date is required",
                                                 onChange: (e) => {
                                                     const birthDate = new Date(e.target.value);
                                                     const today = new Date();
@@ -336,15 +357,15 @@ const AddPetPage = () => {
                                                     setValue('age', Math.max(0, age));
                                                 }
                                             })}
-                                            className={`w-full bg-bg-secondary/50 border-2 rounded-[1.25rem] px-6 py-4 outline-none transition-all duration-200 font-medium text-text-primary pr-12 cursor-pointer ${errors.birth_date ? 'border-status-error/20 focus:border-status-error' : 'border-transparent focus:border-brand-primary/30 focus:bg-bg-surface'}`}
+                                            className={`w-full bg-[#FAF3E0]/50 border border-[#EBC176]/20 rounded-2xl px-6 py-4 outline-none transition-all duration-300 font-bold text-[#402E11] pr-12 cursor-pointer focus:border-[#C48B28]/40 focus:bg-white focus:shadow-inner ${errors.birth_date ? 'border-red-200 focus:border-red-400' : ''}`}
                                             onClick={(e) => e.target.showPicker && e.target.showPicker()}
                                         />
-                                        <Calendar className={`absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none transition-colors ${errors.birth_date ? 'text-status-error' : 'text-text-tertiary group-focus-within:text-brand-primary'}`} size={18} />
+                                        <Calendar className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-[#C48B28]/30 group-focus-within:text-[#C48B28] transition-colors" size={18} />
                                     </div>
-                                    {errors.birth_date && <p className="text-status-error text-xs font-bold ml-2">{errors.birth_date.message}</p>}
+                                    {errors.birth_date && <p className="text-red-500 text-[10px] font-bold ml-2 uppercase tracking-wider">{errors.birth_date.message}</p>}
                                     {watch('birth_date') && (
-                                        <div className="px-4 py-2 bg-brand-primary/10 rounded-xl text-brand-primary text-xs font-bold inline-flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
-                                            <Sparkles size={14} />
+                                        <div className="px-4 py-2 bg-[#C48B28]/10 rounded-xl text-[#C48B28] text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
+                                            <Sparkles size={12} />
                                             {watch('age') === 0 ? "Less than a year old" : `${watch('age')} Years Old`}
                                         </div>
                                     )}
@@ -353,14 +374,14 @@ const AddPetPage = () => {
 
                             <input type="hidden" {...register('age')} />
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-text-secondary ml-1">Gender</label>
-                                <div className="bg-bg-secondary p-1 rounded-2xl flex gap-1">
+                            <div className="space-y-2.5">
+                                <label className="text-[11px] font-black uppercase tracking-[0.15em] text-[#402E11]/40 ml-1">Gender</label>
+                                <div className="bg-[#FAF3E0]/50 border border-[#EBC176]/10 p-1.5 rounded-[1.5rem] flex gap-1.5">
                                     {['male', 'female', 'unknown'].map(g => (
                                         <button
                                             key={g} type="button"
-                                            onClick={() => setValue('gender', g)}
-                                            className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${watch('gender') === g ? 'bg-bg-surface text-text-primary shadow-soft' : 'text-text-tertiary hover:bg-bg-surface/50'}`}
+                                            onClick={() => setValue('gender', g, { shouldValidate: true })}
+                                            className={`flex-1 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${watchedValues.gender === g ? 'bg-white text-[#C48B28] shadow-md shadow-[#C48B28]/5' : 'text-[#402E11]/30 hover:text-[#C48B28] hover:bg-white/40'}`}
                                         >
                                             {g}
                                         </button>
@@ -369,17 +390,17 @@ const AddPetPage = () => {
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <label className="text-sm font-bold text-text-secondary ml-1">Physical Details</label>
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-text-tertiary ml-1 uppercase tracking-wide">Size Category</label>
+                        <div className="space-y-6">
+                            <label className="text-[11px] font-black uppercase tracking-[0.15em] text-[#402E11]/40 ml-1">Physical Details</label>
+                            <div className="grid md:grid-cols-2 gap-10">
+                                <div className="space-y-3">
+                                    <label className="text-[9px] font-black text-[#402E11]/30 ml-1 uppercase tracking-[0.2em]">Size Category</label>
                                     <div className="flex flex-wrap gap-2">
                                         {SIZE_OPTIONS.map(opt => (
                                             <button
                                                 key={opt.value} type="button"
-                                                onClick={() => setValue('size', opt.value)}
-                                                className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border-2 ${watch('size') === opt.value ? 'border-brand-primary bg-brand-primary/10 text-brand-primary' : 'border-transparent bg-bg-secondary text-text-tertiary'}`}
+                                                onClick={() => setValue('size', opt.value, { shouldValidate: true })}
+                                                className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-300 border-2 ${watchedValues.size === opt.value ? 'border-[#C48B28] bg-[#C48B28]/10 text-[#C48B28]' : 'border-transparent bg-[#FAF3E0]/50 text-[#402E11]/30 hover:bg-[#FAF3E0]'}`}
                                                 title={opt.label}
                                             >
                                                 {opt.value}
@@ -387,12 +408,12 @@ const AddPetPage = () => {
                                         ))}
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-text-tertiary ml-1 uppercase tracking-wide">Weight (lbs)</label>
+                                <div className="space-y-3">
+                                    <label className="text-[9px] font-black text-[#402E11]/30 ml-1 uppercase tracking-[0.2em]">Weight (lbs)</label>
                                     <input
                                         type="number" step="0.1"
                                         {...register('weight')}
-                                        className="w-full bg-bg-secondary/50 border-2 border-transparent focus:border-brand-primary/30 focus:bg-bg-surface rounded-[1.25rem] px-6 py-4 outline-none transition-all duration-200 font-medium text-text-primary"
+                                        className="w-full bg-[#FAF3E0]/50 border border-[#EBC176]/20 focus:border-[#C48B28]/40 focus:bg-white focus:shadow-inner rounded-2xl px-6 py-4 outline-none transition-all duration-300 font-bold text-[#402E11] placeholder:text-[#402E11]/20"
                                         placeholder="e.g. 15.5"
                                     />
                                 </div>
@@ -427,40 +448,30 @@ const AddPetPage = () => {
             case 'personality':
                 return (
                     <div className="space-y-8 animate-in slide-in-from-right-8 duration-500">
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-text-secondary ml-1">Personality Traits</label>
-                            <div className="flex flex-wrap gap-2">
-                                <Controller
-                                    name="personality_traits" control={control}
-                                    render={({ field }) => (
-                                        <>
-                                            {availableTraits.map(traitObj => {
-                                                const traitName = traitObj.name;
-                                                return (
-                                                    <button
-                                                        key={traitObj.id} type="button"
-                                                        onClick={() => {
-                                                            const current = field.value || [];
-                                                            if (current.includes(traitName)) field.onChange(current.filter(t => t !== traitName));
-                                                            else field.onChange([...current, traitName]);
-                                                        }}
-                                                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all border-2 ${field.value?.includes(traitName) ? 'bg-brand-primary border-brand-primary text-text-inverted' : 'bg-bg-surface border-border text-text-tertiary'}`}
-                                                    >
-                                                        {traitName}
-                                                    </button>
-                                                );
-                                            })}
-                                        </>
-                                    )}
-                                />
+                        <div className="space-y-4">
+                            <label className="text-[11px] font-black uppercase tracking-[0.15em] text-[#402E11]/40 ml-1">Personality Traits</label>
+                            <div className="flex flex-wrap gap-2.5">
+                                {availableTraits.map((trait) => {
+                                    const isSelected = watchedValues.personality_traits?.includes(trait.name);
+                                    return (
+                                        <button
+                                            key={trait.id} type="button"
+                                            onClick={() => toggleTrait(trait.name)}
+                                            className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 border-2 ${isSelected ? 'border-[#C48B28] bg-[#C48B28]/10 text-[#C48B28] shadow-sm' : 'border-transparent bg-[#FAF3E0]/50 text-[#402E11]/30 hover:bg-[#FAF3E0]'}`}
+                                        >
+                                            {trait.name}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-text-secondary ml-1">Bio / Story</label>
+                        <div className="space-y-4">
+                            <label className="text-[11px] font-black uppercase tracking-[0.15em] text-[#402E11]/40 ml-1">Pet's Story / Bio</label>
                             <textarea
                                 {...register('rehoming_story')}
-                                className="w-full h-32 bg-bg-secondary/50 border-2 border-transparent focus:border-brand-primary/30 focus:bg-bg-surface rounded-[1.5rem] px-6 py-4 outline-none transition-all duration-200 font-medium text-text-primary resize-none"
-                                placeholder="Tell us about them..."
+                                rows={8}
+                                className="w-full bg-[#FAF3E0]/50 border border-[#EBC176]/20 focus:border-[#C48B28]/40 focus:bg-white focus:shadow-inner rounded-3xl px-8 py-6 outline-none transition-all duration-300 font-bold text-[#402E11] placeholder:text-[#402E11]/20 resize-none"
+                                placeholder="Tell potential adopters about your pet's personality, history, and what makes them special..."
                             />
                         </div>
                     </div>
@@ -468,70 +479,94 @@ const AddPetPage = () => {
             case 'medical':
                 return (
                     <div className="space-y-8 animate-in slide-in-from-right-8 duration-500">
-                        <div className="space-y-4">
-                            <label className="text-sm font-bold text-text-secondary ml-1">Medical Status</label>
-                            <div className="grid grid-cols-2 gap-4">
-                                <label className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all cursor-pointer ${watch('medical_history.spayed_neutered') ? 'border-status-success bg-status-success/10 text-status-success' : 'border-border bg-bg-secondary text-text-tertiary'}`}>
-                                    <input type="checkbox" {...register('medical_history.spayed_neutered')} className="hidden" />
-                                    <Check size={16} className={watch('medical_history.spayed_neutered') ? 'opacity-100' : 'opacity-20'} />
-                                    <span className="text-xs font-bold uppercase tracking-wider">Spayed/Neutered</span>
-                                </label>
-                                <label className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all cursor-pointer ${watch('medical_history.microchipped') ? 'border-status-success bg-status-success/10 text-status-success' : 'border-border bg-bg-secondary text-text-tertiary'}`}>
-                                    <input type="checkbox" {...register('medical_history.microchipped')} className="hidden" />
-                                    <Check size={16} className={watch('medical_history.microchipped') ? 'opacity-100' : 'opacity-20'} />
-                                    <span className="text-xs font-bold uppercase tracking-wider">Microchipped</span>
-                                </label>
+                        <div className="grid md:grid-cols-2 gap-8">
+                            <div className="space-y-4">
+                                <label className="text-[11px] font-black uppercase tracking-[0.15em] text-[#402E11]/40 ml-1">Spayed / Neutered</label>
+                                <div className="bg-[#FAF3E0]/50 border border-[#EBC176]/10 p-1.5 rounded-[1.5rem] flex gap-1.5">
+                                    {[true, false].map(v => {
+                                        const isSelected = watchedValues.medical_history?.spayed_neutered === v;
+                                        return (
+                                            <button
+                                                key={v.toString()} type="button"
+                                                onClick={() => setValue('medical_history.spayed_neutered', v, { shouldValidate: true })}
+                                                className={`flex-1 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${isSelected ? 'bg-white text-[#C48B28] shadow-md shadow-[#C48B28]/5' : 'text-[#402E11]/30 hover:text-[#C48B28] hover:bg-white/40'}`}
+                                            >
+                                                {v ? 'Yes' : 'No'}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <label className="text-[11px] font-black uppercase tracking-[0.15em] text-[#402E11]/40 ml-1">Microchipped</label>
+                                <div className="bg-[#FAF3E0]/50 border border-[#EBC176]/10 p-1.5 rounded-[1.5rem] flex gap-1.5">
+                                    {[true, false].map(v => {
+                                        const isSelected = watchedValues.medical_history?.microchipped === v;
+                                        return (
+                                            <button
+                                                key={v.toString()} type="button"
+                                                onClick={() => setValue('medical_history.microchipped', v, { shouldValidate: true })}
+                                                className={`flex-1 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${isSelected ? 'bg-white text-[#C48B28] shadow-md shadow-[#C48B28]/5' : 'text-[#402E11]/30 hover:text-[#C48B28] hover:bg-white/40'}`}
+                                            >
+                                                {v ? 'Yes' : 'No'}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </div>
 
-                        <div className="bg-bg-secondary/30 p-6 rounded-2xl border border-border/50 flex gap-4">
-                            <Info size={24} className="text-brand-primary flex-shrink-0" />
-                            <div className="space-y-1">
-                                <h4 className="text-sm font-bold text-text-primary">Medical Privacy</h4>
-                                <p className="text-xs text-text-tertiary leading-relaxed">
+                        <div className="bg-[#FAF3E0] p-8 rounded-[2rem] border border-[#EBC176]/30 flex gap-6 relative overflow-hidden group">
+                            <div className="absolute top-0 left-0 w-1.5 h-full bg-[#C48B28]/20 group-hover:bg-[#C48B28] transition-colors" />
+                            <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-[#C48B28] flex-shrink-0">
+                                <Info size={24} strokeWidth={2.5} />
+                            </div>
+                            <div className="space-y-1.5">
+                                <h4 className="text-[11px] font-black text-[#402E11] uppercase tracking-[0.2em]">Medical Privacy</h4>
+                                <p className="text-[10px] font-bold text-[#402E11]/40 leading-relaxed uppercase tracking-[0.15em]">
                                     We only display the basics (Spayed/Neutered status) publicly. Detailed medical records will be handled securely during the adoption process if needed.
                                 </p>
                             </div>
                         </div>
-                    </div >
+                    </div>
                 );
             default: return null;
         }
     }
 
     return (
-        <div className="min-h-screen bg-bg-primary relative overflow-hidden font-sans pb-20 pt-4">
-            {/* Background Elements */}
-            <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-brand-primary/5 rounded-full blur-[120px] -z-10"></div>
-            <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-brand-secondary/5 rounded-full blur-[120px] -z-10"></div>
+        <div className="min-h-screen bg-[#FEF9ED] relative overflow-hidden font-sans pb-20 pt-4">
+            {/* Background Decorative Elements */}
+            <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#EBC176]/10 rounded-full blur-[120px] -z-10"></div>
+            <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#C48B28]/5 rounded-full blur-[120px] -z-10"></div>
 
             <div className="max-w-7xl mx-auto px-6 py-6 md:py-10 animate-in fade-in duration-700">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
                     <div>
-                        <button onClick={() => navigate('/dashboard/my-pets')} className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors mb-4 group">
-                            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                        <button onClick={() => navigate('/dashboard/my-pets')} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#402E11]/40 hover:text-[#C48B28] transition-colors mb-4 group">
+                            <ArrowLeft size={14} strokeWidth={3} className="group-hover:-translate-x-1 transition-transform" />
                             Back to My Pets
                         </button>
-                        <h1 className="text-4xl md:text-5xl font-black text-text-primary tracking-tight mb-2">
-                            Add a New <span className="text-brand-primary">Companion</span>
+                        <h1 className="text-4xl md:text-5xl font-black text-[#402E11] tracking-tight mb-2">
+                            Add a New <span className="text-[#C48B28]">Companion</span>
                         </h1>
-                        <p className="text-lg text-text-secondary font-medium">Create a beautiful profile for your friend.</p>
+                        <p className="text-sm font-bold text-[#402E11]/50 uppercase tracking-widest">Create a beautiful profile for your friend.</p>
                     </div>
 
                     {/* Horizontal Stepper (Visual) */}
-                    <div className="bg-white/70 backdrop-blur-md border border-white/50 p-1.5 rounded-2xl shadow-xl flex gap-1 items-center">
+                    <div className="bg-white/70 backdrop-blur-md border border-[#EBC176]/20 p-2 rounded-[2rem] shadow-xl shadow-[#C48B28]/5 flex gap-1 items-center">
                         {SECTIONS.map((section, idx) => {
                             const isActive = activeSection === section.id;
                             const isCompleted = SECTIONS.findIndex(s => s.id === activeSection) > idx;
                             const Icon = section.icon;
                             return (
-                                <div key={section.id} className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 ${isActive ? 'bg-brand-primary text-text-inverted shadow-lg' : isCompleted ? 'text-status-success bg-status-success/10' : 'text-text-tertiary opacity-60'}`}>
-                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${isActive ? 'bg-white/20' : isCompleted ? 'bg-status-success/20' : 'bg-bg-secondary'}`}>
-                                        {isCompleted ? <Check size={14} /> : idx + 1}
+                                <div key={section.id} className={`flex items-center gap-2.5 px-5 py-2.5 rounded-[1.25rem] transition-all duration-300 ${isActive ? 'bg-[#C48B28] text-white shadow-lg shadow-[#C48B28]/20' : isCompleted ? 'text-green-600 bg-green-50' : 'text-[#402E11]/30'}`}>
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${isActive ? 'bg-white/20' : isCompleted ? 'bg-green-100' : 'bg-[#FEF9ED]'}`}>
+                                        {isCompleted ? <Check size={12} strokeWidth={4} /> : idx + 1}
                                     </div>
-                                    <Icon size={16} className={`${isActive ? 'text-white' : ''}`} />
-                                    <span className="text-sm font-bold whitespace-nowrap hidden sm:block">{section.label}</span>
+                                    <Icon size={16} strokeWidth={2.5} className={`${isActive ? 'text-white' : ''}`} />
+                                    <span className="text-[11px] font-black uppercase tracking-wider whitespace-nowrap hidden sm:block">{section.label}</span>
                                 </div>
                             )
                         })}
@@ -550,23 +585,48 @@ const AddPetPage = () => {
                     </div>
 
                     {/* Form Card */}
-                    <div className="bg-bg-surface/80 backdrop-blur-xl border border-border p-8 md:p-12 rounded-[2.5rem] shadow-soft relative">
+                    <div className="bg-white rounded-[3rem] border border-[#EBC176]/20 p-8 md:p-12 shadow-2xl shadow-[#C48B28]/5 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-2 h-full bg-[#C48B28]/10" />
                         <form onSubmit={(e) => e.preventDefault()} className="space-y-10">
                             {renderSectionContent()}
 
-                            <div className="flex justify-between items-center pt-8 border-t border-gray-100 mt-12">
-                                <button type="button" onClick={handlePrev} disabled={isFirstSection} className={`px-8 py-4 rounded-2xl font-bold text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-all flex items-center gap-2 ${isFirstSection ? 'opacity-0 pointer-events-none' : ''}`}>
-                                    <ArrowLeft size={16} /> Previous
+                            <div className="flex justify-between items-center pt-10 border-t border-[#EBC176]/10 mt-12">
+                                <button
+                                    type="button"
+                                    onClick={handlePrev}
+                                    disabled={isFirstSection}
+                                    className={`px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 flex items-center gap-3 ${isFirstSection ? 'opacity-0 pointer-events-none' : 'text-[#402E11]/40 hover:text-[#C48B28] hover:bg-[#FAF3E0]'}`}
+                                >
+                                    <ArrowLeft size={16} strokeWidth={3} /> Previous Step
                                 </button>
+
                                 <div className="flex items-center gap-4">
-                                    {isSaving && <Loader2 className="animate-spin text-brand-primary" />}
+                                    {isSaving && <Loader2 className="animate-spin text-[#C48B28]" />}
                                     {isLastSection ? (
-                                        <button type="button" onClick={handleFinalSubmit} className="bg-brand-primary text-text-inverted px-12 py-4 rounded-2xl font-black tracking-tight hover:opacity-90 transition-all shadow-lg shadow-brand-primary/20 flex items-center gap-3">
-                                            Finish Profile <Check size={20} />
+                                        <button
+                                            type="button"
+                                            onClick={handleFinalSubmit}
+                                            disabled={isSaving}
+                                            className="bg-[#402E11] text-white px-12 py-5 rounded-[1.25rem] text-[11px] font-black uppercase tracking-[0.25em] shadow-2xl shadow-[#402E11]/20 hover:bg-[#C48B28] hover:shadow-[#C48B28]/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 flex items-center gap-4 group"
+                                        >
+                                            {isSaving ? 'Processing...' : (
+                                                <>
+                                                    Finish Profile
+                                                    <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                                                        <Check size={12} strokeWidth={4} />
+                                                    </div>
+                                                </>
+                                            )}
                                         </button>
                                     ) : (
-                                        <button type="button" onClick={handleNext} className="bg-text-primary text-text-inverted px-10 py-4 rounded-2xl font-bold hover:opacity-90 transition-all shadow-soft flex items-center gap-2">
-                                            Next Step <ChevronRight size={18} />
+                                        <button
+                                            type="button"
+                                            onClick={handleNext}
+                                            disabled={isSaving}
+                                            className="bg-[#C48B28] text-white px-10 py-5 rounded-[1.25rem] text-[11px] font-black uppercase tracking-[0.25em] shadow-xl shadow-[#C48B28]/20 hover:bg-[#402E11] hover:shadow-[#402E11]/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 flex items-center gap-4 group"
+                                        >
+                                            Next Step
+                                            <ChevronRight size={16} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
                                         </button>
                                     )}
                                 </div>
@@ -574,34 +634,24 @@ const AddPetPage = () => {
                         </form>
                     </div>
 
-                    {/* Live Preview (Custom Inline) */}
+                    {/* Live Preview (PetCard V2 Integration) */}
                     <div className="hidden lg:block space-y-6">
-                        <div className="bg-bg-surface/50 backdrop-blur-md border border-border p-6 rounded-[2rem] shadow-soft space-y-6 sticky top-24">
-                            <h3 className="font-black text-text-primary uppercase tracking-tighter">Live Preview</h3>
-                            <div className="bg-bg-surface rounded-[1.5rem] overflow-hidden shadow-soft border border-border group">
-                                <div className="aspect-[4/5] bg-bg-secondary relative overflow-hidden">
-                                    {(watchedValues.photos && watchedValues.photos.length > 0) ? (
-                                        <img src={watchedValues.photos[0].url} alt="Preview" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center text-text-tertiary gap-4">
-                                            <div className="w-20 h-20 rounded-full border-4 border-dashed border-border flex items-center justify-center">
-                                                <Dog size={40} />
-                                            </div>
-                                            <span className="text-xs font-bold uppercase tracking-widest">No Photo Yet</span>
-                                        </div>
-                                    )}
-                                    <div className="absolute top-4 left-4 bg-bg-surface/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-brand-primary shadow-sm">
-                                        {watchedValues.species || 'Pet'}
-                                    </div>
+                        <div className="bg-white rounded-[2.5rem] border border-[#EBC176]/10 p-8 shadow-xl shadow-[#C48B28]/5 space-y-8 sticky top-24">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-[11px] font-black text-[#C48B28] uppercase tracking-[0.2em]">Profile Preview</h3>
+                                <div className="px-3 py-1 bg-[#FAF3E0] rounded-full flex items-center gap-1.5">
+                                    <Sparkles size={10} className="text-[#C48B28]" />
+                                    <span className="text-[9px] font-black text-[#402E11]/60 uppercase tracking-widest">Real-time</span>
                                 </div>
-                                <div className="p-6 space-y-2">
-                                    <h4 className="text-xl font-bold text-text-primary truncate">{watchedValues.pet_name || 'Your Pet Name'}</h4>
-                                    <p className="text-xs text-text-tertiary font-bold uppercase tracking-widest truncate">{watchedValues.breed || 'Breed Unknown'}</p>
-                                    <div className="flex gap-2 pt-2">
-                                        <div className="px-3 py-1 bg-brand-primary/10 text-brand-primary text-[10px] font-black rounded-lg uppercase">{watchedValues.gender}</div>
-                                        <div className="px-3 py-1 bg-status-info/10 text-status-info text-[10px] font-black rounded-lg">{watchedValues.age ? `${watchedValues.age} yrs` : 'Age unknown'}</div>
-                                    </div>
-                                </div>
+                            </div>
+
+                            <div className="flex justify-center">
+                                <PetCard
+                                    pet={getPayload(watchedValues)}
+                                    variant="profile"
+                                    viewMode="grid"
+                                    isPreview={true}
+                                />
                             </div>
 
                             {/* Profile Strength Card */}

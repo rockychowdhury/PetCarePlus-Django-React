@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, PawPrint, CheckCircle, AlertCircle, Loader, ArrowRight } from 'lucide-react';
+import { X, Calendar, PawPrint, CheckCircle, AlertCircle, Loader, ArrowRight, Home, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
@@ -8,6 +8,7 @@ import useServices from '../../hooks/useServices';
 import usePets from '../../hooks/usePets';
 import Button from '../../components/common/Buttons/Button';
 import { toast } from 'react-toastify';
+import { providerService } from '../../services';
 
 const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
     const [step, setStep] = useState(1);
@@ -24,48 +25,6 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
 
     const { useGetMyPets } = usePets();
     const { data: myPets, isLoading: petsLoading } = useGetMyPets();
-
-    // Fetch availability when date changes
-    const fetchAvailability = async (date) => {
-        if (!provider || !date) return;
-
-        setLoadingAvailability(true);
-        try {
-            const response = await fetch('/api/services/bookings/check_availability/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-                },
-                body: JSON.stringify({
-                    provider_id: provider.id,
-                    date: format(date, 'yyyy-MM-dd')
-                })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setAvailableSlots(data.available_slots || []);
-                // Set first available slot as default
-                const firstAvailable = data.available_slots?.find(slot => slot.available);
-                if (firstAvailable) {
-                    setSelectedTime(firstAvailable.time);
-                }
-            }
-        } catch (error) {
-            console.error('Failed to fetch availability:', error);
-            toast.error('Could not load available times');
-        } finally {
-            setLoadingAvailability(false);
-        }
-    };
-
-    // Fetch availability when date changes and it's an appointment
-    React.useEffect(() => {
-        if (isAppointment && startDate && isOpen) {
-            fetchAvailability(startDate);
-        }
-    }, [startDate, isAppointment, isOpen]);
 
     // Determine booking type logic
     const getBookingType = () => {
@@ -97,7 +56,115 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
 
     const isAppointment = getBookingType() === 'appointment';
 
+    // Fetch availability when date changes
+    const fetchAvailability = async (date) => {
+        if (!provider || !date) return;
+
+        setLoadingAvailability(true);
+        try {
+            const dateStr = format(date, 'yyyy-MM-dd');
+            const data = await providerService.getAvailability(provider.id, dateStr);
+
+            setAvailableSlots(data.available_slots || []);
+            // Set first available slot as default
+            const firstAvailable = data.available_slots?.find(slot => slot.available !== false); // API returns strings or objects? Wait, API returns array of strings 'HH:MM'
+
+            // Check API contract: "available_slots": ["09:00", "10:00"]
+            // The previous code assumed objects with .available property.
+            // Let's adapt based on verified verification_report.md which says: "available_slots": ["09:00", "10:00"]
+
+            if (data.available_slots?.length > 0) {
+                // Format is likely just strings based on view_code_item inspection earlier
+                setSelectedTime(data.available_slots[0]);
+            }
+        } catch (error) {
+            console.error('Failed to fetch availability:', error);
+            toast.error('Could not load available times');
+            setAvailableSlots([]); // clear on error
+        } finally {
+            setLoadingAvailability(false);
+        }
+    };
+
+    // Fetch availability when date changes and it's an appointment
+    React.useEffect(() => {
+        if (isAppointment && startDate && isOpen) {
+            fetchAvailability(startDate);
+        }
+    }, [startDate, isAppointment, isOpen]);
+
+
+
+    // Pricing Calculation
+    const calculateTotal = () => {
+        if (!provider) return { total: 0, rate: 0, days: 0, label: 'Free' };
+
+        let rate = 0;
+        let days = 1;
+        let label = 'Flat Rate'; // or 'Per Night', 'Per Visit'
+
+        // 1. Determine Rate based on Provider Type & Service
+        // Priority: Service Option Price -> Provider Specific Detail Rate -> Default
+
+        if (initialService && (initialService.base_price || initialService.price)) {
+            rate = parseFloat(initialService.price || initialService.base_price);
+            if (!rate) rate = 0; // handle null
+            if (isAppointment) label = 'Per Session';
+        } else {
+            // Fallbacks based on provider details
+            const details = provider.service_specific_details || {};
+            const slug = provider.category?.slug;
+
+            if (slug === 'veterinary') {
+                rate = 0; // Consult fee handling complex
+                label = 'Consultation';
+            } else if (slug === 'grooming') {
+                rate = parseFloat(details.base_price) || 0;
+                label = 'Starting At';
+            } else if (slug === 'training') {
+                rate = parseFloat(details.private_session_rate) || 0;
+                label = 'Per Session';
+            } else if (slug === 'foster') {
+                rate = parseFloat(details.daily_rate) || 0;
+                label = 'Per Night';
+            } else if (slug === 'pet_sitting') {
+                const isWalking = initialService?.name?.toLowerCase().includes('walk') || provider.category?.slug === 'walking';
+                if (isWalking) {
+                    rate = parseFloat(details.walking_rate) || 0;
+                    label = 'Per Walk';
+                } else {
+                    rate = parseFloat(details.house_sitting_rate) || parseFloat(details.drop_in_rate) || 0;
+                    label = 'Per Night';
+                }
+            }
+        }
+
+        // 2. Determine Duration
+        if (!isAppointment) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            // Calculate difference in days, inclusive? usually nights for boarding
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            days = diffDays > 0 ? diffDays : 1; // Minimum 1 day/night
+        } else {
+            // Appointment is usually 1 unit
+            days = 1;
+        }
+
+        return {
+            total: rate * days,
+            rate: rate,
+            days: days,
+            label: label,
+            isEstimate: true
+        };
+    };
+
+    const pricing = calculateTotal();
+
     const handleNext = () => setStep(prev => prev + 1);
+
     const handleBack = () => setStep(prev => prev - 1);
 
     const handleSubmit = async () => {
@@ -124,7 +191,8 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
                 booking_time: isAppointment ? selectedTime : null,
                 start_datetime: finalStart.toISOString(),
                 end_datetime: finalEnd.toISOString(),
-                special_requirements: notes
+                special_requirements: notes,
+                agreed_price: pricing.total.toFixed(2)
             });
 
             // Redirect to payment checkout
@@ -143,55 +211,60 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#402E11]/40 backdrop-blur-sm">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden"
+                className="bg-[#FEF9ED] rounded-[2.5rem] w-full max-w-lg shadow-2xl border border-[#EBC176]/20 overflow-hidden"
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b">
-                    <h2 className="text-xl font-bold font-merriweather">
+                <div className="flex items-center justify-between p-8 border-b border-[#EBC176]/20">
+                    <h2 className="text-2xl font-black text-[#402E11] tracking-tight">
                         Book {provider?.business_name}
                     </h2>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white border border-[#EBC176]/20 rounded-full text-[#C48B28] hover:bg-[#FAF3E0] transition-colors">
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="p-6">
+                <div className="p-8">
                     {step === 1 && (
-                        <div className="space-y-6">
+                        <div className="space-y-8">
                             <div>
-                                <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
-                                    <Calendar className="text-brand-primary" size={20} /> Select Date & Time
-                                </h3>
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-10 h-10 bg-[#FAF3E0] rounded-xl flex items-center justify-center text-[#C48B28] shrink-0">
+                                        <Calendar size={20} />
+                                    </div>
+                                    <h3 className="text-[11px] font-black text-[#C48B28] uppercase tracking-[0.2em]">Select Date & Time</h3>
+                                </div>
 
-                                <div className="space-y-4">
+                                <div className="space-y-6">
                                     {/* Date Picker */}
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                                            <label className="block text-[9px] font-black text-themev2-text/40 uppercase tracking-widest mb-2">
                                                 {isAppointment ? 'Date' : 'Start Date'}
                                             </label>
-                                            <DatePicker
-                                                selected={startDate}
-                                                onChange={(date) => {
-                                                    setStartDate(date);
-                                                    if (isAppointment) setEndDate(date); // For appointments, end date is same day usually
-                                                }}
-                                                selectsStart
-                                                startDate={startDate}
-                                                endDate={endDate}
-                                                className="w-full p-2 border border-border rounded-lg"
-                                                minDate={new Date()}
-                                            />
+                                            <div className="relative">
+                                                <DatePicker
+                                                    selected={startDate}
+                                                    onChange={(date) => {
+                                                        setStartDate(date);
+                                                        if (isAppointment) setEndDate(date);
+                                                    }}
+                                                    selectsStart
+                                                    startDate={startDate}
+                                                    endDate={endDate}
+                                                    className="w-full px-5 py-4 bg-[#FAF3E0] border border-[#EBC176]/10 rounded-2xl text-[11px] font-black text-themev2-text uppercase tracking-widest focus:ring-0 focus:border-[#C48B28]/50 outline-none cursor-pointer"
+                                                    minDate={new Date()}
+                                                />
+                                            </div>
                                         </div>
                                         {!isAppointment && (
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">End Date</label>
+                                                <label className="block text-[9px] font-black text-themev2-text/40 uppercase tracking-widest mb-2">End Date</label>
                                                 <DatePicker
                                                     selected={endDate}
                                                     onChange={(date) => setEndDate(date)}
@@ -199,51 +272,32 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
                                                     startDate={startDate}
                                                     endDate={endDate}
                                                     minDate={startDate}
-                                                    className="w-full p-2 border border-border rounded-lg"
+                                                    className="w-full px-5 py-4 bg-[#FAF3E0] border border-[#EBC176]/10 rounded-2xl text-[11px] font-black text-themev2-text uppercase tracking-widest focus:ring-0 focus:border-[#C48B28]/50 outline-none cursor-pointer"
                                                 />
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* Time Slot Picker (Only for appointments) */}
+                                    {/* Time Slot Picker */}
                                     {isAppointment && (
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                                            <label className="block text-[9px] font-black text-themev2-text/40 uppercase tracking-widest mb-4">
                                                 Preferred Time
-                                                {loadingAvailability && <span className="ml-2 text-xs font-normal text-gray-400">(Loading...)</span>}
+                                                {loadingAvailability && <span className="ml-2 text-[8px] font-bold text-[#C48B28]/50 tracking-normal">(Syncing...)</span>}
                                             </label>
-                                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto">
-                                                {availableSlots.length > 0 ? (
-                                                    availableSlots.map((slot) => (
-                                                        <button
-                                                            key={slot.time}
-                                                            onClick={() => setSelectedTime(slot.time)}
-                                                            disabled={!slot.available}
-                                                            className={`px-3 py-2 text-sm rounded-lg border transition-all ${selectedTime === slot.time
-                                                                ? 'bg-brand-primary text-white border-brand-primary'
-                                                                : slot.available
-                                                                    ? 'bg-white text-gray-700 border-gray-200 hover:border-brand-primary/50'
-                                                                    : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-50'
-                                                                }`}
-                                                        >
-                                                            {slot.time}
-                                                            {!slot.available && <span className="text-[10px] block">Booked</span>}
-                                                        </button>
-                                                    ))
-                                                ) : (
-                                                    // Fallback to default times if no availability data
-                                                    ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'].map(time => (
-                                                        <button
-                                                            key={time}
-                                                            onClick={() => setSelectedTime(time)}
-                                                            className={`px-3 py-2 text-sm rounded-lg border transition-all ${selectedTime === time
-                                                                ? 'bg-brand-primary text-white border-brand-primary'
-                                                                : 'bg-white text-gray-700 border-gray-200 hover:border-brand-primary/50'}`}
-                                                        >
-                                                            {time}
-                                                        </button>
-                                                    ))
-                                                )}
+                                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                                                {(availableSlots.length > 0 ? availableSlots : ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00']).map((time) => (
+                                                    <button
+                                                        key={time}
+                                                        onClick={() => setSelectedTime(time)}
+                                                        className={`px-4 py-3 text-[10px] font-black rounded-xl border transition-all uppercase tracking-widest ${selectedTime === time
+                                                            ? 'bg-[#C48B28] text-white border-[#C48B28] shadow-lg shadow-[#C48B28]/20'
+                                                            : 'bg-white text-themev2-text/60 border-[#EBC176]/20 hover:border-[#C48B28]/50'
+                                                            }`}
+                                                    >
+                                                        {time}
+                                                    </button>
+                                                ))}
                                             </div>
                                         </div>
                                     )}
@@ -251,11 +305,11 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium mb-1">Additional Notes</label>
+                                <label className="block text-[9px] font-black text-themev2-text/40 uppercase tracking-widest mb-4">Additional Notes</label>
                                 <textarea
-                                    className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-brand-primary/20 outline-none resize-none"
+                                    className="w-full p-6 bg-[#FAF3E0] border border-[#EBC176]/10 rounded-[2rem] text-[11px] font-bold text-themev2-text/60 placeholder-themev2-text/30 outline-none focus:border-[#C48B28]/40 resize-none uppercase tracking-widest leading-loose"
                                     rows={3}
-                                    placeholder="Any special instructions or questions?..."
+                                    placeholder="Any special instructions?..."
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
                                 />
@@ -264,40 +318,56 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
                     )}
 
                     {step === 2 && (
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
-                                <PawPrint className="text-brand-primary" size={20} /> Select Pet
-                            </h3>
+                        <div className="space-y-8">
+                            <div className="flex items-center gap-4 mb-2">
+                                <div className="w-10 h-10 bg-[#FAF3E0] rounded-xl flex items-center justify-center text-[#C48B28] shrink-0">
+                                    <PawPrint size={20} />
+                                </div>
+                                <h3 className="text-[11px] font-black text-[#C48B28] uppercase tracking-[0.2em]">Select Your Pet</h3>
+                            </div>
 
-                            {petsLoading ? (
-                                <div className="flex justify-center py-8"><Loader className="animate-spin" /></div>
+                            {(petsLoading || !myPets) ? (
+                                <div className="flex justify-center py-12 flex-col items-center gap-4">
+                                    <Loader className="animate-spin text-[#C48B28]" size={32} />
+                                    <p className="text-[10px] font-black text-themev2-text/40 uppercase tracking-widest animate-pulse">Fetching your pets...</p>
+                                </div>
                             ) : myPets?.results?.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 gap-3">
                                     {myPets.results.map(pet => (
                                         <div
                                             key={pet.id}
                                             onClick={() => setSelectedPet(pet)}
-                                            className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-3 ${selectedPet?.id === pet.id ? 'border-brand-primary bg-brand-primary/5 ring-1 ring-brand-primary' : 'border-gray-200 hover:border-brand-primary/50'}`}
+                                            className={`p-5 rounded-[1.5rem] border group cursor-pointer transition-all flex items-center gap-4 ${selectedPet?.id === pet.id ? 'bg-[#FAF3E0] border-[#C48B28] shadow-lg shadow-[#C48B28]/5' : 'bg-white border-[#EBC176]/20 hover:border-[#C48B28]/50'}`}
                                         >
-                                            <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden shrink-0">
-                                                {pet.images?.[0]?.image ? (
-                                                    <img src={pet.images[0].image} alt={pet.name} className="w-full h-full object-cover" />
+                                            <div className="w-14 h-14 rounded-2xl bg-[#FAF3E0] overflow-hidden shrink-0 border-2 border-white shadow-sm">
+                                                {pet.media?.[0]?.url ? (
+                                                    <img src={pet.media[0].url} alt={pet.name} className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-gray-400"><PawPrint size={16} /></div>
+                                                    <div className="w-full h-full flex items-center justify-center text-[#C48B28]/30"><PawPrint size={20} /></div>
                                                 )}
                                             </div>
-                                            <div>
-                                                <p className="font-bold text-gray-900">{pet.name}</p>
-                                                <p className="text-xs text-gray-500">{pet.species}</p>
+                                            <div className="flex-1">
+                                                <p className="text-base font-black text-themev2-text tracking-tight">{pet.name}</p>
+                                                <p className="text-[9px] font-black text-[#C48B28] uppercase tracking-widest mt-1">{pet.species}</p>
                                             </div>
-                                            {selectedPet?.id === pet.id && <CheckCircle className="ml-auto text-brand-primary" size={18} />}
+                                            {selectedPet?.id === pet.id && (
+                                                <div className="w-8 h-8 bg-[#C48B28] rounded-full flex items-center justify-center text-white scale-110 shadow-lg shadow-[#C48B28]/20 transition-transform">
+                                                    <CheckCircle size={16} />
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-8 bg-gray-50 rounded-xl">
-                                    <p className="text-gray-500 mb-2">You don't have any pets profiled yet.</p>
-                                    <Button variant="outline" size="sm" onClick={() => window.open('/pets/add', '_blank')}>Add a Pet</Button>
+                                <div className="text-center py-12 bg-[#FAF3E0]/30 rounded-[2.5rem] border border-dashed border-[#EBC176]/30">
+                                    <PawPrint size={32} className="text-[#C48B28]/20 mx-auto mb-4" />
+                                    <p className="text-[10px] font-black text-themev2-text/40 uppercase tracking-widest mb-6">No pet profiles found.</p>
+                                    <button
+                                        onClick={() => window.open('/dashboard/pets/create', '_blank')}
+                                        className="px-10 py-4 bg-[#C48B28] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#C48B28]/20 hover:scale-105 active:scale-95 transition-all"
+                                    >
+                                        Create Pet Profile
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -305,66 +375,93 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
 
                     {step === 3 && (
                         <div className="space-y-6">
-                            <div className="bg-brand-primary/5 p-4 rounded-xl border border-brand-primary/10">
-                                <h3 className="font-bold text-lg mb-4 text-brand-primary">Confirm Booking</h3>
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Provider:</span>
-                                        <span className="font-bold">{provider.business_name}</span>
+                            <div className="bg-white rounded-[2.5rem] p-8 border border-[#EBC176]/20 shadow-sm">
+                                <h3 className="text-[11px] font-black text-[#C48B28] uppercase tracking-[0.2em] mb-8">Booking Summary</h3>
+                                <div className="space-y-6">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 bg-[#FAF3E0] rounded-xl flex items-center justify-center text-[#C48B28] shadow-sm">
+                                                {isAppointment ? <Clock size={18} /> : <Home size={18} />}
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-black text-themev2-text/40 uppercase tracking-widest">When</p>
+                                                <p className="text-[11px] font-black text-themev2-text uppercase tracking-widest mt-1">
+                                                    {format(startDate, 'MMM dd, yyyy')}
+                                                    {isAppointment && <span className="text-[#C48B28] ml-2 font-black">{selectedTime}</span>}
+                                                    {!isAppointment && <span className="text-themev2-text ml-1 opacity-40">- {format(endDate, 'MMM dd')}</span>}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[9px] font-black text-themev2-text/40 uppercase tracking-widest">Estimate</p>
+                                            <p className="text-2xl font-black text-themev2-text tracking-tight mt-1">
+                                                {pricing.total > 0 ? `$${pricing.total.toFixed(2)}` : 'QuoteReq'}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Service:</span>
-                                        <span className="font-bold">{initialService?.name || 'General Service'}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600 font-medium">When:</span>
-                                        <span className="font-bold text-right">
-                                            {format(startDate, 'MMM dd, yyyy')}
-                                            {isAppointment && <span className="block text-brand-primary">{selectedTime}</span>}
-                                            {!isAppointment && <> - {format(endDate, 'MMM dd')}</>}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">For:</span>
-                                        <span className="font-bold">{selectedPet?.name} <span className="text-xs font-normal text-gray-500">({selectedPet?.species})</span></span>
+
+                                    <div className="flex items-center justify-between p-5 bg-[#FAF3E0]/30 rounded-2xl border border-[#EBC176]/10">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-full overflow-hidden bg-white border-2 border-white shadow-sm">
+                                                {selectedPet?.media?.[0]?.url ? (
+                                                    <img src={selectedPet.media[0].url} alt={selectedPet.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-[#C48B28]/30 bg-white"><PawPrint size={20} /></div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black text-themev2-text tracking-tight">{selectedPet?.name}</p>
+                                                <p className="text-[8px] font-black text-[#C48B28] uppercase tracking-widest">{selectedPet?.species}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[10px] font-black text-themev2-text uppercase tracking-widest">{initialService?.name || 'Standard'}</p>
+                                            <p className="text-[8px] font-black text-themev2-text/40 uppercase tracking-widest">Selected Service</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             {createBooking.isError && (
-                                <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-3 rounded-lg">
-                                    <AlertCircle size={16} />
-                                    <span>Failed to create booking. Please try again.</span>
+                                <div className="flex items-center gap-3 text-red-600 p-5 bg-red-50 rounded-[1.5rem] border border-red-100">
+                                    <AlertCircle size={18} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Failed to create booking. Please try again.</span>
                                 </div>
                             )}
                         </div>
                     )}
                 </div>
 
-                {/* Footer */}
-                <div className="p-4 border-t bg-gray-50 flex justify-between">
+                {/* Footer Actions */}
+                <div className="p-8 border-t border-[#EBC176]/20 bg-[#FAF3E0]/30 flex justify-between items-center">
                     {step > 1 ? (
-                        <Button variant="ghost" onClick={handleBack}>Back</Button>
+                        <button
+                            onClick={handleBack}
+                            className="text-[11px] font-black text-themev2-text/40 uppercase tracking-[0.2em] hover:text-[#402E11] transition-colors"
+                        >
+                            Back
+                        </button>
                     ) : (
-                        <div></div>
+                        <div />
                     )}
 
                     {step < 3 ? (
-                        <Button
-                            variant="primary"
+                        <button
                             onClick={handleNext}
                             disabled={step === 2 && !selectedPet}
+                            className={`px-10 py-4 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${step === 2 && !selectedPet ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#C48B28] text-white shadow-xl shadow-[#C48B28]/20 hover:scale-105 active:scale-95 flex items-center gap-2'}`}
                         >
-                            Next <ArrowRight size={16} className="ml-2" />
-                        </Button>
+                            Next Step <ArrowRight size={16} />
+                        </button>
                     ) : (
-                        <Button
-                            variant="primary"
+                        <button
                             onClick={handleSubmit}
                             disabled={createBooking.isPending}
+                            className="px-10 py-4 bg-[#C48B28] text-white rounded-full text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[#C48B28]/20 hover:scale-105 active:scale-95 disabled:opacity-50 flex items-center gap-2"
                         >
-                            {createBooking.isPending ? 'Confirming...' : 'Confirm Booking'}
-                        </Button>
+                            {createBooking.isPending ? 'Confirming...' : 'Complete Booking'}
+                            {!createBooking.isPending && <CheckCircle size={16} />}
+                        </button>
                     )}
                 </div>
             </motion.div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import { AlertTriangle, Clock, CheckCircle2, ArrowRight, ArrowLeft } from 'lucide-react';
+import { AlertTriangle, Clock, CheckCircle2 } from 'lucide-react';
+import RehomingActionBar from './components/RehomingActionBar';
 
 const RehomingSituationPage = () => {
     const { formData, updateFormData, markStepComplete } = useOutletContext();
@@ -29,46 +30,55 @@ const RehomingSituationPage = () => {
     };
 
     return (
-        <div className="max-w-2xl mx-auto  animate-in fade-in slide-in-from-right-4 duration-500">
-            <h1 className="text-xl font-logo font-bold text-foreground mb-1">The Situation</h1>
-            <p className="text-muted-foreground text-xs mb-6">Tell us why you're rehoming and how urgent it is.</p>
+        <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-right-8 duration-700">
+            <div className="text-center mb-10">
+                <h1 className="text-3xl font-black text-[#402E11] mb-2 tracking-tight">The <span className="text-[#C48B28]">Situation</span></h1>
+                <p className="text-[#402E11]/60 text-xs font-bold uppercase tracking-[0.15em]">Tell us your story</p>
+            </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-border p-5 md:p-6 mb-6">
+            <div className="bg-white rounded-[2.5rem] border border-[#EBC176]/20 shadow-2xl shadow-[#402E11]/5 p-8 md:p-10 mb-10">
                 {/* Reason */}
-                <div className="space-y-2 mb-6">
-                    <label className="block text-sm font-bold text-foreground">
-                        Why are you rehoming?
-                    </label>
+                <div className="space-y-4 mb-10">
+                    <div className="flex items-center justify-between">
+                        <label className="text-sm font-black text-[#402E11] uppercase tracking-wider">
+                            Why are you rehoming?
+                        </label>
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${(formData.reason?.length || 0) >= 50 ? "text-[#5A856D]" : "text-[#402E11]/30"}`}>
+                            {formData.reason?.length || 0} / 50 min
+                        </span>
+                    </div>
                     <textarea
                         value={formData.reason || ''}
                         onChange={(e) => updateFormData({ reason: e.target.value })}
-                        placeholder="I need to rehome my pet because..."
-                        className={`w-full h-24 p-3 text-sm rounded-lg border resize-none focus:ring-2 focus:ring-brand-primary/10 outline-none transition-all ${errors.reason ? 'border-red-300 focus:border-red-500' : 'border-border focus:border-brand-primary'}`}
+                        placeholder="Please share details about your situation..."
+                        className={`w-full h-36 p-5 text-sm font-medium rounded-2xl bg-[#FAF3E0]/30 border-2 resize-none focus:ring-4 focus:ring-[#C48B28]/5 outline-none transition-all duration-300 ${errors.reason ? 'border-red-300 bg-red-50/30' : 'border-[#EBC176]/10 focus:border-[#C48B28] focus:bg-white'}`}
                     />
-                    <div className="flex justify-between items-center text-[10px]">
-                        <span className={errors.reason ? "text-red-500 font-bold" : "text-muted-foreground"}>
-                            {errors.reason || "Minimum 50 characters required."}
-                        </span>
-                        <span className={(formData.reason?.length || 0) >= 50 ? "text-green-600 font-bold" : "text-muted-foreground"}>
-                            {formData.reason?.length || 0} chars
-                        </span>
-                    </div>
+                    {errors.reason && (
+                        <p className="text-red-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                            <AlertTriangle size={12} /> {errors.reason}
+                        </p>
+                    )}
                 </div>
 
                 {/* Urgency */}
-                <div className="space-y-2">
-                    <label className="block text-sm font-bold text-foreground">
+                <div className="space-y-4">
+                    <label className="text-sm font-black text-[#402E11] uppercase tracking-wider block">
                         How urgent is this?
                     </label>
-                    <div className="grid gap-2">
+                    <div className="grid gap-3">
                         {[
-                            { value: 'immediate', label: 'Immediate (< 3 days)', desc: 'Emergency situations.', icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-50 border-red-200 ring-red-500' },
-                            { value: 'soon', label: 'Soon (1-2 weeks)', desc: 'Moving or life changes.', icon: Clock, color: 'text-orange-600', bg: 'bg-orange-50 border-orange-200 ring-orange-500' },
-                            { value: 'flexible', label: 'Flexible (> 2 weeks)', desc: 'Finding the right match.', icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50 border-green-200 ring-green-500' }
+                            { value: 'immediate', label: 'Immediate', sub: '< 3 days', desc: 'Emergency situations.', icon: AlertTriangle, color: 'text-red-500', bg: 'bg-red-50/50 hover:bg-red-50', activeBg: 'bg-red-50 border-red-200 ring-red-500/20' },
+                            { value: 'soon', label: 'Soon', sub: '1-2 weeks', desc: 'Moving or life changes.', icon: Clock, color: 'text-[#C48B28]', bg: 'bg-[#FAF3E0]/50 hover:bg-[#FAF3E0]', activeBg: 'bg-[#FAF3E0] border-[#C48B28]/30 ring-[#C48B28]/10' },
+                            { value: 'flexible', label: 'Flexible', sub: '> 2 weeks', desc: 'Finding the right match.', icon: CheckCircle2, color: 'text-[#5A856D]', bg: 'bg-[#EBF1ED]/50 hover:bg-[#EBF1ED]', activeBg: 'bg-[#EBF1ED] border-[#5A856D]/30 ring-[#5A856D]/10' }
                         ].map((option) => (
                             <label
                                 key={option.value}
-                                className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${formData.urgency === option.value ? `${option.bg} border-transparent ring-1` : 'border-border hover:border-gray-300'}`}
+                                className={`
+                                    flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300
+                                    ${formData.urgency === option.value
+                                        ? `${option.activeBg} ring-4 translate-x-1`
+                                        : `border-transparent ${option.bg} opacity-70 hover:opacity-100 hover:translate-x-1`}
+                                `}
                             >
                                 <input
                                     type="radio"
@@ -78,41 +88,41 @@ const RehomingSituationPage = () => {
                                     onChange={(e) => updateFormData({ urgency: e.target.value })}
                                     className="sr-only"
                                 />
-                                <div className={`p-1.5 rounded-full bg-white ${option.color} shadow-sm transition-transform ${formData.urgency === option.value ? 'scale-105' : ''}`}>
-                                    <option.icon size={16} />
+                                <div className={`w-12 h-12 rounded-xl bg-white flex items-center justify-center ${option.color} shadow-sm transition-transform ${formData.urgency === option.value ? 'scale-110 shadow-md' : ''}`}>
+                                    <option.icon size={20} strokeWidth={2.5} />
                                 </div>
-                                <div>
-                                    <div className={`font-bold text-sm ${formData.urgency === option.value ? 'text-foreground' : 'text-gray-700'}`}>{option.label}</div>
-                                    <div className="text-[10px] text-muted-foreground">{option.desc}</div>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className={`font-black text-sm ${formData.urgency === option.value ? 'text-[#402E11]' : 'text-[#402E11]/60'}`}>
+                                            {option.label}
+                                        </span>
+                                        <span className="text-[9px] font-black text-[#C48B28] uppercase tracking-[0.1em] opacity-60">
+                                            {option.sub}
+                                        </span>
+                                    </div>
+                                    <div className="text-[10px] font-bold text-[#402E11]/40 lowercase tracking-tight">
+                                        {option.desc}
+                                    </div>
                                 </div>
                                 {formData.urgency === option.value && (
-                                    <div className="ml-auto text-brand-primary">
-                                        <div className="w-4 h-4 rounded-full bg-current flex items-center justify-center">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                                        </div>
+                                    <div className="w-6 h-6 rounded-full bg-[#402E11] flex items-center justify-center text-white scale-110 transition-all">
+                                        <CheckCircle2 size={14} strokeWidth={3} />
                                     </div>
                                 )}
                             </label>
                         ))}
                     </div>
                 </div>
-                {errors.urgency && <p className="text-red-500 text-[10px] mt-2 font-bold">{errors.urgency}</p>}
+                {errors.urgency && <p className="text-red-500 text-[10px] mt-4 font-black uppercase tracking-widest">{errors.urgency}</p>}
             </div>
 
-            <div className="flex items-center justify-between pt-2">
-                <button
-                    onClick={() => navigate('/rehoming/select-pet')}
-                    className="btn-ghost flex items-center gap-2 pl-0 hover:pl-2 transition-all text-muted-foreground font-bold text-sm"
-                >
-                    <ArrowLeft size={16} /> Back
-                </button>
-                <button
-                    onClick={handleNext}
-                    className="btn-primary flex items-center gap-2 px-6 py-2.5 rounded-full shadow-lg shadow-brand-primary/20 hover:shadow-xl hover:-translate-y-0.5 transition-all text-sm"
-                >
-                    Next Step <ArrowRight size={16} />
-                </button>
-            </div>
+            {/* Premium Action Bar */}
+            <RehomingActionBar
+                onBack={() => navigate('/rehoming/select-pet')}
+                onNext={handleNext}
+                nextLabel="Next Step"
+                statusText="Tell us why you are rehoming"
+            />
         </div>
     );
 };

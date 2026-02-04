@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Star, ChevronLeft, Upload, Camera } from 'lucide-react';
 import { toast } from 'react-toastify';
 import useReviews from '../../hooks/useReviews';
@@ -9,16 +9,18 @@ import Card from '../../components/common/Layout/Card';
 
 const ServiceReviewPage = () => {
     const { id } = useParams();
+    const [searchParams] = useSearchParams();
+    const bookingId = searchParams.get('booking');
     const navigate = useNavigate();
-    const [rating, setRating] = useState(0);
+    const [rating, setRating] = useState(5);
     const [hoverRating, setHoverRating] = useState(0);
     const [review, setReview] = useState('');
-    const [recommend, setRecommend] = useState(null);
+    const [recommend, setRecommend] = useState('yes');
     const [subRatings, setSubRatings] = useState({
-        communication: 0,
-        cleanliness: 0,
-        care: 0,
-        value: 0
+        communication: 5,
+        cleanliness: 5,
+        care: 5,
+        value: 5
     });
 
     const categories = [
@@ -46,6 +48,7 @@ const ServiceReviewPage = () => {
 
         const payload = {
             provider: id,
+            booking: bookingId,
             rating_overall: rating,
             rating_communication: subRatings.communication,
             rating_cleanliness: subRatings.cleanliness,
@@ -58,7 +61,8 @@ const ServiceReviewPage = () => {
         try {
             await submitReview.mutateAsync(payload);
             toast.success("Review submitted successfully!");
-            navigate(-1);
+            // Invalidate the bookings query to reflect the new has_review state
+            navigate('/dashboard/bookings');
         } catch (error) {
             console.error("Service review failed:", error);
             toast.error("Failed to submit review.");

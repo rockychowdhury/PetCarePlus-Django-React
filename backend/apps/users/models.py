@@ -106,12 +106,17 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.role == User.UserRole.SERVICE_PROVIDER
 
     @property
+    def has_service_profile(self):
+        return hasattr(self, 'service_provider_profile')
+
+    @property
     def is_admin(self):
         return self.role == User.UserRole.ADMIN
     
     @property
     def is_verified(self):
-        return self.email_verified and self.phone_verified
+        # Relaxed for now: Only email verification is mandatory
+        return self.email_verified
     
     @property
     def full_name(self):
@@ -133,7 +138,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         if not self.last_name or not str(self.last_name).strip(): missing.append('last_name')
         if not self.email: missing.append('email') # Should be present as username
         
-        if not self.phone_number or not str(self.phone_number).strip(): missing.append('phone_number')
+        # if not self.phone_number or not str(self.phone_number).strip(): missing.append('phone_number')
         if not self.location_city or not str(self.location_city).strip(): missing.append('location_city')
         if not self.location_state or not str(self.location_state).strip(): missing.append('location_state')
         if not self.date_of_birth: missing.append('date_of_birth')

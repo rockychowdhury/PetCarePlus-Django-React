@@ -58,6 +58,8 @@
     /* Warm amber */
     --color-status-info: #5B9BD5;
     /* Calm blue */
+
+
   }
 
   .dark {
@@ -260,7 +262,8 @@
 }
 
 body {
-  @apply bg-bg-primary text-text-primary font-sans transition-colors duration-300;
+  background-color: #FEF9ED;
+  @apply text-text-primary font-sans transition-colors duration-300;
 }
 
 /* Animations */
@@ -327,18 +330,20 @@ html {
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-bg-secondary;
+  background-color: #FEF9ED;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-border rounded-full;
+  background-color: #EBC176;
+  border-radius: 10px;
+  border: 2px solid #FEF9ED;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-border-focus;
+  background-color: #C48B28;
 }

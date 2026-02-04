@@ -1,35 +1,29 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
-import { PawPrint, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import Logo from '../components/common/Logo';
 
-/**
- * AuthSplitLayout - Split-screen authentication layout
- * Left: Feature carousel
- * Right: Form content
- * Refactored to use Tailwind CSS utility classes
- */
 const AuthSplitLayout = ({ carousel, children }) => {
     return (
-        <div className="flex flex-col md:flex-row min-h-screen w-full bg-bg-primary  text-text-primary">
+        <div className="flex flex-col md:flex-row min-h-screen w-full bg-white">
             {/* Left Panel - Carousel */}
-            <div className="w-full md:w-[40%] lg:w-1/2 h-[40vh] md:h-screen md:sticky md:top-0 relative overflow-hidden bg-bg-secondary">
+            <div className="w-full md:w-[45%] lg:w-1/2 h-[40vh] md:h-screen md:sticky md:top-0 relative overflow-hidden">
                 {/* Logo - Top Left */}
-                <div className="absolute top-6 left-6 md:top-10 md:left-10 z-30">
-                    <Link to="/" className="flex items-center gap-2 text-white hover:opacity-80 transition-opacity">
-                        <PawPrint size={24} className="text-brand-secondary" />
-                        <span className="text-xl font-bold tracking-tight">PetCircle</span>
+                <div className="absolute top-8 left-8 md:top-12 md:left-12 z-30">
+                    <Link to="/" className="hover:opacity-80 transition-opacity">
+                        <Logo variant="white" />
                     </Link>
                 </div>
 
-                {/* Back to Website Button - Top Right */}
-                <div className="absolute top-6 right-6 md:top-10 md:right-10 z-30">
+                {/* Back Button - Top Right */}
+                <div className="absolute top-8 right-8 md:top-12 md:right-12 z-30">
                     <Link
                         to="/"
-                        className="flex items-center gap-2 px-4 py-2 md:px-6 md:py-2.5 rounded-full bg-black/20 backdrop-blur-md text-white text-xs md:text-sm font-medium hover:bg-black/40 transition-all border border-white/10"
+                        className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-black/10 backdrop-blur-md text-white text-[11px] font-black uppercase tracking-wider hover:bg-black/20 transition-all border border-white/10"
                     >
-                        Back to website
-                        <ArrowRight size={16} />
+                        Return Home
+                        <ArrowRight size={14} strokeWidth={3} />
                     </Link>
                 </div>
 
@@ -38,8 +32,8 @@ const AuthSplitLayout = ({ carousel, children }) => {
             </div>
 
             {/* Right Panel - Forms */}
-            <div className="w-full md:w-[60%] lg:w-1/2 min-h-[60vh] md:min-h-screen bg-bg-primary flex items-center justify-center p-4 md:p-12 lg:p-16 overflow-y-auto">
-                <div className="w-full max-w-[440px] bg-bg-surface p-6 md:p-12 shadow-xl rounded-3xl border border-border">
+            <div className="w-full md:w-[55%] lg:w-1/2 min-h-[60vh] md:min-h-screen bg-white flex items-center justify-center p-6 md:p-12 lg:p-20 overflow-y-auto">
+                <div className="w-full max-w-[480px]">
                     {children}
                 </div>
             </div>

@@ -5,28 +5,28 @@ import Button from '../Buttons/Button';
 import noResultsImage from '../../../assets/no_results_dog.png'; // Updated later if needed
 
 const NoResults = ({
-    title = "No companions found",
-    description = "Try adjusting your filters to find more friends",
+    title = "No pets found",
+    description = "Try broadening your search or adjusting your area.",
     onReset,
     icon: Icon = Search,
     backgroundText = "EMPTY"
 }) => {
     return (
-        <div className="relative py-24 px-4 overflow-hidden bg-bg-primary rounded-[64px]">
-            {/* Background Text */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[10rem] md:text-[20rem] font-black text-bg-secondary select-none pointer-events-none z-0 uppercase tracking-tighter">
+        <div className="relative py-20 px-6 overflow-hidden bg-[#FAF9F6]/50 rounded-[3rem] border border-[#EBC176]/10">
+            {/* Background Text Watermark */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[12rem] md:text-[18rem] font-black text-[#F3EAD3]/40 select-none pointer-events-none z-0 uppercase tracking-tighter">
                 {backgroundText}
             </div>
 
-            <div className="relative z-10 flex flex-col items-center max-w-2xl mx-auto text-center ">
+            <div className="relative z-10 flex flex-col items-center max-w-lg mx-auto text-center">
                 {/* Image Section */}
-                <div className="relative mb-12">
+                <div className="relative mb-8">
                     <motion.div
-                        initial={{ rotate: -5, scale: 0.9, opacity: 0 }}
-                        animate={{ rotate: -5, scale: 1, opacity: 1 }}
-                        whileHover={{ rotate: 0, scale: 1.05 }}
-                        transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                        className="w-56 h-56 md:w-72 md:h-72 rounded-[48px] overflow-hidden shadow-2xl border-8 border-white bg-bg-secondary relative"
+                        initial={{ rotate: -3, scale: 0.9, opacity: 0 }}
+                        animate={{ rotate: -3, scale: 1, opacity: 1 }}
+                        whileHover={{ rotate: 0, scale: 1.02 }}
+                        transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+                        className="w-48 h-48 md:w-56 md:h-56 rounded-[2.5rem] overflow-hidden shadow-2xl border-8 border-white bg-white relative"
                     >
                         <img
                             src={noResultsImage}
@@ -35,35 +35,35 @@ const NoResults = ({
                         />
                     </motion.div>
 
-                    {/* Icon Badge */}
+                    {/* Magnifying Glass Badge */}
                     <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 0.3, type: 'spring' }}
-                        className="absolute -top-4 -right-4 w-16 h-16 bg-brand-primary text-white rounded-full flex items-center justify-center shadow-lg border-4 border-bg-primary"
+                        initial={{ scale: 0, rotate: 45 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ delay: 0.4, type: 'spring' }}
+                        className="absolute -top-3 -right-3 w-12 h-12 bg-[#638C7D] text-white rounded-full flex items-center justify-center shadow-lg border-4 border-white"
                     >
-                        <Icon size={28} strokeWidth={2.5} />
+                        <Search size={20} strokeWidth={3} />
                     </motion.div>
                 </div>
 
                 {/* Text Content */}
-                <h3 className="text-4xl md:text-5xl font-logo font-black text-text-primary mb-4 leading-tight">
+                <h3 className="text-2xl md:text-3xl font-black text-[#2D2418] mb-3 leading-tight tracking-tight">
                     {title}
                 </h3>
-                <p className="text-text-secondary text-lg mb-12 max-w-sm mx-auto font-medium">
+                <p className="text-[#2D2418]/50 text-xs md:text-sm mb-10 max-w-[280px] mx-auto font-bold leading-relaxed">
                     {description}
                 </p>
 
-                {/* Actions */}
-                <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <button
-                        onClick={onReset}
-                        className="w-full sm:w-auto px-10 py-4 bg-brand-primary text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-brand-primary/90 transition-all shadow-xl shadow-brand-primary/20 active:scale-95"
-                    >
-                        <RefreshCcw size={18} />
-                        Reset All Filters
-                    </button>
-                </div>
+                {/* Reset Action */}
+                <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={onReset}
+                    className="flex items-center gap-3 px-8 py-4 bg-[#638C7D] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-[#638C7D]/20 hover:bg-[#527a6b] transition-all group"
+                >
+                    <RefreshCcw size={16} className="group-hover:rotate-180 transition-transform duration-500" />
+                    Reset All Filters
+                </motion.button>
             </div>
         </div>
     );

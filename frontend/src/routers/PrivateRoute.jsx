@@ -2,6 +2,7 @@ import PropTypes from "prop-types";
 import useAuth from "../hooks/useAuth";
 import Spinner from "../components/common/Spinner";
 import { Navigate, useLocation } from "react-router-dom";
+import { getRoleBasedRedirect } from "../utils/roleRedirect";
 
 /**
  * AdminRoute - Protects routes that require admin role
@@ -71,6 +72,62 @@ const PrivateRoute = ({ children }) => {
 };
 
 PrivateRoute.propTypes = {
+    children: PropTypes.any,
+};
+
+/**
+ * GuestRoute - Protects routes that should ONLY be accessible by guests (non-authenticated users)
+ * Redirects authenticated users to their role-specific dashboard
+ */
+export const GuestRoute = ({ children }) => {
+    const { user, loading } = useAuth();
+    const location = useLocation();
+
+    if (loading) return <Spinner />;
+
+    if (user) {
+        const redirectPath = getRoleBasedRedirect(user);
+        return <Navigate to={redirectPath} replace />;
+    }
+
+    return children;
+};
+
+GuestRoute.propTypes = {
+    children: PropTypes.any,
+};
+
+/**
+ * PetOwnerRoute - Protects the main user dashboard
+ * Ensures Service Providers and Admins are redirected to their own dashboards
+ * only "normal" users (pet owners) can access /dashboard
+ */
+export const PetOwnerRoute = ({ children }) => {
+    const { user, loading } = useAuth();
+    const location = useLocation();
+
+    if (loading) return <Spinner />;
+
+    // 1. Must be logged in
+    if (!user) {
+        return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    }
+
+    // 2. If Service Provider -> Redirect to Provider Dashboard
+    if (user.role === 'service_provider') {
+        return <Navigate to={getRoleBasedRedirect(user)} replace />;
+    }
+
+    // 3. If Admin -> Redirect to Admin Dashboard
+    if (user.role === 'admin') {
+        return <Navigate to={getRoleBasedRedirect(user)} replace />;
+    }
+
+    // 4. Authorized (Pet Owner / Standard User)
+    return children;
+};
+
+PetOwnerRoute.propTypes = {
     children: PropTypes.any,
 };
 

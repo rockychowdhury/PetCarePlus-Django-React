@@ -35,56 +35,49 @@ const FeaturesSection = () => {
         {
             title: "Verified Service Directory",
             tag: "SERVICES",
-            icon: <Users size={20} />, // or Stethoscope if imported, but Users is fine or I can import Stethoscope
-            description: "Find trusted veterinary clinics and foster care providers with verified credentials and community reviews.",
-            subtext: "Search by location, service type, and rating."
+            icon: <Users size={20} />,
+            description: "Browse trusted veterinary clinics, groomers, and foster care providers with verified credentials and community ratings.",
+            subtext: "SEARCH BY LOCATION AND SERVICE TYPE."
         },
         {
-            title: "Mediated Communication",
-            tag: "PRIVACY",
-            icon: <MessageSquare size={20} />,
-            description: "Communicate safely with other users through our platform. Your personal contact details stay private until you're ready.",
-            subtext: "Secure messaging with safety filters."
-        },
-        {
-            title: "Schedule Meet & Greets",
-            tag: "VISITS",
+            title: "Expert Care",
+            tag: "VETERINARY",
             icon: <Calendar size={20} />,
-            description: "Pick a time, share who is coming, and confirm a visit with the owner in a guided, step-by-step flow.",
-            subtext: "Automatic reminders and clear visit details."
+            description: "From routine checkups to specialized treatments, discover verified veterinarians and medical professionals near you.",
+            subtext: "BOOK APPOINTMENTS WITH TRUSTED PROS."
         },
         {
             title: "Behavioral Disclosures",
             tag: "TRANSPARENCY",
             icon: <FileText size={20} />,
-            description: "Detailed pet profiles include mandatory behavioral history and medical records to ensure the right match.",
-            subtext: "Honest, transparent rehoming."
+            description: "Access detailed pet profiles including mandatory behavioral history and medical records for full transparency.",
+            subtext: "HONEST, DATA-DRIVEN REHOMING."
         },
         {
             title: "Rehomer Dashboards",
-            tag: "REHOMING",
+            tag: "DASHBOARD",
             icon: <LayoutDashboard size={20} />,
-            description: "Manage your pet profile, track applications, and coordinate visits from one place while your pet stays home.",
-            subtext: "Built for responsible life transitions."
+            description: "Manage your pet's journey, track inquiries, and coordinate safe transitions from your dedicated control center.",
+            subtext: "BUILT FOR RESPONSIBLE LIFE TRANSITIONS."
         },
         {
-            title: "Adoption Requests",
-            tag: "WORKFLOW",
-            icon: <Layout size={20} />, // Changed icon to Layout as FileText used above, or keep FileText
-            description: "Track every application from 'New' to 'Adopted' with notes, documents, and conversations in a single timeline.",
-            subtext: "Less email back-and-forth, more happy matches."
+            title: "WhatsApp Connect",
+            tag: "COMMUNICATION",
+            icon: <MessageSquare size={20} />,
+            description: "Connect instantly via WhatsApp with verified providers and owners. Direct, secure, and reliable communication at your fingertips.",
+            subtext: "INSTANT CONNECTIVITY & MEDIA SHARING."
         }
     ];
 
     return (
-        <section className="py-24 bg-bg-primary relative overflow-hidden">
+        <section className="py-24 bg-[#FEF9ED] relative overflow-hidden">
             <SectionCursor label="ECOSYSTEM" icon={<Layout size={14} />}>
                 {/* Background Decoration Container (Clipped) */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 relative h-full">
                         <motion.div
                             animate={{
-                                opacity: [0.3, 0.5, 0.3],
+                                opacity: [0.2, 0.4, 0.2],
                                 scale: [1, 1.1, 1]
                             }}
                             transition={{
@@ -94,7 +87,7 @@ const FeaturesSection = () => {
                             }}
                             className="absolute top-20 left-4"
                         >
-                            <Sparkles className="text-brand-secondary fill-current" size={64} />
+                            <Sparkles className="text-[#EBC176] fill-current" size={64} />
                         </motion.div>
 
                         <motion.img
@@ -108,7 +101,7 @@ const FeaturesSection = () => {
                             }}
                             src={star}
                             alt=""
-                            className="absolute top-1/2 left-0 w-12 h-12 opacity-20"
+                            className="absolute top-1/2 left-0 w-12 h-12 opacity-15"
                             style={{ filter: 'brightness(0) sepia(1) hue-rotate(-50deg) saturate(5)' }}
                         />
                     </div>
@@ -125,21 +118,21 @@ const FeaturesSection = () => {
                         className="text-center mb-24 relative"
                     >
                         <div className="relative inline-block mb-6">
-                            <h2 className="text-5xl md:text-6xl font-black text-text-primary leading-tight tracking-tight">
-                                Everything in <span className="text-brand-primary">One Place</span>
+                            <h2 className="text-5xl md:text-6xl font-black text-themev2-text leading-tight tracking-tight">
+                                Everything in <span className="text-[#C48B28]">One Place</span>
                             </h2>
                             <motion.img
                                 animate={{ rotate: 360 }}
                                 transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
                                 src={star}
                                 alt=""
-                                className="absolute -top-10 -right-14 w-12 h-12 opacity-60 hidden md:block"
+                                className="absolute -top-10 -right-14 w-12 h-12 opacity-40 hidden md:block"
                                 style={{ filter: 'brightness(0)' }}
                             />
                         </div>
 
-                        <p className="text-text-secondary text-xl max-w-3xl mx-auto font-medium opacity-80 leading-relaxed">
-                            See exactly how PetCare+ supports responsible rehoming — from first listing to the final transfer papers.
+                        <p className="text-themev2-text/60 text-xl max-w-3xl mx-auto font-medium leading-relaxed">
+                            Discover how PetCare+ streamlines expert care and responsible rehoming with a unified, verified platform.
                         </p>
                     </motion.div>
 
@@ -152,29 +145,29 @@ const FeaturesSection = () => {
                             transition={{ duration: 0.8, delay: 0.2 }}
                             className="lg:w-1/3 lg:sticky lg:top-32 h-fit space-y-8"
                         >
-                            <h3 className="text-4xl md:text-5xl font-black text-text-primary leading-[1.1]  tracking-tight">
-                                Built for every step of the <span className="text-brand-primary">adoption journey.</span>
+                            <h3 className="text-4xl md:text-5xl font-black text-themev2-text leading-[1.1]  tracking-tight">
+                                Built for every step of the <span className="text-[#C48B28]">care journey.</span>
                             </h3>
-                            <p className="text-text-secondary text-lg leading-relaxed font-medium opacity-80">
-                                Whether you are discovering your first pet, finding a vet, or rehoming a pet, you get clear tools for communication, visits, and paperwork — without juggling different apps.
+                            <p className="text-themev2-text/60 text-lg leading-relaxed font-bold">
+                                Whether you are finding expert services or navigating rehoming, our platform provides the verified tools you need for a safe and supported experience.
                             </p>
 
                             {/* Toggle */}
                             <div className="inline-flex bg-bg-secondary/40 rounded-full p-1.5 border border-border/60 shadow-inner">
                                 <button
                                     onClick={() => setActiveTab('adopting')}
-                                    className={`px-8 py-3 rounded-full text-xs font-black transition-all duration-500 ease-out transform tracking-[0.1em] uppercase ${activeTab === 'adopting'
-                                        ? 'bg-bg-surface text-brand-primary shadow-lg shadow-black/5 scale-100'
-                                        : 'text-text-secondary/60 hover:text-text-primary hover:bg-bg-surface/30 scale-95'
+                                    className={`px-8 py-3 rounded-full text-[10px] font-black transition-all duration-500 ease-out transform tracking-[0.15em] uppercase ${activeTab === 'adopting'
+                                        ? 'bg-white text-[#C48B28] shadow-lg shadow-[#1a365d]/5 scale-100'
+                                        : 'text-themev2-text/40 hover:text-themev2-text hover:bg-white/50 scale-95'
                                         }`}
                                 >
                                     For Adopting
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('rehoming')}
-                                    className={`px-8 py-3 rounded-full text-xs font-black transition-all duration-500 ease-out transform tracking-[0.1em] uppercase ${activeTab === 'rehoming'
-                                        ? 'bg-bg-surface text-brand-primary shadow-lg shadow-black/5 scale-100'
-                                        : 'text-text-secondary/60 hover:text-text-primary hover:bg-bg-surface/30 scale-95'
+                                    className={`px-8 py-3 rounded-full text-[10px] font-black transition-all duration-500 ease-out transform tracking-[0.15em] uppercase ${activeTab === 'rehoming'
+                                        ? 'bg-white text-[#C48B28] shadow-lg shadow-[#1a365d]/5 scale-100'
+                                        : 'text-themev2-text/40 hover:text-themev2-text hover:bg-white/50 scale-95'
                                         }`}
                                 >
                                     For Rehoming
@@ -183,23 +176,23 @@ const FeaturesSection = () => {
 
                             {/* Dynamic List based on Tab */}
                             <div className="space-y-6 pt-4">
-                                <h4 className="text-[10px] font-black text-text-tertiary uppercase tracking-[0.2em]">
-                                    {activeTab === 'adopting' ? "IF YOU'RE ADOPTING" : "IF REHOMING A PET"}
+                                <h4 className="text-[10px] font-black text-themev2-text/40 uppercase tracking-[0.2em]">
+                                    {activeTab === 'adopting' ? "RESOURCES FOR ADOPTERS" : "REHOWER SUPPORT TOOLS"}
                                 </h4>
-                                <div className="flex flex-wrap gap-3">
+                                <div className="flex flex-wrap gap-2.5">
                                     {activeTab === 'adopting' ? (
                                         <>
-                                            <span className="px-4 py-2 bg-bg-secondary rounded-xl text-sm font-medium text-text-primary">Direct contact with owners</span>
-                                            <span className="px-4 py-2 bg-bg-secondary rounded-xl text-sm font-medium text-text-primary">Verified pet history & medicals</span>
-                                            <span className="px-4 py-2 bg-bg-secondary rounded-xl text-sm font-medium text-text-primary">Verified Service Providers</span>
-                                            <span className="px-4 py-2 bg-bg-secondary rounded-xl text-sm font-medium text-text-primary">Guided meeting process</span>
+                                            <span className="px-5 py-2.5 bg-white rounded-2xl text-[13px] font-bold text-themev2-text border border-[#EBC176]/20 shadow-sm">Direct WhatsApp connection</span>
+                                            <span className="px-5 py-2.5 bg-white rounded-2xl text-[13px] font-bold text-themev2-text border border-[#EBC176]/20 shadow-sm">Full behavioral disclosures</span>
+                                            <span className="px-5 py-2.5 bg-white rounded-2xl text-[13px] font-bold text-themev2-text border border-[#EBC176]/20 shadow-sm">Expert Service matching</span>
+                                            <span className="px-5 py-2.5 bg-white rounded-2xl text-[13px] font-bold text-themev2-text border border-[#EBC176]/20 shadow-sm">Verified medical history</span>
                                         </>
                                     ) : (
                                         <>
-                                            <span className="px-4 py-2 bg-bg-secondary rounded-xl text-sm font-medium text-text-primary">Create a digital wallet for your pet</span>
-                                            <span className="px-4 py-2 bg-bg-secondary rounded-xl text-sm font-medium text-text-primary">Access rehoming interventions</span>
-                                            <span className="px-4 py-2 bg-bg-secondary rounded-xl text-sm font-medium text-text-primary">Screen applicants directly</span>
-                                            <span className="px-4 py-2 bg-bg-secondary rounded-xl text-sm font-medium text-text-primary">Keep your pet until matched</span>
+                                            <span className="px-5 py-2.5 bg-white rounded-2xl text-[13px] font-bold text-themev2-text border border-[#EBC176]/20 shadow-sm">Streamlined digitial dashboard</span>
+                                            <span className="px-5 py-2.5 bg-white rounded-2xl text-[13px] font-bold text-themev2-text border border-[#EBC176]/20 shadow-sm">Verified location data</span>
+                                            <span className="px-5 py-2.5 bg-white rounded-2xl text-[13px] font-bold text-themev2-text border border-[#EBC176]/20 shadow-sm">Screen inquiries via WhatsApp</span>
+                                            <span className="px-5 py-2.5 bg-white rounded-2xl text-[13px] font-bold text-themev2-text border border-[#EBC176]/20 shadow-sm">Safe rehoming protocols</span>
                                         </>
                                     )}
                                 </div>
@@ -212,31 +205,31 @@ const FeaturesSection = () => {
                             initial="hidden"
                             whileInView="visible"
                             viewport={{ once: true, margin: "-50px" }}
-                            className="lg:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-8"
+                            className="lg:w-2/3 grid grid-cols-1 sm:grid-cols-2 gap-8"
                         >
                             {features.map((feature, index) => (
                                 <motion.div
                                     key={index}
                                     variants={cardVariants}
-                                    className="bg-bg-surface p-10 rounded-[48px] shadow-[0_24px_48px_-12px_rgba(0,0,0,0.03)] border border-border/40 hover:border-brand-primary/20 transition-all duration-300 ease-out hover:-translate-y-2 group"
+                                    className={`bg-white p-10 rounded-[48px] shadow-sm border border-[#EBC176]/20 hover:border-[#C48B28]/40 transition-all duration-300 ease-out hover:-translate-y-2 group ${index === 4 ? 'sm:col-span-2' : ''}`}
                                 >
-                                    <div className="flex justify-between items-start mb-10">
-                                        <div className="w-14 h-14 rounded-2xl bg-bg-secondary group-hover:bg-brand-primary/10 transition-all duration-500 flex items-center justify-center text-text-primary">
+                                    <div className="flex justify-between items-start mb-8">
+                                        <div className="w-14 h-14 rounded-2xl bg-[#FEF9ED] group-hover:bg-[#FFF5E1] transition-all duration-500 flex items-center justify-center text-[#C48B28]">
                                             {React.cloneElement(feature.icon, { size: 24, strokeWidth: 1.5 })}
                                         </div>
-                                        <span className="px-4 py-1.5 bg-bg-secondary rounded-xl text-[10px] font-black text-text-tertiary uppercase tracking-[0.2em] group-hover:text-brand-primary transition-colors">
+                                        <span className="px-4 py-1.5 bg-[#FEF9ED] rounded-xl text-[9px] font-black text-themev2-text/40 uppercase tracking-[0.2em] group-hover:text-[#C48B28] transition-colors">
                                             {feature.tag}
                                         </span>
                                     </div>
-                                    <h4 className="text-2xl font-black text-text-primary mb-4  tracking-tight leading-tight">
+                                    <h4 className="text-2xl font-black text-themev2-text mb-4  tracking-tight leading-tight">
                                         {feature.title}
                                     </h4>
-                                    <p className="text-text-secondary text-[15px] leading-relaxed mb-6 font-medium opacity-80">
+                                    <p className="text-themev2-text/60 text-[15px] leading-relaxed mb-6 font-bold">
                                         {feature.description}
                                     </p>
-                                    <div className="w-full h-px bg-border/40 mb-6"></div>
-                                    <p className="text-[10px] text-text-tertiary font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                                        <Sparkles size={12} className="text-brand-primary" />
+                                    <div className="w-full h-px bg-[#EBC176]/20 mb-6"></div>
+                                    <p className="text-[9px] text-themev2-text/40 font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                                        <Sparkles size={12} className="text-[#C48B28]" />
                                         {feature.subtext}
                                     </p>
                                 </motion.div>
@@ -244,7 +237,7 @@ const FeaturesSection = () => {
                         </motion.div>
                     </div>
                 </div>
-            </SectionCursor>
+            </SectionCursor >
         </section >
     );
 };

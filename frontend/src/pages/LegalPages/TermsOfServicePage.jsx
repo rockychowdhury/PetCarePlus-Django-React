@@ -102,19 +102,21 @@ const TermsOfServicePage = () => {
     }, []);
 
     return (
-        <div className="bg-bg-primary min-h-screen  text-text-primary">
+        <div className="bg-[#FEF9ED] min-h-screen text-themev2-text pt-20">
             {/* Header */}
-            <div className="bg-bg-surface border-b border-border">
-                <div className="max-w-7xl mx-auto px-6 py-12 md:py-16">
+            {/* Header */}
+            <div className="bg-[#C48B28] relative overflow-hidden">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                <div className="max-w-7xl mx-auto px-6 py-12 md:py-20 relative z-10">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                         <div>
-                            <p className="text-brand-primary font-bold uppercase tracking-widest mb-3 text-sm flex items-center gap-2">
-                                <Shield size={16} /> Legal Documentation
+                            <p className="text-white/80 font-bold uppercase tracking-widest mb-3 text-sm flex items-center gap-2">
+                                <Shield size={16} className="text-white" /> Legal Documentation
                             </p>
-                            <h1 className="text-4xl md:text-5xl font-black mb-4 font-logo tracking-tight">
+                            <h1 className="text-4xl md:text-5xl font-black mb-4 font-logo tracking-tight text-white">
                                 Terms of Service
                             </h1>
-                            <p className="text-text-secondary text-lg">
+                            <p className="text-white/80 text-lg font-medium">
                                 Last Updated: December 16, 2025
                             </p>
                         </div>
@@ -122,9 +124,9 @@ const TermsOfServicePage = () => {
                             <button
                                 onClick={handleDownloadPDF}
                                 disabled={isDownloading}
-                                className="flex items-center gap-2 px-5 py-2.5 bg-bg-secondary hover:bg-bg-secondary/80 text-text-secondary rounded-xl transition-all font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center gap-2 px-6 py-3 bg-white hover:bg-white/90 text-[#C48B28] rounded-full transition-all font-black uppercase tracking-widest text-xs disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                             >
-                                <Download size={18} />
+                                <Download size={16} />
                                 {isDownloading ? 'Generating...' : 'Download PDF'}
                             </button>
                         </div>
@@ -147,8 +149,8 @@ const TermsOfServicePage = () => {
                                         key={section.id}
                                         onClick={() => scrollToSection(section.id)}
                                         className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 border-l-2 ${activeSection === section.id
-                                            ? 'bg-brand-primary/10 text-brand-primary border-brand-primary'
-                                            : 'text-text-secondary hover:bg-bg-secondary border-transparent hover:text-text-primary'
+                                            ? 'bg-[#C48B28]/10 text-[#C48B28] border-[#C48B28]'
+                                            : 'text-themev2-text/60 hover:bg-[#FEF9ED] border-transparent hover:text-themev2-text'
                                             }`}
                                     >
                                         {section.title}
@@ -163,13 +165,13 @@ const TermsOfServicePage = () => {
 
                         {/* 1. Acceptance */}
                         <section id="acceptance" className="scroll-mt-32">
-                            <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                                <div className="p-2 bg-bg-secondary rounded-lg text-text-secondary">
+                            <h2 className="text-2xl font-bold mb-6 flex items-center gap-3 text-themev2-text">
+                                <div className="p-2 bg-[#FEF9ED] rounded-lg text-[#C48B28] border border-[#EBC176]/20">
                                     <FileText size={24} />
                                 </div>
                                 1. Acceptance of Terms
                             </h2>
-                            <div className="bg-bg-surface p-8 rounded-2xl shadow-sm border border-border prose max-w-none text-text-secondary leading-relaxed">
+                            <div className="bg-white p-8 rounded-2xl shadow-sm border border-[#EBC176]/20 prose max-w-none text-themev2-text/70 leading-relaxed">
                                 <p className="mb-4">
                                     Welcome to PetCircle ("the Platform"), a community-driven application designed to connect pet lovers, facilitate responsible rehoming, and provide access to verified service providers.
                                 </p>
@@ -181,8 +183,8 @@ const TermsOfServicePage = () => {
 
                         {/* 2. User Accounts */}
                         <section id="accounts" className="scroll-mt-32">
-                            <h2 className="text-2xl font-bold mb-6">2. User Accounts & Registration</h2>
-                            <div className="prose max-w-none text-text-secondary leading-relaxed space-y-4">
+                            <h2 className="text-2xl font-bold mb-6 text-themev2-text">2. User Accounts & Registration</h2>
+                            <div className="prose max-w-none text-themev2-text/70 leading-relaxed space-y-4">
                                 <p>
                                     To access certain features of the Service (such as posting listings or messaging), you must register for an account. You agree to provide accurate, current, and complete information during the registration process and to keep such information updated.
                                 </p>
@@ -194,23 +196,23 @@ const TermsOfServicePage = () => {
 
                         {/* 3. User Responsibilities */}
                         <section id="responsibilities" className="scroll-mt-32">
-                            <h2 className="text-2xl font-bold mb-6">3. User Responsibilities</h2>
-                            <div className="bg-bg-surface p-8 rounded-2xl shadow-sm border border-border space-y-6">
-                                <p className="text-text-secondary">
+                            <h2 className="text-2xl font-bold mb-6 text-themev2-text">3. User Responsibilities</h2>
+                            <div className="bg-white p-8 rounded-2xl shadow-sm border border-[#EBC176]/20 space-y-6">
+                                <p className="text-themev2-text/70">
                                     You warrant that use of the Platform is for lawful, personal purposes. Specifically, you agree that:
                                 </p>
                                 <ul className="space-y-4">
                                     <li className="flex items-start gap-3">
-                                        <CheckCircle className="text-status-success mt-1 shrink-0" size={18} />
-                                        <span className="text-text-secondary">You are at least 18 years of age.</span>
+                                        <CheckCircle className="text-[#C48B28] mt-1 shrink-0" size={18} />
+                                        <span className="text-themev2-text/70">You are at least 18 years of age.</span>
                                     </li>
                                     <li className="flex items-start gap-3">
-                                        <CheckCircle className="text-status-success mt-1 shrink-0" size={18} />
-                                        <span className="text-text-secondary">You have the legal right to rehome any pet you list on the Platform.</span>
+                                        <CheckCircle className="text-[#C48B28] mt-1 shrink-0" size={18} />
+                                        <span className="text-themev2-text/70">You have the legal right to rehome any pet you list on the Platform.</span>
                                     </li>
                                     <li className="flex items-start gap-3">
-                                        <CheckCircle className="text-status-success mt-1 shrink-0" size={18} />
-                                        <span className="text-text-secondary">You will treat all other users and staff with respect, free from harassment or abuse.</span>
+                                        <CheckCircle className="text-[#C48B28] mt-1 shrink-0" size={18} />
+                                        <span className="text-themev2-text/70">You will treat all other users and staff with respect, free from harassment or abuse.</span>
                                     </li>
                                 </ul>
                             </div>
@@ -218,41 +220,41 @@ const TermsOfServicePage = () => {
 
                         {/* 4. Rehoming Guidelines */}
                         <section id="rehoming" className="scroll-mt-32">
-                            <h2 className="text-2xl font-bold mb-6 text-brand-primary">4. Rehoming Guidelines</h2>
-                            <div className="bg-brand-primary/5 p-8 rounded-2xl border border-brand-primary/20 space-y-6">
-                                <p className="text-text-secondary font-medium">
+                            <h2 className="text-2xl font-bold mb-6 text-[#C48B28]">4. Rehoming Guidelines</h2>
+                            <div className="bg-[#C48B28]/5 p-8 rounded-2xl border border-[#C48B28]/20 space-y-6">
+                                <p className="text-themev2-text/80 font-medium">
                                     PetCircle is a rehoming platform, NOT a marketplace. To ensure the welfare of animals, users must adhere to strict ethical guidelines:
                                 </p>
                                 <div className="grid md:grid-cols-2 gap-6">
-                                    <div className="bg-bg-surface p-6 rounded-xl border border-brand-primary/20 shadow-sm">
-                                        <h4 className="font-bold text-text-primary mb-2 flex items-center gap-2">
-                                            <AlertCircle size={18} className="text-brand-primary" /> Honesty
+                                    <div className="bg-white p-6 rounded-xl border border-[#EBC176]/20 shadow-sm">
+                                        <h4 className="font-bold text-themev2-text mb-2 flex items-center gap-2">
+                                            <AlertCircle size={18} className="text-[#C48B28]" /> Honesty
                                         </h4>
-                                        <p className="text-sm text-text-secondary">
+                                        <p className="text-sm text-themev2-text/70">
                                             You must accurately disclose the pet's health, behavioral history (including any aggression), and reason for rehoming.
                                         </p>
                                     </div>
-                                    <div className="bg-bg-surface p-6 rounded-xl border border-brand-primary/20 shadow-sm">
-                                        <h4 className="font-bold text-text-primary mb-2 flex items-center gap-2">
-                                            <AlertCircle size={18} className="text-brand-primary" /> No Commercial Sales
+                                    <div className="bg-white p-6 rounded-xl border border-[#EBC176]/20 shadow-sm">
+                                        <h4 className="font-bold text-themev2-text mb-2 flex items-center gap-2">
+                                            <AlertCircle size={18} className="text-[#C48B28]" /> No Commercial Sales
                                         </h4>
-                                        <p className="text-sm text-text-secondary">
+                                        <p className="text-sm text-themev2-text/70">
                                             Breeding operations and "flipping" are strictly prohibited. Rehoming fees must reflect reasonable costs (e.g., vet care), not profit.
                                         </p>
                                     </div>
-                                    <div className="bg-bg-surface p-6 rounded-xl border border-brand-primary/20 shadow-sm">
-                                        <h4 className="font-bold text-text-primary mb-2 flex items-center gap-2">
-                                            <AlertCircle size={18} className="text-brand-primary" /> Vetting
+                                    <div className="bg-white p-6 rounded-xl border border-[#EBC176]/20 shadow-sm">
+                                        <h4 className="font-bold text-themev2-text mb-2 flex items-center gap-2">
+                                            <AlertCircle size={18} className="text-[#C48B28]" /> Vetting
                                         </h4>
-                                        <p className="text-sm text-text-secondary">
+                                        <p className="text-sm text-themev2-text/70">
                                             Pet owners are responsible for vetting potential adopters. We provide tools (applications, messaging), but the final decision lies with you.
                                         </p>
                                     </div>
-                                    <div className="bg-bg-surface p-6 rounded-xl border border-brand-primary/20 shadow-sm">
-                                        <h4 className="font-bold text-text-primary mb-2 flex items-center gap-2">
-                                            <AlertCircle size={18} className="text-brand-primary" /> Safety
+                                    <div className="bg-white p-6 rounded-xl border border-[#EBC176]/20 shadow-sm">
+                                        <h4 className="font-bold text-themev2-text mb-2 flex items-center gap-2">
+                                            <AlertCircle size={18} className="text-[#C48B28]" /> Safety
                                         </h4>
-                                        <p className="text-sm text-text-secondary">
+                                        <p className="text-sm text-themev2-text/70">
                                             Meet in safe, public locations for initial greetings. Do not hand over a pet until you are entirely comfortable with the match.
                                         </p>
                                     </div>
@@ -278,31 +280,31 @@ const TermsOfServicePage = () => {
 
                         {/* 6. Content Ownership */}
                         <section id="content" className="scroll-mt-32">
-                            <h2 className="text-2xl font-bold mb-6">6. Content Ownership & License</h2>
-                            <p className="text-text-secondary leading-relaxed mb-4">
+                            <h2 className="text-2xl font-bold mb-6 text-themev2-text">6. Content Ownership & License</h2>
+                            <p className="text-themev2-text/70 leading-relaxed mb-4">
                                 You retain ownership of the content (photos, text) you post to the Service. However, by posting content, you grant PetCircle a non-exclusive, worldwide, royalty-free license to use, display, reproduce, and distribute your content for the purpose of operating and promoting the Service (e.g., featuring a success story).
                             </p>
                         </section>
 
                         {/* 7. Adoption Process */}
                         <section id="adoption" className="scroll-mt-32">
-                            <h2 className="text-2xl font-bold mb-6">7. Pet Adoption Process</h2>
-                            <div className="border border-border rounded-2xl p-8 space-y-6">
-                                <p className="text-text-secondary">
+                            <h2 className="text-2xl font-bold mb-6 text-themev2-text">7. Pet Adoption Process</h2>
+                            <div className="border border-[#EBC176]/30 rounded-2xl p-8 space-y-6">
+                                <p className="text-themev2-text/70">
                                     Our platform facilitates connections but does not serve as the legal guardian of any animal.
                                 </p>
                                 <div className="space-y-4">
                                     <div className="flex gap-4">
-                                        <span className="flex-shrink-0 w-8 h-8 rounded-full bg-bg-secondary text-text-secondary font-bold flex items-center justify-center">1</span>
-                                        <p className="text-text-secondary text-sm mt-1.5">Users submit applications directly to pet owners through our secure system.</p>
+                                        <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#FEF9ED] text-[#C48B28] font-bold flex items-center justify-center border border-[#EBC176]/20">1</span>
+                                        <p className="text-themev2-text/70 text-sm mt-1.5">Users submit applications directly to pet owners through our secure system.</p>
                                     </div>
                                     <div className="flex gap-4">
-                                        <span className="flex-shrink-0 w-8 h-8 rounded-full bg-bg-secondary text-text-secondary font-bold flex items-center justify-center">2</span>
-                                        <p className="text-text-secondary text-sm mt-1.5">Pet owners review applications and choose suitable candidates for meet-and-greets.</p>
+                                        <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#FEF9ED] text-[#C48B28] font-bold flex items-center justify-center border border-[#EBC176]/20">2</span>
+                                        <p className="text-themev2-text/70 text-sm mt-1.5">Pet owners review applications and choose suitable candidates for meet-and-greets.</p>
                                     </div>
                                     <div className="flex gap-4">
-                                        <span className="flex-shrink-0 w-8 h-8 rounded-full bg-bg-secondary text-text-secondary font-bold flex items-center justify-center">3</span>
-                                        <p className="text-text-secondary text-sm mt-1.5">All adoption agreements are entered into directly between the pet owner and the adopter. PetCircle is not a party to these agreements.</p>
+                                        <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#FEF9ED] text-[#C48B28] font-bold flex items-center justify-center border border-[#EBC176]/20">3</span>
+                                        <p className="text-themev2-text/70 text-sm mt-1.5">All adoption agreements are entered into directly between the pet owner and the adopter. PetCircle is not a party to these agreements.</p>
                                     </div>
                                 </div>
                             </div>
@@ -310,21 +312,21 @@ const TermsOfServicePage = () => {
 
                         {/* 8. Payments */}
                         <section id="payments" className="scroll-mt-32">
-                            <h2 className="text-2xl font-bold mb-6">8. Payment Terms</h2>
-                            <p className="text-text-secondary leading-relaxed">
+                            <h2 className="text-2xl font-bold mb-6 text-themev2-text">8. Payment Terms</h2>
+                            <p className="text-themev2-text/70 leading-relaxed">
                                 PetCircle is currently a free platform. Any rehoming fees discussed are handled directly between users. We strongly advise users to avoid cash transfers before meeting in person. Platform fees (if introduced in the future) will be clearly communicated.
                             </p>
                         </section>
 
                         {/* 9. Liability - IMPORTANT */}
                         <section id="liability" className="scroll-mt-32">
-                            <h2 className="text-2xl font-bold mb-6">9. Liability & Disclaimers</h2>
-                            <div className="bg-bg-secondary border-l-4 border-text-primary p-6">
-                                <h3 className="font-bold text-text-primary mb-3 uppercase text-sm tracking-wider">Disclaimer of Warranties</h3>
-                                <p className="text-text-secondary text-sm leading-relaxed mb-4">
+                            <h2 className="text-2xl font-bold mb-6 text-themev2-text">9. Liability & Disclaimers</h2>
+                            <div className="bg-[#FEF9ED] border-l-4 border-[#C48B28] p-6">
+                                <h3 className="font-bold text-themev2-text mb-3 uppercase text-sm tracking-wider">Disclaimer of Warranties</h3>
+                                <p className="text-themev2-text/70 text-sm leading-relaxed mb-4">
                                     THE SERVICE IS PROVIDED "AS IS". PETCIRCLE DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
                                 </p>
-                                <p className="text-text-secondary text-sm leading-relaxed">
+                                <p className="text-themev2-text/70 text-sm leading-relaxed">
                                     WE DO NOT GUARANTEE THE HEALTH, BEHAVIOR, TEMPERAMENT, OR HISTORY OF ANY ANIMAL LISTED ON THE SERVICE. USERS ASSUME ALL RISKS ASSOCIATED WITH INTERACTING WITH OTHER USERS AND ADOPTING ANIMALS.
                                 </p>
                             </div>
@@ -332,33 +334,33 @@ const TermsOfServicePage = () => {
 
                         {/* 10. Termination */}
                         <section id="termination" className="scroll-mt-32">
-                            <h2 className="text-2xl font-bold mb-6">10. Termination Policy</h2>
-                            <p className="text-text-secondary leading-relaxed">
+                            <h2 className="text-2xl font-bold mb-6 text-themev2-text">10. Termination Policy</h2>
+                            <p className="text-themev2-text/70 leading-relaxed">
                                 We may suspend or terminate your account immediately, without prior notice, if you breach these Terms of Service (e.g., misrepresenting a pet, abusive behavior) or for any other reason at our sole discretion. Upon termination, your right to use the Service will immediately cease.
                             </p>
                         </section>
 
                         {/* 11. Changes */}
                         <section id="changes" className="scroll-mt-32">
-                            <h2 className="text-2xl font-bold mb-6">11. Changes to Terms</h2>
-                            <p className="text-text-secondary leading-relaxed">
+                            <h2 className="text-2xl font-bold mb-6 text-themev2-text">11. Changes to Terms</h2>
+                            <p className="text-themev2-text/70 leading-relaxed">
                                 We reserve the right to modify these terms at any time. We will provide notice of significant changes updates on this page. Your continued use of the Platform after any changes constitutes your acceptance of the new Terms.
                             </p>
                         </section>
 
                         {/* 12. Contact */}
                         <section id="contact" className="scroll-mt-32 mb-20">
-                            <h2 className="text-2xl font-bold mb-6">12. Contact Information</h2>
-                            <p className="text-text-secondary leading-relaxed mb-6">
+                            <h2 className="text-2xl font-bold mb-6 text-themev2-text">12. Contact Information</h2>
+                            <p className="text-themev2-text/70 leading-relaxed mb-6">
                                 If you have any questions about these Terms, please contact us.
                             </p>
                             <div className="flex gap-6">
-                                <div className="flex items-center gap-3 text-text-secondary">
-                                    <Mail className="text-brand-primary" size={20} />
+                                <div className="flex items-center gap-3 text-themev2-text/70">
+                                    <Mail className="text-[#C48B28]" size={20} />
                                     <span>legal@petcircle.com</span>
                                 </div>
-                                <div className="flex items-center gap-3 text-text-secondary">
-                                    <AlertTriangle className="text-brand-primary" size={20} />
+                                <div className="flex items-center gap-3 text-themev2-text/70">
+                                    <AlertTriangle className="text-[#C48B28]" size={20} />
                                     <span>Report a Violation</span>
                                 </div>
                             </div>

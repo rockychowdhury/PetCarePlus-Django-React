@@ -11,26 +11,26 @@ const ContactPage = () => {
     };
 
     return (
-        <div className="bg-bg-primary min-h-screen  text-text-primary py-12 md:py-20">
+        <div className="bg-[#FEF9ED] min-h-screen text-themev2-text py-12 md:py-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="text-center mb-16">
-                    <h1 className="text-4xl md:text-5xl font-bold mb-4 font-serif text-text-primary">Contact Us</h1>
-                    <p className="text-lg text-text-secondary">
+                    <h1 className="text-4xl md:text-5xl font-bold mb-4 font-serif text-themev2-text">Contact Us</h1>
+                    <p className="text-lg text-themev2-text/60">
                         We're here to help! Send us a message and we'll respond within 24 hours.
                     </p>
                 </div>
 
                 <div className="grid lg:grid-cols-2 gap-8 items-start">
                     {/* Left Column: Contact Form */}
-                    <div className="bg-bg-surface rounded-[2rem] shadow-sm p-8 md:p-12 border border-border">
+                    <div className="bg-white rounded-[2rem] shadow-sm p-8 md:p-12 border border-[#EBC176]/20">
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                             {/* Full Name */}
                             <div>
-                                <label className="block text-sm font-bold text-text-primary mb-2">Full Name</label>
+                                <label className="block text-sm font-bold text-themev2-text mb-2">Full Name</label>
                                 <input
                                     type="text"
-                                    className={`w-full h-12 px-4 rounded-xl border ${errors.fullName ? 'border-status-error' : 'border-border'} bg-bg-secondary focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition`}
+                                    className={`w-full h-12 px-4 rounded-xl border ${errors.fullName ? 'border-status-error' : 'border-[#EBC176]/30'} bg-[#FEF9ED] focus:outline-none focus:ring-2 focus:ring-[#C48B28]/20 focus:border-[#C48B28] transition font-medium text-themev2-text`}
                                     placeholder="Enter your name"
                                     {...register("fullName", { required: true })}
                                 />
@@ -39,10 +39,10 @@ const ContactPage = () => {
 
                             {/* Email Address */}
                             <div>
-                                <label className="block text-sm font-bold text-text-primary mb-2">Email Address</label>
+                                <label className="block text-sm font-bold text-themev2-text mb-2">Email Address</label>
                                 <input
                                     type="email"
-                                    className={`w-full h-12 px-4 rounded-xl border ${errors.email ? 'border-status-error' : 'border-border'} bg-bg-secondary focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition`}
+                                    className={`w-full h-12 px-4 rounded-xl border ${errors.email ? 'border-status-error' : 'border-[#EBC176]/30'} bg-[#FEF9ED] focus:outline-none focus:ring-2 focus:ring-[#C48B28]/20 focus:border-[#C48B28] transition font-medium text-themev2-text`}
                                     placeholder="you@example.com"
                                     {...register("email", { required: true, pattern: /^\S+@\S+$/i })}
                                 />
@@ -51,10 +51,10 @@ const ContactPage = () => {
 
                             {/* Subject */}
                             <div>
-                                <label className="block text-sm font-bold text-text-primary mb-2">Subject</label>
+                                <label className="block text-sm font-bold text-themev2-text mb-2">Subject</label>
                                 <div className="relative">
                                     <select
-                                        className="w-full h-12 px-4 rounded-xl border border-border bg-bg-secondary focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition appearance-none cursor-pointer"
+                                        className="w-full h-12 px-4 rounded-xl border border-[#EBC176]/30 bg-[#FEF9ED] focus:outline-none focus:ring-2 focus:ring-[#C48B28]/20 focus:border-[#C48B28] transition appearance-none cursor-pointer font-medium text-themev2-text"
                                         {...register("subject")}
                                     >
                                         <option value="General Inquiry">General Inquiry</option>
@@ -70,9 +70,9 @@ const ContactPage = () => {
 
                             {/* Message */}
                             <div>
-                                <label className="block text-sm font-bold text-text-primary mb-2">Message</label>
+                                <label className="block text-sm font-bold text-themev2-text mb-2">Message</label>
                                 <textarea
-                                    className={`w-full p-4 rounded-xl border ${errors.message ? 'border-status-error' : 'border-border'} bg-bg-secondary focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition h-40 resize-none`}
+                                    className={`w-full p-4 rounded-xl border ${errors.message ? 'border-status-error' : 'border-[#EBC176]/30'} bg-[#FEF9ED] focus:outline-none focus:ring-2 focus:ring-[#C48B28]/20 focus:border-[#C48B28] transition h-40 resize-none font-medium text-themev2-text`}
                                     placeholder="How can we help you today? (Min 50 characters)"
                                     {...register("message", { required: true, minLength: 50 })}
                                 ></textarea>
@@ -81,13 +81,13 @@ const ContactPage = () => {
 
                             {/* Attachment (Optional) */}
                             <div>
-                                <label className="block text-sm font-bold text-text-primary mb-2">Attachment (Optional)</label>
-                                <div className="border-2 border-dashed border-brand-primary/30 rounded-xl bg-bg-secondary/50 p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-bg-secondary transition-colors group">
-                                    <div className="w-10 h-10 mb-3 text-brand-primary group-hover:scale-110 transition-transform">
+                                <label className="block text-sm font-bold text-themev2-text mb-2">Attachment (Optional)</label>
+                                <div className="border-2 border-dashed border-[#EBC176]/40 rounded-xl bg-[#FEF9ED]/50 p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-[#FEF9ED] transition-colors group">
+                                    <div className="w-10 h-10 mb-3 text-[#C48B28] group-hover:scale-110 transition-transform">
                                         <Upload size={40} strokeWidth={1.5} />
                                     </div>
-                                    <span className="text-sm font-medium text-brand-primary">Click to upload or drag and drop</span>
-                                    <span className="text-xs text-brand-primary/70 mt-1">Max file size: 5MB</span>
+                                    <span className="text-sm font-medium text-[#C48B28]">Click to upload or drag and drop</span>
+                                    <span className="text-xs text-[#C48B28]/70 mt-1">Max file size: 5MB</span>
                                     <input type="file" className="hidden" {...register("attachment")} />
                                 </div>
                             </div>
@@ -95,7 +95,7 @@ const ContactPage = () => {
                             {/* Submit Button */}
                             <button
                                 type="submit"
-                                className="w-full bg-text-primary text-text-inverted font-bold py-4 rounded-xl hover:opacity-90 transition-all shadow-lg hover:shadow-xl active:scale-[0.98] flex items-center justify-center gap-2 mt-4"
+                                className="w-full bg-themev2-text text-white font-bold py-4 rounded-xl hover:opacity-90 transition-all shadow-lg hover:shadow-xl active:scale-[0.98] flex items-center justify-center gap-2 mt-4"
                             >
                                 <span className="text-lg">Send Message</span>
                             </button>
@@ -105,20 +105,20 @@ const ContactPage = () => {
                     {/* Right Column: Info & Map */}
                     <div className="space-y-6">
                         {/* Contact Info Card */}
-                        <div className="bg-bg-surface rounded-[2rem] shadow-sm p-8 md:p-10 border border-border space-y-8">
+                        <div className="bg-white rounded-[2rem] shadow-sm p-8 md:p-10 border border-[#EBC176]/20 space-y-8">
 
                             {/* Email */}
                             <ContactItem
                                 icon={<Mail size={20} />}
                                 label="Email Us"
-                                content={<a href="mailto:support@petcircle.com" className="hover:text-brand-primary transition-colors">support@petcircle.com</a>}
+                                content={<a href="mailto:support@petcircle.com" className="hover:text-[#C48B28] transition-colors">support@petcircle.com</a>}
                             />
 
                             {/* Call */}
                             <ContactItem
                                 icon={<Phone size={20} />}
                                 label="Call Us"
-                                content={<a href="tel:5551234567" className="hover:text-brand-primary transition-colors">(555) 123-4567</a>}
+                                content={<a href="tel:5551234567" className="hover:text-[#C48B28] transition-colors">(555) 123-4567</a>}
                             />
 
                             {/* Office Hours */}
@@ -145,7 +145,7 @@ const ContactPage = () => {
 
                             {/* Follow Us */}
                             <div>
-                                <h4 className="font-bold text-text-primary mb-4">Follow Us</h4>
+                                <h4 className="font-bold text-themev2-text mb-4">Follow Us</h4>
                                 <div className="flex gap-4">
                                     <SocialButton icon={<Facebook size={18} />} />
                                     <SocialButton icon={<Twitter size={18} />} />
@@ -156,7 +156,7 @@ const ContactPage = () => {
                         </div>
 
                         {/* Map Card */}
-                        <div className="bg-bg-surface rounded-[2rem] shadow-sm p-2 border border-border h-64 overflow-hidden relative">
+                        <div className="bg-white rounded-[2rem] shadow-sm p-2 border border-[#EBC176]/20 h-64 overflow-hidden relative">
                             <iframe
                                 title="Map of Dhaka"
                                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d233667.8223908687!2d90.27923710646989!3d23.780887456212758!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755b8b087026b81%3A0x8fa563bbdd5904c2!2sDhaka!5e0!3m2!1sen!2sbd!4v1715000000000!5m2!1sen!2sbd"
@@ -178,12 +178,12 @@ const ContactPage = () => {
 // Helper Components
 const ContactItem = ({ icon, label, content }) => (
     <div className="flex items-start gap-4">
-        <div className="flex-shrink-0 w-12 h-12 bg-brand-primary/10 rounded-full flex items-center justify-center text-brand-primary">
+        <div className="flex-shrink-0 w-12 h-12 bg-[#FEF9ED] rounded-full flex items-center justify-center text-[#C48B28]">
             {icon}
         </div>
         <div>
-            <h4 className="font-bold text-text-primary text-lg mb-1">{label}</h4>
-            <div className="text-text-secondary text-sm leading-relaxed font-medium">
+            <h4 className="font-bold text-themev2-text text-lg mb-1">{label}</h4>
+            <div className="text-themev2-text/60 text-sm leading-relaxed font-medium">
                 {content}
             </div>
         </div>
@@ -191,7 +191,7 @@ const ContactItem = ({ icon, label, content }) => (
 );
 
 const SocialButton = ({ icon }) => (
-    <a href="#" className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-text-secondary hover:bg-brand-primary/10 hover:text-brand-primary hover:border-brand-primary transition-all">
+    <a href="#" className="w-10 h-10 rounded-full border border-[#EBC176]/30 flex items-center justify-center text-themev2-text/60 hover:bg-[#C48B28]/10 hover:text-[#C48B28] hover:border-[#C48B28] transition-all">
         {icon}
     </a>
 );

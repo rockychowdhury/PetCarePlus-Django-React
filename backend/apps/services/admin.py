@@ -3,7 +3,7 @@ from unfold.admin import ModelAdmin
 from .models import (
     ServiceCategory, Species, Specialization, ServiceOption,
     ServiceProvider, ServiceMedia, BusinessHours,
-    FosterService, VeterinaryClinic, TrainerService,
+    FosterService, VeterinaryClinic, TrainerService, GroomerService, PetSitterService,
     ServiceBooking, ServiceReview
 )
 
@@ -27,10 +27,54 @@ class ServiceOptionAdmin(ModelAdmin):
     list_display = ('name', 'category', 'base_price')
     list_filter = ('category',)
 
+class FosterServiceInline(admin.StackedInline):
+    model = FosterService
+    extra = 0
+    can_delete = False
+
+class VeterinaryClinicInline(admin.StackedInline):
+    model = VeterinaryClinic
+    extra = 0
+    can_delete = False
+
+class TrainerServiceInline(admin.StackedInline):
+    model = TrainerService
+    extra = 0
+    can_delete = False
+
+class GroomerServiceInline(admin.StackedInline):
+    model = GroomerService
+    extra = 0
+    can_delete = False
+
+class PetSitterServiceInline(admin.StackedInline):
+    model = PetSitterService
+    extra = 0
+    can_delete = False
+
+class BusinessHoursInline(admin.TabularInline):
+    model = BusinessHours
+    extra = 7
+    max_num = 7
+
+class ServiceMediaInline(admin.TabularInline):
+    model = ServiceMedia
+    extra = 1
+
 @admin.register(ServiceProvider)
 class ServiceProviderAdmin(ModelAdmin):
-    list_display = ('user', 'business_name', 'category', 'verification_status')
+    list_display = ('id', 'user', 'business_name', 'category', 'verification_status')
     list_filter = ('category', 'verification_status')
+    search_fields = ('business_name', 'email', 'user__email')
+    inlines = [
+        BusinessHoursInline,
+        ServiceMediaInline,
+        VeterinaryClinicInline,
+        FosterServiceInline,
+        TrainerServiceInline,
+        GroomerServiceInline,
+        PetSitterServiceInline
+    ]
 
 @admin.register(FosterService)
 class FosterServiceAdmin(ModelAdmin):

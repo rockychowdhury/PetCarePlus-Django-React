@@ -9,21 +9,22 @@ const ServiceTabs = ({ activeTab, onTabChange }) => {
     ];
 
     return (
-        <div className="sticky top-[73px] z-30 bg-white border-b border-border shadow-sm">
-            <div className="max-w-7xl mx-auto px-4 md:px-8">
-                <nav className="flex space-x-8 overflow-x-auto scrollbar-hide" aria-label="Tabs">
+        <div className="sticky top-[72px] z-30 bg-[#FEF9ED]/80 backdrop-blur-md border-b border-[#EBC176]/10">
+            <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
+                <nav className="flex space-x-10 overflow-x-auto scrollbar-hide" aria-label="Tabs" id="service-tabs">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => onTabChange(tab.id)}
                             className={`
-                                whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200
+                                whitespace-nowrap py-5 px-1 border-b-2 font-black text-[11px] uppercase tracking-widest transition-all duration-300 outline-none
                                 ${activeTab === tab.id
-                                    ? 'border-brand-primary text-brand-primary'
-                                    : 'border-transparent text-text-secondary hover:text-text-primary hover:border-gray-300'
+                                    ? 'border-[#C48B28] text-themev2-text'
+                                    : 'border-transparent text-themev2-text/30 hover:text-themev2-text hover:border-[#EBC176]/30'
                                 }
                             `}
                             aria-current={activeTab === tab.id ? 'page' : undefined}
+                            id={`tab-${tab.id}`}
                         >
                             {tab.label}
                         </button>
