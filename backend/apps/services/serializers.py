@@ -269,6 +269,7 @@ class ServiceProviderSerializer(serializers.ModelSerializer):
     )
     media = ServiceMediaSerializer(many=True, read_only=True)
     hours = BusinessHoursSerializer(many=True, required=False)
+    availability_blocks = ProviderAvailabilityBlockSerializer(many=True, read_only=True)
     reviews = ServiceReviewSerializer(many=True, read_only=True)
     
     foster_details = FosterServiceSerializer(required=False, allow_null=True)
@@ -295,9 +296,7 @@ class ServiceProviderSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'user', 'business_name', 'category', 'description', 'website',
             'phone', 'email', 'license_number', 'verification_status',
-            'phone', 'email', 'license_number', 'verification_status',
-            'media', 'hours',
-            'address',
+            'media', 'hours', 'availability_blocks',
             'address', 
             'address_line1', 'address_line2', 'city', 'state', 'zip_code', 'latitude', 'longitude',
             'is_verified', 'reviews', 'reviews_count', 'avg_rating', 

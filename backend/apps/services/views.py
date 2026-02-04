@@ -400,6 +400,28 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         
         return Response(self.get_serializer(provider).data)
         
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def update_settings(self, request, pk=None):
+        """Update provider settings JSON"""
+        provider = self.get_object()
+        
+        # Check ownership
+        if provider.user != request.user:
+            return Response({"error": "Not authorized"}, status=403)
+            
+        settings_data = request.data
+        if not isinstance(settings_data, dict):
+            return Response({"error": "Expected a dictionary of settings."}, status=400)
+            
+        # Merge new settings with existing ones
+        current_settings = provider.settings or {}
+        current_settings.update(settings_data)
+        
+        provider.settings = current_settings
+        provider.save()
+        
+        return Response(self.get_serializer(provider).data)
+        
     @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny], url_path='availability')
     def availability(self, request, pk=None):
         """Get availability for a provider (Contract 3.4)"""

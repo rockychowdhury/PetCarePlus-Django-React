@@ -1,7 +1,12 @@
 import React from 'react';
-import { Calendar, X, Clock } from 'lucide-react';
+import {
+    Calendar, X, Clock, AlertCircle,
+    RefreshCcw, ArrowRight, Ban, Info
+} from 'lucide-react';
 import { format } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../../../../components/common/Buttons/Button';
+import Badge from '../../../../components/common/Display/Badge';
 
 const BlockedTimesList = ({ blocks, onDelete, loading }) => {
     const oneTimeBlocks = blocks?.filter(b => !b.is_recurring) || [];
@@ -11,101 +16,113 @@ const BlockedTimesList = ({ blocks, onDelete, loading }) => {
 
     if (loading) {
         return (
-            <div className="text-center py-8 text-gray-500">
-                Loading blocks...
+            <div className="flex flex-col items-center justify-center py-24 space-y-4">
+                <div className="w-12 h-12 border-4 border-[#402E11]/5 border-t-[#C48B28] rounded-full animate-spin" />
+                <p className="text-[#402E11]/40 text-xs font-black uppercase tracking-[0.2em]">Synchronizing Exceptions</p>
             </div>
         );
     }
 
     if (blocks?.length === 0) {
         return (
-            <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                <Calendar className="mx-auto text-gray-400 mb-3" size={48} />
-                <p className="text-gray-600 font-medium">No blocked times yet</p>
-                <p className="text-sm text-gray-500 mt-1">Click "Block Time" to add unavailable slots</p>
-            </div>
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center justify-center py-24 bg-[#FAF9F6]/50 rounded-[3rem] border-2 border-dashed border-[#EAE6E2]"
+            >
+                <div className="w-20 h-20 bg-white rounded-[2.5rem] flex items-center justify-center text-[#402E11]/10 shadow-sm mb-6">
+                    <Ban size={40} />
+                </div>
+                <h3 className="text-xl font-black text-[#402E11] mb-2">Clear Schedule</h3>
+                <p className="text-[#402E11]/40 text-sm font-bold max-w-xs text-center">
+                    You haven't added any availability exceptions yet. Your weekly schedule is currently fully active.
+                </p>
+            </motion.div>
         );
     }
 
     const BlockCard = ({ block, isRecurring }) => (
-        <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between">
+        <motion.div
+            layout
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            className="group bg-white border border-[#EAE6E2] rounded-[2rem] p-6 hover:shadow-2xl hover:shadow-[#402E11]/5 transition-all relative overflow-hidden"
+        >
+            <div className="flex items-start justify-between relative z-10">
                 <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-3 mb-4">
                         {isRecurring ? (
-                            <div className="flex items-center gap-2 text-purple-600">
-                                <Clock size={16} />
-                                <span className="font-bold text-gray-900">
-                                    Every {daysOfWeek[block.day_of_week]}
-                                </span>
+                            <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100">
+                                <RefreshCcw size={14} />
                             </div>
                         ) : (
-                            <div className="flex items-center gap-2 text-red-600">
-                                <Calendar size={16} />
-                                <span className="font-bold text-gray-900">
-                                    {format(new Date(block.block_date), 'MMMM d, yyyy')}
-                                </span>
+                            <div className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 border border-orange-100">
+                                <Calendar size={14} />
                             </div>
                         )}
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#402E11]/40">
+                            {isRecurring ? 'Recurring Logic' : 'Date Exception'}
+                        </span>
                     </div>
 
-                    {block.is_all_day ? (
-                        <div className="text-sm text-gray-600">All Day</div>
-                    ) : (
-                        <div className="text-sm text-gray-600">
-                            {block.start_time} - {block.end_time}
+                    <div className="mb-4">
+                        <div className="text-lg font-black text-[#402E11]">
+                            {isRecurring
+                                ? `Every ${daysOfWeek[block.day_of_week]}`
+                                : format(new Date(block.block_date), 'MMMM d, yyyy')
+                            }
                         </div>
-                    )}
+                        <div className="flex items-center gap-2 mt-1 text-sm font-bold text-[#402E11]/60">
+                            <Clock size={14} className="text-[#C48B28]" />
+                            {block.is_all_day ? 'All Day Closure' : `${block.start_time} — ${block.end_time}`}
+                        </div>
+                    </div>
 
                     {block.reason && (
-                        <div className="mt-2 text-xs text-gray-500 bg-gray-50 rounded p-2">
+                        <div className="bg-[#FAF9F6] border border-[#EAE6E2] rounded-2xl p-4 text-[11px] font-bold text-[#402E11]/60 flex items-start gap-3">
+                            <Info size={14} className="text-[#C48B28] flex-shrink-0 mt-0.5" />
                             {block.reason}
                         </div>
                     )}
-
-                    {isRecurring && (
-                        <div className="mt-2 text-xs text-purple-600 font-medium capitalize">
-                            {block.recurrence_pattern}
-                        </div>
-                    )}
                 </div>
 
-                <button
-                    onClick={() => onDelete(block.id)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors ml-4"
-                    title="Remove block"
-                >
-                    <X size={18} />
-                </button>
+                <div className="flex flex-col items-end gap-4 ml-4">
+                    <button
+                        onClick={() => onDelete(block.id)}
+                        className="w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all border border-red-100"
+                        title="Remove block"
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                    {isRecurring && (
+                        <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-100 text-[8px] font-black uppercase tracking-wider px-2 py-0.5">
+                            {block.recurrence_pattern}
+                        </Badge>
+                    )}
+                </div>
             </div>
-        </div>
+
+            {/* Subtle background decoration */}
+            <div className="absolute -bottom-6 -right-6 text-[#402E11]/[0.02] pointer-events-none">
+                {isRecurring ? <RefreshCcw size={120} /> : <Calendar size={120} />}
+            </div>
+        </motion.div>
     );
 
     return (
-        <div className="space-y-6">
-            {/* One-time Blocks */}
-            {oneTimeBlocks.length > 0 && (
-                <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-3">Blocked Dates</h3>
-                    <div className="space-y-3">
-                        {oneTimeBlocks.map(block => (
-                            <BlockCard key={block.id} block={block} isRecurring={false} />
-                        ))}
-                    </div>
-                </div>
-            )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <AnimatePresence mode="popLayout">
+                {/* One-time Blocks */}
+                {oneTimeBlocks.map(block => (
+                    <BlockCard key={block.id} block={block} isRecurring={false} />
+                ))}
 
-            {/* Recurring Blocks */}
-            {recurringBlocks.length > 0 && (
-                <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-3">Recurring Blocks</h3>
-                    <div className="space-y-3">
-                        {recurringBlocks.map(block => (
-                            <BlockCard key={block.id} block={block} isRecurring={true} />
-                        ))}
-                    </div>
-                </div>
-            )}
+                {/* Recurring Blocks */}
+                {recurringBlocks.map(block => (
+                    <BlockCard key={block.id} block={block} isRecurring={true} />
+                ))}
+            </AnimatePresence>
         </div>
     );
 };
