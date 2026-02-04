@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import {
     Search,
     Calendar,
@@ -17,7 +18,8 @@ import Button from '../../../../components/common/Buttons/Button';
 import Badge from '../../../../components/common/Feedback/Badge';
 import useServices from '../../../../hooks/useServices';
 
-const BookingsPage = ({ provider }) => {
+const BookingsPage = () => {
+    const { provider } = useOutletContext();
     const { useGetMyBookings, useBookingAction } = useServices();
     const { data: bookingsData, isLoading } = useGetMyBookings();
     const bookingAction = useBookingAction();

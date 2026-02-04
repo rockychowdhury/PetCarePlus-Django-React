@@ -31,17 +31,16 @@ const Calendar = ({
     className = ''
 }) => {
     const [currentDate, setCurrentDate] = useState(initialDate);
-    const [currentView, setCurrentView] = useState(view);
 
     // Navigation functions
     const goToNext = () => {
-        if (currentView === 'week') setCurrentDate(addWeeks(currentDate, 1));
-        if (currentView === 'month') setCurrentDate(addWeeks(currentDate, 4));
+        if (view === 'week') setCurrentDate(addWeeks(currentDate, 1));
+        if (view === 'month') setCurrentDate(addWeeks(currentDate, 4));
     };
 
     const goToPrev = () => {
-        if (currentView === 'week') setCurrentDate(subWeeks(currentDate, 1));
-        if (currentView === 'month') setCurrentDate(subWeeks(currentDate, 4));
+        if (view === 'week') setCurrentDate(subWeeks(currentDate, 1));
+        if (view === 'month') setCurrentDate(subWeeks(currentDate, 4));
     };
 
     const goToToday = () => setCurrentDate(new Date());
@@ -233,7 +232,7 @@ const Calendar = ({
                         Today
                     </button>
                     <h2 className="text-lg font-bold text-gray-900">
-                        {currentView === 'week'
+                        {view === 'week'
                             ? `${format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM dd')} - ${format(
                                 addDays(startOfWeek(currentDate, { weekStartsOn: 1 }), 6),
                                 'MMM dd, yyyy'
@@ -252,8 +251,8 @@ const Calendar = ({
             </div>
 
             {/* Calendar Views */}
-            {currentView === 'week' && renderWeekView()}
-            {currentView === 'month' && renderMonthView()}
+            {view === 'week' && renderWeekView()}
+            {view === 'month' && renderMonthView()}
         </div>
     );
 };

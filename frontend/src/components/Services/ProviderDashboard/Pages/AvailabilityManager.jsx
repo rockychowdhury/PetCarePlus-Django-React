@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { PlusCircle, CalendarOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import useAPI from '../../../../hooks/useAPI';
@@ -8,7 +9,8 @@ import Button from '../../../../components/common/Buttons/Button';
 import BlockTimeModal from '../Components/BlockTimeModal';
 import BlockedTimesList from '../Components/BlockedTimesList';
 
-const AvailabilityManager = ({ provider }) => {
+const AvailabilityManager = () => {
+    const { provider } = useOutletContext();
     const api = useAPI();
     const { user } = useAuth();
     const [blocks, setBlocks] = useState([]);

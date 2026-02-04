@@ -7,25 +7,35 @@ import {
     User,
     Star,
     TrendingUp,
-    LogOut
+    LogOut,
+    Home,
+    Settings as SettingsIcon,
+    DollarSign
 } from 'lucide-react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, Link, useLocation } from 'react-router-dom';
 import useAuth from '../../../../hooks/useAuth';
 import Logo from '../../../common/Logo';
 
 const Sidebar = ({ isMobileOpen, setIsMobileOpen, provider }) => {
     const { logout, user } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const menuItems = [
         { path: '/provider/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { path: '/provider/calendar', label: 'Calendar', icon: CalendarDays },
         { path: '/provider/availability', label: 'Availability', icon: CalendarOff },
-        { path: '/provider/bookings', label: 'Bookings', icon: Calendar, badge: 3 }, // TODO: Dynamic badge
-        { path: '/provider/profile', label: 'My Profile', icon: User },
+        { path: '/provider/bookings', label: 'Bookings', icon: Calendar },
         { path: '/provider/reviews', label: 'Reviews', icon: Star },
         { path: '/provider/analytics', label: 'Analytics', icon: TrendingUp },
+        { path: '/provider/settings', label: 'Settings', icon: SettingsIcon },
     ];
+
+    const isActive = (path) => {
+        if (path === '/provider/dashboard' && location.pathname === '/provider/dashboard') return true;
+        if (path !== '/provider/dashboard' && location.pathname.startsWith(path)) return true;
+        return false;
+    };
 
     const handleLogout = () => {
         logout();
@@ -47,67 +57,80 @@ const Sidebar = ({ isMobileOpen, setIsMobileOpen, provider }) => {
 
             {/* Sidebar Container */}
             <aside className={`
-                fixed top-0 left-0 bottom-0 z-40 w-72 bg-white border-r border-gray-100
-                transform transition-transform duration-300 ease-in-out lg:transform-none lg:relative
-                ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col
+                fixed top-0 left-0 bottom-0 z-40 w-72 bg-white border-r border-[#EBC176]/20
+                transform transition-transform duration-300 ease-in-out
+                ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} flex flex-col h-screen shadow-[4px_0_24px_-12px_rgba(196,139,40,0.1)]
             `}>
                 {/* Logo Area */}
-                <div className="px-8 py-8 lg:py-10">
-                    <Logo />
+                <div className="px-6 pt-8 pb-6 text-center">
+                    <Link to="/" className="block">
+                        <Logo className="scale-90 origin-left" />
+                    </Link>
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
+                <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto custom-scrollbar py-4">
+                    {/* Back to Home Link */}
+                    <Link
+                        to="/"
+                        className="flex items-center gap-3 px-4 py-3 rounded-[1.1rem] text-[13px] font-bold text-[#5A3C0B]/60 hover:bg-[#FEF9ED] hover:text-[#C48B28] transition-all duration-300 mb-6 group"
+                    >
+                        <Home size={18} className="text-[#C48B28]/70 group-hover:text-[#C48B28]" />
+                        Back to Home
+                    </Link>
+
                     {menuItems.map((item) => {
+                        const active = isActive(item.path);
                         const Icon = item.icon;
                         return (
-                            <NavLink
+                            <Link
                                 key={item.path}
                                 to={item.path}
                                 onClick={() => window.innerWidth < 1024 && setIsMobileOpen(false)}
-                                className={({ isActive }) => `
-                                    w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-as font-medium transition-all duration-200
-                                    ${isActive
-                                        ? 'bg-brand-primary/10 text-brand-primary'
-                                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                                    }
-                                `}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-[1.1rem] text-[13px] font-bold transition-all duration-300 relative group ${active
+                                    ? 'bg-[#C48B28] text-white shadow-sm shadow-[#C48B28]/20 translate-x-1'
+                                    : 'text-[#5A3C0B]/70 hover:bg-[#FEF9ED] hover:text-[#C48B28]'
+                                    }`}
                             >
-                                <div className="flex items-center gap-3.5">
-                                    <Icon size={22} className="opacity-80" />
-                                    {item.label}
-                                </div>
+                                <Icon
+                                    size={18}
+                                    strokeWidth={active ? 2.5 : 2}
+                                    className={`transition-colors duration-300 ${active ? 'text-white' : 'text-[#C48B28]/70 group-hover:text-[#C48B28]'}`}
+                                />
+                                {item.label}
+
                                 {item.badge && (
-                                    <span className="bg-gray-800 text-white text-[10px] font-bold min-w-5 h-5 flex items-center justify-center rounded-full shadow-sm">
+                                    <div className={`ml-auto flex items-center justify-center px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider ${active
+                                        ? 'bg-white/20 text-white'
+                                        : 'bg-[#C48B28]/10 text-[#C48B28]'
+                                        }`}>
                                         {item.badge}
-                                    </span>
+                                    </div>
                                 )}
-                            </NavLink>
+                            </Link>
                         );
                     })}
                 </nav>
 
                 {/* Footer Section */}
-                <div className="p-6 mt-auto space-y-6">
+                <div className="p-4 mt-auto">
                     {/* Log Out Link */}
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-2 text-brand-primary font-bold text-base hover:opacity-80 transition-opacity"
+                        className="flex items-center gap-3 w-full px-4 py-3 rounded-[1.1rem] text-[#5A3C0B]/50 font-bold text-[13px] hover:bg-red-50 hover:text-red-500 transition-all duration-300 group border border-transparent hover:border-red-100"
                     >
-                        <LogOut size={20} />
-                        Log Out
+                        <LogOut size={18} strokeWidth={2} className="group-hover:stroke-red-500 transition-colors" />
+                        <span className="tracking-wide">Log Out</span>
                     </button>
 
                     {/* User Profile Card */}
-                    <div className="bg-gray-50 rounded-2xl p-4 flex items-center gap-4 border border-gray-100">
-                        <div className="w-10 h-10 rounded-full bg-brand-primary flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-sm">
+                    <div className="mt-4 flex items-center gap-3 px-4 py-3 bg-[#FAF3E0]/60 rounded-xl border border-[#EBC176]/20">
+                        <div className="w-8 h-8 rounded-full bg-[#C48B28] flex items-center justify-center text-white text-[10px] font-black shadow-sm shrink-0">
                             {firstInitial}
                         </div>
-                        <div className="overflow-hidden">
-                            <div className="text-[10px] font-black text-brand-primary/60 uppercase tracking-wider mb-0.5">LOGGED IN AS</div>
-                            <div className="font-bold text-gray-900 text-base truncate">
-                                {businessName}
-                            </div>
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[9px] font-bold text-[#5A3C0B]/40 uppercase tracking-wider">Business Portal</span>
+                            <span className="text-xs font-black text-[#5A3C0B] truncate">{businessName}</span>
                         </div>
                     </div>
                 </div>

@@ -147,8 +147,8 @@ const PetCard = ({ pet, viewMode = 'grid', variant = 'listing', onDelete, onTogg
                 <div className="p-3 flex flex-col gap-2.5">
                     {/* Pet Name & Type */}
                     <div>
-                        <h3 className="text-sm font-black text-themev2-text leading-tight mb-0.5 truncate">{data.name}</h3>
-                        <p className="text-[9px] font-bold text-themev2-text/50 uppercase tracking-widest truncate">
+                        <h3 className="text-sm font-black text-[#402E11] leading-tight mb-0.5 truncate">{data.name}</h3>
+                        <p className="text-[9px] font-bold text-[#402E11]/50 uppercase tracking-widest truncate">
                             {data.species} • {data.breed}
                         </p>
                     </div>
@@ -156,25 +156,25 @@ const PetCard = ({ pet, viewMode = 'grid', variant = 'listing', onDelete, onTogg
                     {/* Stats Grid - Ultra Compact */}
                     <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
                         <div className="flex items-center gap-1.5">
-                            <Cake size={10} className="text-themev2-primary flex-shrink-0" />
-                            <p className="text-[10px] font-bold text-themev2-text truncate">{data.age}</p>
+                            <Cake size={10} className="text-[#C48B28] flex-shrink-0" />
+                            <p className="text-[10px] font-bold text-[#402E11] truncate">{data.age}</p>
                         </div>
 
                         <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-themev2-primary flex-shrink-0 leading-none">
+                            <span className="text-xs text-[#C48B28] flex-shrink-0 leading-none">
                                 {data.gender.toLowerCase() === 'female' ? '♀' : data.gender.toLowerCase() === 'male' ? '♂' : '?'}
                             </span>
-                            <p className="text-[10px] font-bold text-themev2-text capitalize truncate">{data.gender}</p>
+                            <p className="text-[10px] font-bold text-[#402E11] capitalize truncate">{data.gender}</p>
                         </div>
 
                         <div className="flex items-center gap-1.5">
-                            <Ruler size={10} className="text-themev2-primary flex-shrink-0" />
-                            <p className="text-[10px] font-bold text-themev2-text capitalize truncate">{data.size}</p>
+                            <Ruler size={10} className="text-[#C48B28] flex-shrink-0" />
+                            <p className="text-[10px] font-bold text-[#402E11] capitalize truncate">{data.size}</p>
                         </div>
 
                         <div className="flex items-center gap-1.5">
-                            <Scale size={10} className="text-themev2-primary flex-shrink-0" />
-                            <p className="text-[10px] font-bold text-themev2-text truncate">{data.weight}</p>
+                            <Scale size={10} className="text-[#C48B28] flex-shrink-0" />
+                            <p className="text-[10px] font-bold text-[#402E11] truncate">{data.weight}</p>
                         </div>
                     </div>
 
@@ -212,14 +212,14 @@ const PetCard = ({ pet, viewMode = 'grid', variant = 'listing', onDelete, onTogg
                     <div className="flex gap-1.5 mt-auto pt-1">
                         <button
                             onClick={() => onView && onView(pet)}
-                            className="flex-1 bg-themev2-text text-white h-7 rounded-lg flex items-center justify-center text-[9px] font-bold uppercase tracking-wide hover:bg-themev2-primary transition-all shadow-sm"
+                            className="flex-1 bg-[#402E11] text-white h-7 rounded-lg flex items-center justify-center text-[9px] font-bold uppercase tracking-wide hover:bg-[#C48B28] transition-all shadow-sm"
                         >
                             View
                         </button>
                         {onToggleActive && (
                             <button
                                 onClick={() => onToggleActive(pet)}
-                                className="w-7 h-7 flex items-center justify-center border border-themev2-surface rounded-lg text-themev2-text/60 hover:text-themev2-primary hover:bg-themev2-surface/20 transition-all"
+                                className="w-7 h-7 flex items-center justify-center border border-[#EBC176]/40 rounded-lg text-[#402E11]/60 hover:text-[#C48B28] hover:bg-[#FAF3E0] transition-all"
                             >
                                 {data.status === 'active' ? <Archive size={12} /> : <RotateCcw size={12} />}
                             </button>

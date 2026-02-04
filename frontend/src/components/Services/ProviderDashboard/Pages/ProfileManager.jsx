@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { User, ClipboardList, Clock, Image as ImageIcon, ExternalLink, DollarSign } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Button from '../../../../components/common/Buttons/Button';
@@ -7,7 +8,8 @@ import ServiceSpecificForm from '../ServiceSpecificForm';
 import BusinessHoursEditor from '../BusinessHoursEditor';
 import MediaGalleryEditor from '../MediaGalleryEditor';
 
-const ProfileManager = ({ provider }) => {
+const ProfileManager = () => {
+    const { provider } = useOutletContext();
     const [activeTab, setActiveTab] = useState('basic');
     const { useUpdateProviderProfile, useUpdateProviderHours, useUpdateProviderMedia, useGetCategories } = useServices();
 
