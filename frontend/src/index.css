@@ -31,21 +31,29 @@
     --color-text-muted: #B0B0B0;
     /* Light gray - Disabled */
 
-    /* Brand Colors */
-    --color-brand-primary: #5B8A72;
-    /* Sage Green - Primary actions */
-    --color-brand-secondary: #f29d4a;
-    /* Champagne Gold - Accents */
-    --color-brand-accent: #E8D5C4;
-    /* Soft Beige - Highlights */
+    /* Brand Colors (V2 Unified) */
+    --color-brand-primary: #C48B28;
+    /* Golden - Primary actions */
+    --color-brand-secondary: #EBC176;
+    /* Warm Sand - Accents */
+    --color-brand-accent: #FAF3E0;
+    /* Soft Linen - Highlights */
+    --color-brand-ai: #8A725B;
+    /* Earthy Taupe - AI features */
+
+    /* Theme V2 Specifics */
+    --themev2-bg: #FEF9ED;
+    --themev2-surface: #FFFFFF;
+    --themev2-primary: #C48B28;
+    --themev2-text: #402E11;
 
     /* Border Colors */
-    --color-border: #E8E8E4;
-    /* Light gray - Default */
-    --color-border-light: #F0F0EC;
-    /* Very light - Subtle */
-    --color-border-focus: #5B8A72;
-    /* Sage - Focus state */
+    --color-border: #EBC176;
+    /* Warm border - Default */
+    --color-border-light: #FAF3E0;
+    /* Subtle border */
+    --color-border-focus: #C48B28;
+    /* Golden - Focus state */
     --color-border-error: #E05D5D;
     /* Soft red - Error */
 

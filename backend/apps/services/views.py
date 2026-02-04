@@ -319,6 +319,98 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         
         serializer = ServiceReviewSerializer(review)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def analytics(self, request):
+        """
+        Return comprehensive analytics for the authenticated provider.
+        """
+        user = request.user
+        if not hasattr(user, 'service_provider_profile'):
+             return Response({"error": "User is not a service provider"}, status=403)
+        
+        provider = user.service_provider_profile
+        
+        # 1. Timeline Data (Last 12 months)
+        from django.db.models.functions import TruncMonth
+        from django.utils import timezone
+        
+        now = timezone.now()
+        one_year_ago = now - timezone.timedelta(days=365)
+        
+        # Filter valid bookings (completed/paid or confirmed) - for earnings, usually only completed
+        # For volume, maybe confirmed+
+        monthly_stats = ServiceBooking.objects.filter(
+            provider=provider,
+            created_at__gte=one_year_ago
+        ).annotate(
+            month=TruncMonth('booking_date')
+        ).values('month').annotate(
+            earnings=Sum('agreed_price', filter=Q(status='completed') & ~Q(payment_status='refunded')),
+            bookings=Count('id')
+        ).order_by('month')
+        
+        timeline_data = []
+        for entry in monthly_stats:
+            if entry['month']:
+                timeline_data.append({
+                    "month": entry['month'].strftime("%b %Y"),
+                    "earnings": float(entry['earnings'] or 0),
+                    "bookings": entry['bookings']
+                })
+
+        # 2. Service Distribution
+        # Group by service_option name or booking_type
+        distribution_stats = ServiceBooking.objects.filter(
+            provider=provider,
+            status__in=['completed', 'confirmed']
+        ).values('service_option__name', 'booking_type').annotate(
+            count=Count('id')
+        ).order_by('-count')[:5]
+
+        distribution = []
+        total_dist = sum(item['count'] for item in distribution_stats)
+        
+        for item in distribution_stats:
+            label = item['service_option__name'] or item['booking_type']
+            if not label: label = "Standard Service"
+            val = round((item['count'] / total_dist) * 100) if total_dist > 0 else 0
+            distribution.append({
+                "name": label,
+                "value": val
+            })
+            
+        # 3. Weekly Intensity
+        from django.db.models.functions import ExtractWeekDay
+        weekly_stats = ServiceBooking.objects.filter(
+            provider=provider,
+            created_at__gte=one_year_ago
+        ).annotate(
+            weekday=ExtractWeekDay('booking_date')
+        ).values('weekday').annotate(
+            count=Count('id')
+        ).order_by('weekday')
+        
+        # Django ExtractWeekDay: Sunday=1, Monday=2... Saturday=7
+        week_map = {1: 'Sun', 2: 'Mon', 3: 'Tue', 4: 'Wed', 5: 'Thu', 6: 'Fri', 7: 'Sat'}
+        intensity_dict = {day: 0 for day in week_map.values()}
+        
+        for item in weekly_stats:
+            day_name = week_map.get(item['weekday'])
+            if day_name:
+                intensity_dict[day_name] = item['count']
+                
+        # Sorted Mon-Sun for chart
+        sorter = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        intensity_data = []
+        for day in sorter:
+            intensity_data.append({"day": day, "count": intensity_dict[day]})
+
+        return Response({
+            "timeline": timeline_data,
+            "distribution": distribution,
+            "weekly_intensity": intensity_data
+        })
     
     @action(detail=True, methods=['get', 'post'], permission_classes=[permissions.IsAuthenticated])
     def availability_blocks(self, request, pk=None):
@@ -369,7 +461,8 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def me(self, request):
         try:
-            provider = ServiceProvider.objects.get(user=request.user)
+            # Use get_queryset to ensure annotations (avg_rating, etc) are included
+            provider = self.get_queryset().get(user=request.user)
             serializer = self.get_serializer(provider)
             return Response(serializer.data)
         except ServiceProvider.DoesNotExist:
@@ -671,40 +764,7 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
             "today_schedule": ServiceBookingSerializer(today_bookings, many=True).data,
         })
 
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
-    def analytics(self, request):
-        """
-        Get historical analytics for provider.
-        """
-        user = request.user
-        if not hasattr(user, 'service_provider_profile'):
-             return Response({"error": "User is not a service provider"}, status=403)
-        
-        provider = user.service_provider_profile
-        bookings = ServiceBooking.objects.filter(provider=provider).exclude(status='cancelled').exclude(payment_status='refunded')
-        
-        from django.utils import timezone
-        from django.db.models.functions import TruncMonth
-        
-        # Last 6 months earnings
-        six_months_ago = timezone.now() - timezone.timedelta(days=180)
-        
-        monthly_stats = bookings.filter(created_at__gte=six_months_ago)\
-            .annotate(month=TruncMonth('created_at'))\
-            .values('month')\
-            .annotate(earnings=Sum('agreed_price'), count=Count('id'))\
-            .order_by('month')
-            
-        # Format for frontend
-        data = []
-        for entry in monthly_stats:
-            data.append({
-                "month": entry['month'].strftime('%b %Y'),
-                "earnings": entry['earnings'] or 0,
-                "bookings": entry['count']
-            })
-            
-        return Response(data)
+
 
 
 class ServiceReviewViewSet(viewsets.ModelViewSet):
@@ -794,13 +854,42 @@ class ServiceBookingViewSet(viewsets.ModelViewSet):
         return queryset.select_related('provider', 'pet', 'service_option', 'review').distinct()
 
     def perform_create(self, serializer):
-        # Allow client to create booking
-        # Status defaults to pending in model
-        instance = serializer.save(client=self.request.user)
+        user = self.request.user
+        
+        # Check if creator is a provider
+        is_provider = hasattr(user, 'service_provider_profile')
+        provider_profile = user.service_provider_profile if is_provider else None
+        
+        # Get target provider from payload
+        target_provider = serializer.validated_data.get('provider')
+        
+        # Scenario: Direct Entry by Provider
+        if is_provider and target_provider == provider_profile:
+            # It is the provider creating the booking
+            
+            # If pet is provided, client is pet owner
+            pet = serializer.validated_data.get('pet')
+            specified_client = serializer.validated_data.get('client')
+            
+            client = None
+            if pet:
+                client = pet.owner
+            elif specified_client:
+                client = specified_client
+            
+            # If no client/pet, it's a guest booking (client=None)
+            
+            # Direct bookings are auto-confirmed
+            instance = serializer.save(client=client, status='confirmed')
+            
+        else:
+            # Standard Scenario: User booking for themselves
+            instance = serializer.save(client=user)
+
         log_business_event('SERVICE_BOOKING_CREATED', self.request.user, {
             'booking_id': instance.id,
             'provider_id': instance.provider.id,
-            'pet_id': instance.pet.id
+            'pet_id': instance.pet.id if instance.pet else None
         })
 
     @action(detail=True, methods=['post'])

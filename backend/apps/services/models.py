@@ -575,8 +575,14 @@ class ServiceBooking(models.Model):
     )
     
     provider = models.ForeignKey(ServiceProvider, on_delete=models.CASCADE, related_name='bookings')
-    client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='service_bookings')
-    pet = models.ForeignKey(PetProfile, on_delete=models.CASCADE, related_name='service_bookings')
+    client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='service_bookings', null=True, blank=True)
+    pet = models.ForeignKey(PetProfile, on_delete=models.CASCADE, related_name='service_bookings', null=True, blank=True)
+    
+    # Guest/Walk-in fields
+    guest_client_name = models.CharField(max_length=100, blank=True)
+    guest_pet_name = models.CharField(max_length=100, blank=True)
+    guest_email = models.EmailField(blank=True, null=True)
+    guest_phone = models.CharField(max_length=20, blank=True)
     
     # Optional specific service option
     service_option = models.ForeignKey(ServiceOption, on_delete=models.SET_NULL, null=True, blank=True)
@@ -597,8 +603,15 @@ class ServiceBooking(models.Model):
     
     special_requirements = models.TextField(blank=True, null=True)
     
+    PAYMENT_METHOD_CHOICES = (
+        ('card', 'Credit/Debit Card'),
+        ('cash', 'Cash'),
+        ('platform', 'Platform Payment'),
+    )
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='platform')
     cancellation_reason = models.TextField(blank=True, null=True)
     
     created_at = models.DateTimeField(auto_now_add=True)

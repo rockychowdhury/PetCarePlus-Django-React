@@ -21,11 +21,11 @@ const Sidebar = ({ isMobileOpen, setIsMobileOpen, provider }) => {
     const navigate = useNavigate();
     const location = useLocation();
 
+    // Updated Order: Dashboard, Bookings, Calendar, Availability -> Settings, Reviews, Analytics, Settings
     const menuItems = [
         { path: '/provider/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { path: '/provider/calendar', label: 'Calendar', icon: CalendarDays },
-        { path: '/provider/availability', label: 'Availability', icon: CalendarOff },
         { path: '/provider/bookings', label: 'Bookings', icon: Calendar },
+        { path: '/provider/calendar', label: 'Calendar', icon: CalendarDays },
         { path: '/provider/reviews', label: 'Reviews', icon: Star },
         { path: '/provider/analytics', label: 'Analytics', icon: TrendingUp },
         { path: '/provider/settings', label: 'Settings', icon: SettingsIcon },
@@ -70,14 +70,7 @@ const Sidebar = ({ isMobileOpen, setIsMobileOpen, provider }) => {
 
                 {/* Navigation */}
                 <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto custom-scrollbar py-4">
-                    {/* Back to Home Link */}
-                    <Link
-                        to="/"
-                        className="flex items-center gap-3 px-4 py-3 rounded-[1.1rem] text-[13px] font-bold text-[#5A3C0B]/60 hover:bg-[#FEF9ED] hover:text-[#C48B28] transition-all duration-300 mb-6 group"
-                    >
-                        <Home size={18} className="text-[#C48B28]/70 group-hover:text-[#C48B28]" />
-                        Back to Home
-                    </Link>
+                    {/* Back to Home Link REMOVED */}
 
                     {menuItems.map((item) => {
                         const active = isActive(item.path);

@@ -468,6 +468,7 @@ class ServiceBookingSerializer(serializers.ModelSerializer):
             'start_datetime', 'end_datetime',
             'agreed_price', 'deposit_paid', 'special_requirements',
             'status', 'payment_status', 'cancellation_reason',
+            'guest_client_name', 'guest_pet_name', 'guest_email', 'guest_phone',
             'created_at', 'updated_at', 'duration_hours', 'has_review'
         ]
         read_only_fields = ['client', 'agreed_price', 'deposit_paid', 'status', 'payment_status', 'created_at', 'updated_at']
@@ -485,12 +486,33 @@ class ServiceBookingCreateSerializer(serializers.ModelSerializer):
             'provider', 'pet', 'service_option', 
             'booking_type', 'booking_date', 'booking_time',
             'start_datetime', 'end_datetime',
-            'special_requirements', 'agreed_price'
+            'special_requirements', 'agreed_price',
+            # Guest fields
+            'guest_client_name', 'guest_pet_name', 'guest_email', 'guest_phone',
+            'payment_method', 'payment_status',
+            'client'
         ]
+        extra_kwargs = {
+            'pet': {'required': False},
+            'booking_type': {'required': False},
+        }
     
     def validate(self, attrs):
-        # Validate that the pet belongs to the user
         request = self.context.get('request')
-        if request and request.user != attrs['pet'].owner:
-             raise serializers.ValidationError("You can only book services for your own pets.")
+        
+        # Scenario 1: Registered User Booking (Standard)
+        if attrs.get('pet'):
+             # If user is booking for themselves
+             if request and not request.user.is_staff and not hasattr(request.user, 'service_provider_profile'):
+                  if request.user != attrs['pet'].owner:
+                       raise serializers.ValidationError("You can only book services for your own pets.")
+        
+        # Scenario 2: Provider Booking (Walk-in / Reception Desk)
+        if request and hasattr(request.user, 'service_provider_profile'):
+             # If provider is creating booking, they might not start with 'pet' if it's a walk-in
+             # but they MUST provide guest details if pet is missing
+             if not attrs.get('pet'):
+                  if not attrs.get('guest_client_name') or not attrs.get('guest_pet_name'):
+                       raise serializers.ValidationError("For walk-in guests, Client Name and Pet Name are required.")
+        
         return attrs

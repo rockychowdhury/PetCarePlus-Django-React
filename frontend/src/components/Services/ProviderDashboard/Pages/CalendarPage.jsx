@@ -15,6 +15,7 @@ import useServices from '../../../../hooks/useServices';
 import Button from '../../../common/Buttons/Button';
 import Calendar from '../../../common/Calendar/Calendar';
 import Card from '../../../common/Layout/Card';
+import DirectBookingModal from '../Modals/DirectBookingModal';
 
 const CalendarPage = () => {
     const { provider } = useOutletContext();
@@ -22,6 +23,7 @@ const CalendarPage = () => {
     const { useGetMyBookings } = useServices();
     const { data: bookingsData, isLoading } = useGetMyBookings();
     const [view, setView] = useState('week');
+    const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
     // --- Data Processing ---
     const bookings = bookingsData?.results?.filter(b => b.provider?.id === provider?.id) || [];
@@ -43,8 +45,8 @@ const CalendarPage = () => {
         id: booking.id,
         date: booking.booking_date,
         time: booking.booking_time,
-        title: `${booking.pet?.name} (${booking.pet?.species})`,
-        description: `${booking.service_option?.name || 'Service'} • ${booking.client?.first_name}`,
+        title: booking.pet ? `${booking.pet.name} (${booking.pet.species})` : `${booking.guest_pet_name} (Guest)`,
+        description: `${booking.service_option?.name || 'Standard Service'} • ${booking.client ? booking.client.first_name : booking.guest_client_name}`,
         color: getStatusColor(booking.status),
         status: booking.status,
         rawData: booking
@@ -111,6 +113,7 @@ const CalendarPage = () => {
                         variant="primary"
                         size="lg"
                         className="!bg-[#402E11] hover:!bg-[#5A421B] text-white shadow-xl shadow-[#402E11]/20 !rounded-lg"
+                        onClick={() => setIsBookingModalOpen(true)}
                     >
                         <Plus size={18} className="mr-2" strokeWidth={2.5} />
                         New Booking
@@ -255,6 +258,12 @@ const CalendarPage = () => {
 
                 </div>
             </div>
+            {/* Direct Booking Modal */}
+            <DirectBookingModal
+                isOpen={isBookingModalOpen}
+                onClose={() => setIsBookingModalOpen(false)}
+                provider={provider}
+            />
         </div>
     );
 };

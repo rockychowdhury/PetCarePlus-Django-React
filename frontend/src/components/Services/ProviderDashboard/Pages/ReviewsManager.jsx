@@ -185,47 +185,20 @@ const ReviewsManager = () => {
                     <div className="bg-white/80 backdrop-blur-md p-8 rounded-[2rem] border border-[#EBC176]/20 shadow-xl shadow-[#402E11]/5 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-24 h-24 bg-[#FAF3E0]/40 rounded-bl-[3rem] group-hover:scale-110 transition-transform" />
                         <div className="relative z-10 flex flex-col items-center text-center">
-                            <div className="text-5xl font-black text-[#402E11] tracking-tighter mb-2">{provider.rating || '0.0'}</div>
+                            <div className="text-5xl font-black text-[#402E11] tracking-tighter mb-2">{provider.avg_rating?.toFixed(1) || '0.0'}</div>
                             <div className="flex gap-1 mb-4">
                                 {[1, 2, 3, 4, 5].map(star => (
                                     <Star
                                         key={star}
                                         size={18}
                                         strokeWidth={2.5}
-                                        className={`${star <= Math.round(provider.rating || 0) ? 'text-[#C48B28] fill-[#C48B28]' : 'text-[#FAF3E0]'}`}
+                                        className={`${star <= Math.round(provider.avg_rating || 0) ? 'text-[#C48B28] fill-[#C48B28]' : 'text-[#FAF3E0]'}`}
                                     />
                                 ))}
                             </div>
                             <div className="px-4 py-1 bg-[#402E11] text-[#C48B28] text-[9px] font-black uppercase tracking-[0.2em] rounded-full">
-                                Elite Provider
+                                {provider.reviews_count > 0 ? 'Rated Provider' : 'New Provider'}
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Review Distribution Histogram */}
-                    <div className="bg-white/60 backdrop-blur-md p-8 rounded-[2rem] border border-[#EBC176]/20">
-                        <h3 className="text-[10px] font-black text-[#402E11] uppercase tracking-[0.2em] mb-6 border-b border-[#EBC176]/10 pb-3">Score Distribution</h3>
-                        <div className="space-y-3">
-                            {[5, 4, 3, 2, 1].map((rating) => {
-                                const count = reviews.filter(r => Math.round(r.rating_overall || r.rating) === rating).length;
-                                const percentage = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
-                                return (
-                                    <div key={rating} className="flex items-center gap-3">
-                                        <div className="flex items-center gap-1 min-w-[30px]">
-                                            <span className="text-[10px] font-black text-[#402E11]">{rating}</span>
-                                            <Star size={8} className="text-[#C48B28] fill-[#C48B28]" />
-                                        </div>
-                                        <div className="flex-1 h-1.5 bg-[#FAF3E0] rounded-full overflow-hidden">
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${percentage}%` }}
-                                                className="h-full bg-[#C48B28]"
-                                            />
-                                        </div>
-                                        <span className="text-[9px] font-bold text-[#402E11]/30 min-w-[20px] text-right">{count}</span>
-                                    </div>
-                                );
-                            })}
                         </div>
                     </div>
 
@@ -271,16 +244,20 @@ const ReviewsManager = () => {
                                     </div>
                                     <span className="text-[10px] font-bold text-[#402E11]/60">Trust Score</span>
                                 </div>
-                                <span className="text-sm font-black text-[#402E11]">98%</span>
+                                <span className="text-sm font-black text-[#402E11]">
+                                    {provider.avg_rating ? `${Math.round((provider.avg_rating / 5) * 100)}%` : 'N/A'}
+                                </span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-[#C48B28] shadow-sm">
-                                        <MessageCircle size={14} />
+                                        <Sparkles size={14} />
                                     </div>
-                                    <span className="text-[10px] font-bold text-[#402E11]/60">Response Time</span>
+                                    <span className="text-[10px] font-bold text-[#402E11]/60">Verification</span>
                                 </div>
-                                <span className="text-sm font-black text-[#402E11]">~2h</span>
+                                <span className="text-sm font-black text-[#402E11]">
+                                    {provider.is_verified ? 'Verified' : 'Pending'}
+                                </span>
                             </div>
                         </div>
                     </div>

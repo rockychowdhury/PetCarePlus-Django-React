@@ -43,6 +43,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../../../../components/common/Buttons/Button';
 import Badge from '../../../../components/common/Feedback/Badge';
 import useServices from '../../../../hooks/useServices';
+import DirectBookingModal from '../Modals/DirectBookingModal';
 
 const BookingsPage = () => {
     const { provider } = useOutletContext();
@@ -62,6 +63,7 @@ const BookingsPage = () => {
 
     const [rejectionModal, setRejectionModal] = useState({ isOpen: false, bookingId: null, action: null });
     const [rejectionReason, setRejectionReason] = useState('');
+    const [isDirectEntryOpen, setIsDirectEntryOpen] = useState(false);
 
     // --- Actions ---
     const handleOpenDetail = (booking) => {
@@ -174,13 +176,22 @@ const BookingsPage = () => {
             // Safe extraction of pet photo
             const petPhoto = b.pet?.media?.find(m => m.is_primary)?.url || b.pet?.media?.[0]?.url || null;
 
+            // Client Name & Photo Resolution
+            let clientName = 'Guest Client';
+            if (b.client) {
+                clientName = `${b.client.first_name} ${b.client.last_name}`;
+            } else if (b.guest_client_name) {
+                clientName = b.guest_client_name;
+            }
+
             return {
                 ...b,
-                clientName: `${b.client.first_name} ${b.client.last_name}`,
+                clientName,
                 serviceName: b.service_option?.name || b.booking_type || 'Service',
                 schedule: b.booking_date ? format(parseISO(b.booking_date), 'MMM dd, yyyy') : 'TBD',
                 price: parseFloat(b.agreed_price || b.service_option?.base_price || 0),
-                petPhoto
+                petPhoto,
+                displayPetName: b.pet?.name || b.guest_pet_name || 'Pet'
             };
         });
     }, [bookingsData, provider.id]);
@@ -213,13 +224,13 @@ const BookingsPage = () => {
                 return (
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-[#402E11] flex items-center justify-center text-[#C48B28] text-xs font-black shadow-sm overflow-hidden">
-                            {b.client.photoURL ? (
+                            {b.client?.photoURL ? (
                                 <img src={b.client.photoURL} alt="" className="w-full h-full object-cover" />
-                            ) : b.client.first_name[0]}
+                            ) : (b.client?.first_name?.[0] || b.guest_client_name?.[0] || 'G')}
                         </div>
                         <div>
                             <div className="text-xs font-black text-[#402E11] leading-none mb-1">{b.clientName}</div>
-                            <div className="text-[9px] font-bold text-[#C48B28] uppercase tracking-wider">{b.pet?.name || 'Pet'}</div>
+                            <div className="text-[9px] font-bold text-[#C48B28] uppercase tracking-wider">{b.displayPetName}</div>
                         </div>
                     </div>
                 );
@@ -392,7 +403,7 @@ const BookingsPage = () => {
                         Export Log
                     </button>
                     <button
-                        onClick={() => toast.success("Opening booking creator...")}
+                        onClick={() => setIsDirectEntryOpen(true)}
                         className="px-6 py-4 bg-[#402E11] rounded-2xl text-[10px] font-black text-white uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-[#402E11]/20 flex items-center gap-2"
                     >
                         <Plus size={14} className="text-[#C48B28]" />
@@ -614,22 +625,23 @@ const BookingsPage = () => {
                                     <X size={24} />
                                 </button>
                                 <div className="flex items-center gap-8">
-                                    <div className="w-32 h-32 flex-shrink-0 bg-white rounded-[2.5rem] flex items-center justify-center text-[#402E11] overflow-hidden border-8 border-white shadow-2xl relative z-[5]">
-                                        {detailModal.booking.client.photoURL ? (
+                                    <div className="w-24 h-24 rounded-[2rem] bg-[#EAE6E2] flex items-center justify-center text-[#C48B28] text-2xl font-black shadow-inner overflow-hidden border-4 border-white">
+                                        {detailModal.booking.client?.photoURL ? (
                                             <img src={detailModal.booking.client.photoURL} alt="" className="w-full h-full object-cover" />
-                                        ) : <Users size={48} />}
+                                        ) : (detailModal.booking.client?.first_name?.[0] || detailModal.booking.guest_client_name?.[0] || 'G')}
                                     </div>
                                     <div>
-                                        <div className="flex items-center gap-3 mb-2.5">
-                                            <Badge variant="info" className="bg-[#402E11] text-white border-transparent text-[9px] tracking-[0.2em] font-black uppercase px-4 py-1.5 rounded-full">
-                                                Booking Session
-                                            </Badge>
-                                            <span className="text-[11px] font-black text-[#C48B28] uppercase tracking-[0.25em]">#BK-{detailModal.booking.id}</span>
+                                        <h2 className="text-3xl font-black text-[#402E11] tracking-tighter mb-1">
+                                            {detailModal.booking.clientName}
+                                        </h2>
+                                        <div className="flex items-center gap-3">
+                                            <span className="px-3 py-1 rounded-full bg-[#402E11] text-white text-[10px] font-black uppercase tracking-widest">
+                                                {detailModal.booking.displayPetName}
+                                            </span>
+                                            <span className="text-xs font-bold text-[#402E11]/40 uppercase tracking-widest">
+                                                #{detailModal.booking.id}
+                                            </span>
                                         </div>
-                                        <h2 className="text-4xl font-black tracking-tight text-[#402E11]">{detailModal.booking.clientName}</h2>
-                                        <p className="text-[#402E11]/50 text-sm font-bold flex items-center gap-2.5 mt-2">
-                                            <MapPin size={16} className="text-[#C48B28]" /> {detailModal.booking.client.location_city ? `${detailModal.booking.client.location_city}, ${detailModal.booking.client.location_state}` : 'Location Metadata Missing'}
-                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -698,9 +710,11 @@ const BookingsPage = () => {
                                                 ) : <Dog size={32} />}
                                             </div>
                                             <div className="pl-2">
-                                                <div className="text-lg font-black text-[#402E11] mb-0.5">{detailModal.booking.pet?.name || 'Unknown Pet'}</div>
-                                                <div className="text-[11px] font-bold text-[#C48B28] uppercase tracking-[0.2em]">{detailModal.booking.pet?.species || 'Guest'} • {detailModal.booking.pet?.breed || 'Special Mix'}</div>
-                                                <div className="mt-3 px-3 py-1 bg-white border border-[#EAE6E2] inline-block rounded-full text-[9px] font-black text-[#402E11]/60 uppercase tracking-widest shadow-sm">{detailModal.booking.pet?.age_years || '0'}y {detailModal.booking.pet?.age_months || '0'}m Old</div>
+                                                <div className="text-lg font-black text-[#402E11] mb-0.5">{detailModal.booking.displayPetName}</div>
+                                                <div className="text-[11px] font-bold text-[#C48B28] uppercase tracking-[0.2em]">{detailModal.booking.pet?.species || 'Guest'} • {detailModal.booking.pet?.breed || 'Service Recipient'}</div>
+                                                <div className="mt-3 px-3 py-1 bg-white border border-[#EAE6E2] inline-block rounded-full text-[9px] font-black text-[#402E11]/60 uppercase tracking-widest shadow-sm">
+                                                    {detailModal.booking.pet ? `${detailModal.booking.pet.age_years || '0'}y ${detailModal.booking.pet.age_months || '0'}m Old` : 'Age Not Specified'}
+                                                </div>
                                             </div>
                                         </div>
                                     </section>
@@ -731,11 +745,12 @@ const BookingsPage = () => {
                             </div>
                         </motion.div>
                     </div>
-                )}
-            </AnimatePresence>
+                )
+                }
+            </AnimatePresence >
 
             {/* Completion Modal */}
-            <AnimatePresence>
+            < AnimatePresence >
                 {isCompleteModalOpen && selectedBooking && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                         <motion.div
@@ -810,68 +825,78 @@ const BookingsPage = () => {
                         </motion.div>
                     </div>
                 )}
-            </AnimatePresence>
+            </AnimatePresence >
 
             {/* Rejection Modal */}
-            <AnimatePresence>
-                {rejectionModal.isOpen && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-[#402E11]/15 backdrop-blur-md"
-                            style={{ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
-                            onClick={() => setRejectionModal({ ...rejectionModal, isOpen: false })}
-                        />
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white rounded-[3rem] max-w-lg w-full p-10 relative z-10"
-                        >
-                            <div className="flex justify-between items-center mb-8">
-                                <div>
-                                    <h2 className="text-2xl font-black text-[#402E11] tracking-tight capitalize">{rejectionModal.action === 'reject' ? 'Decline Request' : 'Cancel Booking'}</h2>
-                                    <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] mt-1">This action cannot be undone</p>
-                                </div>
-                                <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-500">
-                                    <XCircle size={24} />
-                                </div>
-                            </div>
-
-                            <div className="space-y-6">
-                                <div>
-                                    <label className="block text-[10px] font-black text-[#402E11] uppercase tracking-widest mb-2 ml-1">Official Reason</label>
-                                    <textarea
-                                        value={rejectionReason}
-                                        onChange={(e) => setRejectionReason(e.target.value)}
-                                        placeholder="Explain the reason for this adjustment..."
-                                        className="w-full bg-[#F0F0F0]/30 border border-[#F0F0F0] rounded-[2rem] p-6 text-base font-bold text-[#402E11] focus:ring-4 focus:ring-red-500/10 outline-none min-h-[140px] placeholder:text-[#402E11]/20"
-                                    />
+            < AnimatePresence >
+                {
+                    rejectionModal.isOpen && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="fixed inset-0 bg-[#402E11]/15 backdrop-blur-md"
+                                style={{ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
+                                onClick={() => setRejectionModal({ ...rejectionModal, isOpen: false })}
+                            />
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                                className="bg-white rounded-[3rem] max-w-lg w-full p-10 relative z-10"
+                            >
+                                <div className="flex justify-between items-center mb-8">
+                                    <div>
+                                        <h2 className="text-2xl font-black text-[#402E11] tracking-tight capitalize">{rejectionModal.action === 'reject' ? 'Decline Request' : 'Cancel Booking'}</h2>
+                                        <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] mt-1">This action cannot be undone</p>
+                                    </div>
+                                    <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-500">
+                                        <XCircle size={24} />
+                                    </div>
                                 </div>
 
-                                <div className="flex flex-col gap-4 mt-8">
-                                    <button
-                                        onClick={handleRejectionSubmit}
-                                        disabled={!rejectionReason.trim()}
-                                        className="w-full bg-red-600 text-white py-5 rounded-3xl font-black text-[11px] uppercase tracking-[0.3em] shadow-2xl shadow-red-600/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
-                                    >
-                                        Execute {rejectionModal.action}
-                                    </button>
-                                    <button
-                                        onClick={() => setRejectionModal({ ...rejectionModal, isOpen: false })}
-                                        className="w-full py-4 text-[10px] font-black text-[#402E11]/30 uppercase tracking-[0.2em] hover:text-[#402E11] transition-colors"
-                                    >
-                                        Abort Action
-                                    </button>
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="block text-[10px] font-black text-[#402E11] uppercase tracking-widest mb-2 ml-1">Official Reason</label>
+                                        <textarea
+                                            value={rejectionReason}
+                                            onChange={(e) => setRejectionReason(e.target.value)}
+                                            placeholder="Explain the reason for this adjustment..."
+                                            className="w-full bg-[#F0F0F0]/30 border border-[#F0F0F0] rounded-[2rem] p-6 text-base font-bold text-[#402E11] focus:ring-4 focus:ring-red-500/10 outline-none min-h-[140px] placeholder:text-[#402E11]/20"
+                                        />
+                                    </div>
+
+                                    <div className="flex flex-col gap-4 mt-8">
+                                        <button
+                                            onClick={handleRejectionSubmit}
+                                            disabled={!rejectionReason.trim()}
+                                            className="w-full bg-red-600 text-white py-5 rounded-3xl font-black text-[11px] uppercase tracking-[0.3em] shadow-2xl shadow-red-600/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                                        >
+                                            Execute {rejectionModal.action}
+                                        </button>
+                                        <button
+                                            onClick={() => setRejectionModal({ ...rejectionModal, isOpen: false })}
+                                            className="w-full py-4 text-[10px] font-black text-[#402E11]/30 uppercase tracking-[0.2em] hover:text-[#402E11] transition-colors"
+                                        >
+                                            Abort Action
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
-        </div>
+                            </motion.div>
+                        </div>
+                    )
+                }
+
+            </AnimatePresence >
+
+            {/* Direct Booking Modal */}
+            <DirectBookingModal
+                isOpen={isDirectEntryOpen}
+                onClose={() => setIsDirectEntryOpen(false)}
+                provider={provider}
+            />
+        </div >
     );
 };
 

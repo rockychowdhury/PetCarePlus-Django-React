@@ -54,7 +54,7 @@ const DashboardOverview = () => {
         { label: 'Calendar', icon: CalendarDays, to: '/provider/calendar', desc: 'Schedule view' },
         { label: 'Availability', icon: Clock, to: '/provider/availability', desc: 'Manage time' },
         { label: 'Reviews', icon: Star, to: '/provider/reviews', desc: 'Check feedback' },
-        { label: 'Profile', icon: Edit, to: '/provider/profile', desc: 'Edit business' },
+        { label: 'Profile', icon: Edit, to: '/provider/settings', desc: 'Edit business' },
         { label: 'Reports', icon: FileText, to: '/provider/analytics', desc: 'Export stats' },
         { label: 'Settings', icon: TrendingUp, to: '/provider/settings', desc: 'Portal configs' },
     ];
@@ -169,7 +169,7 @@ const DashboardOverview = () => {
                         </p>
 
                         <button
-                            onClick={() => onNavigate('profile')}
+                            onClick={() => onNavigate('settings')}
                             className="bg-white/10 hover:bg-white/20 border border-white/20 text-white w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:scale-[1.02]"
                         >
                             Review Profile
@@ -182,7 +182,7 @@ const DashboardOverview = () => {
                         <p className="text-xs text-[#402E11]/60 font-bold leading-relaxed mb-6 italic">
                             "Clients are 40% more likely to book providers with at least 5 photos in their profile."
                         </p>
-                        <Link to="/provider/profile" className="text-[10px] font-black text-[#C48B28] uppercase tracking-[0.2em] hover:text-[#402E11] transition-colors flex items-center gap-2">
+                        <Link to="/provider/settings" className="text-[10px] font-black text-[#C48B28] uppercase tracking-[0.2em] hover:text-[#402E11] transition-colors flex items-center gap-2">
                             Update Gallery <ArrowUpRight size={14} />
                         </Link>
                     </div>

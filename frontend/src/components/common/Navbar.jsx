@@ -164,11 +164,11 @@ const Navbar = () => {
                                                 {/* Account Settings */}
                                                 <div className="mb-1">
                                                     <p className="px-4 py-1.5 text-[9px] font-bold text-gray-400 uppercase tracking-wider">Account</p>
-                                                    <DropdownLink to={user.role === 'service_provider' ? "/provider/profile" : "/dashboard/profile"} icon={<User />} label="My Profile" />
+                                                    <DropdownLink to={user.role === 'service_provider' ? "/provider/settings" : "/dashboard/profile"} icon={<User />} label="My Profile" />
                                                     {user.role === 'admin' && (
                                                         <DropdownLink to="/admin" icon={<SettingsIcon />} label="Admin Panel" />
                                                     )}
-                                                    <DropdownLink to="/dashboard/profile/settings" icon={<SettingsIcon />} label="Settings" />
+                                                    <DropdownLink to={user.role === 'service_provider' ? "/provider/settings" : "/dashboard/profile/settings"} icon={<SettingsIcon />} label="Settings" />
                                                 </div>
                                             </div>
 

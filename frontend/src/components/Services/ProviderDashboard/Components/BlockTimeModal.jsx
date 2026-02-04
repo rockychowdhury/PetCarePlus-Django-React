@@ -1,81 +1,51 @@
 import React, { useState } from 'react';
-import { X, Clock, Calendar, RefreshCcw, Info } from 'lucide-react';
+import { X, Clock, Calendar, RefreshCcw, Info, Check, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
-import Button from '../../../../components/common/Buttons/Button';
 import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 
 const BlockTimeModal = ({ isOpen, onClose, onSubmit }) => {
-    const [blockType, setBlockType] = useState('single'); // single, all-day, recurring
-    const [blockDate, setBlockDate] = useState(new Date());
-    const [startTime, setStartTime] = useState('09:00');
-    const [endTime, setEndTime] = useState('17:00');
-    const [dayOfWeek, setDayOfWeek] = useState(0); // Monday
-    const [recurrencePattern, setRecurrencePattern] = useState('weekly');
-    const [reason, setReason] = useState('');
-    const [submitting, setSubmitting] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [formData, setFormData] = useState({
+        block_date: new Date(),
+        start_time: '09:00',
+        end_time: '17:00',
+        is_all_day: false,
+        is_recurring: false,
+        recurrence_pattern: 'WEEKLY',
+        day_of_week: new Date().getDay() === 0 ? 6 : new Date().getDay() - 1,
+        reason: ''
+    });
 
-    const daysOfWeek = [
-        { value: 0, label: 'Monday' },
-        { value: 1, label: 'Tuesday' },
-        { value: 2, label: 'Wednesday' },
-        { value: 3, label: 'Thursday' },
-        { value: 4, label: 'Friday' },
-        { value: 5, label: 'Saturday' },
-        { value: 6, label: 'Sunday' },
-    ];
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validation
-        if (blockType !== 'recurring' && !blockDate) {
+        if (!formData.is_recurring && !formData.block_date) {
             toast.error('Please select a date');
             return;
         }
 
-        if (blockType === 'single' && startTime >= endTime) {
+        if (!formData.is_all_day && formData.start_time >= formData.end_time) {
             toast.error('End time must be after start time');
             return;
         }
 
-        setSubmitting(true);
-
-        const blockData = {
-            is_recurring: blockType === 'recurring',
-            is_all_day: blockType === 'all-day',
-        };
-
-        if (blockType === 'recurring') {
-            blockData.day_of_week = dayOfWeek;
-            blockData.recurrence_pattern = recurrencePattern;
-            blockData.start_time = startTime;
-            blockData.end_time = endTime;
-        } else {
-            blockData.block_date = blockDate.toISOString().split('T')[0];
-            if (blockType === 'single') {
-                blockData.start_time = startTime;
-                blockData.end_time = endTime;
-            }
-        }
-
-        if (reason.trim()) {
-            blockData.reason = reason;
-        }
-
+        setLoading(true);
         try {
-            await onSubmit(blockData);
+            const payload = {
+                ...formData,
+                block_date: formData.block_date.toISOString().split('T')[0],
+            };
+            await onSubmit(payload);
             toast.success('Exception registered');
             onClose();
-            // Reset form
-            setBlockType('single');
-            setReason('');
-            setStartTime('09:00');
-            setEndTime('17:00');
         } catch (error) {
-            toast.error(error.response?.data?.error || 'Failed to block time');
+            toast.error(error.response?.data?.error || 'Failed to create block');
         } finally {
-            setSubmitting(false);
+            setLoading(false);
         }
     };
 
@@ -83,154 +53,154 @@ const BlockTimeModal = ({ isOpen, onClose, onSubmit }) => {
 
     return (
         <AnimatePresence>
-            <div className="fixed inset-0 bg-[#402E11]/40 backdrop-blur-md flex items-center justify-center z-[100] p-4 text-[#402E11]">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={onClose}
+                    className="absolute inset-0 bg-[#402E11]/40 backdrop-blur-sm"
+                />
+
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                    className="bg-white rounded-[3rem] shadow-2xl max-w-xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-[#FAF9F6]"
+                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                    className="relative bg-white w-full max-w-md rounded-[2rem] shadow-2xl border border-[#EAE6E2] overflow-hidden"
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-10 border-b border-[#FAF9F6] bg-[#FAF9F6]/30">
-                        <div>
-                            <h2 className="text-2xl font-black tracking-tight">Register Exception</h2>
-                            <p className="text-[#402E11]/40 text-xs font-bold uppercase tracking-widest mt-1">Configure schedule override</p>
+                    <div className="bg-[#FAF9F6] px-6 py-4 flex items-center justify-between border-b border-[#EAE6E2]">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-[#402E11] rounded-xl flex items-center justify-center text-[#C48B28] shadow-lg shadow-[#402E11]/10">
+                                <Plus size={16} />
+                            </div>
+                            <h2 className="text-sm font-black text-[#402E11] uppercase tracking-widest">Add Exception</h2>
                         </div>
-                        <button
-                            onClick={onClose}
-                            className="w-12 h-12 bg-white rounded-2xl border border-[#EAE6E2] flex items-center justify-center text-[#402E11]/40 hover:text-[#402E11] transition-all shadow-sm"
-                        >
-                            <X size={20} />
+                        <button onClick={onClose} className="text-[#402E11]/30 hover:text-[#402E11] transition-colors p-1">
+                            <X size={18} />
                         </button>
                     </div>
 
-                    {/* Form */}
-                    <form onSubmit={handleSubmit} className="p-10 space-y-8 overflow-y-auto">
-                        {/* Block Type Selection */}
-                        <div className="grid grid-cols-3 gap-3 p-1.5 bg-[#FAF9F6] rounded-3xl border border-[#EAE6E2]">
-                            {[
-                                { id: 'single', label: 'Time Slot', icon: Clock },
-                                { id: 'all-day', label: 'All Day', icon: Calendar },
-                                { id: 'recurring', label: 'Recurring', icon: RefreshCcw }
-                            ].map(type => (
+                    <form onSubmit={handleSubmit} className="p-6">
+                        <div className="space-y-4">
+                            {/* Type Toggle */}
+                            <div className="flex p-1 bg-[#FAF9F6] rounded-xl border border-[#EAE6E2]">
                                 <button
-                                    key={type.id}
                                     type="button"
-                                    onClick={() => setBlockType(type.id)}
-                                    className={`flex flex-col items-center justify-center gap-2 py-4 rounded-2xl transition-all ${blockType === type.id
-                                            ? 'bg-white text-[#402E11] shadow-xl shadow-[#402E11]/5 border border-[#EAE6E2]'
-                                            : 'text-[#402E11]/30 hover:text-[#402E11]/60'
-                                        }`}
+                                    onClick={() => setFormData(prev => ({ ...prev, is_recurring: false }))}
+                                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${!formData.is_recurring ? 'bg-white text-[#402E11] shadow-sm' : 'text-[#402E11]/30'}`}
                                 >
-                                    <type.icon size={18} />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">{type.label}</span>
+                                    <Calendar size={11} />
+                                    One-Time
                                 </button>
-                            ))}
-                        </div>
-
-                        {/* Date Selection (for non-recurring) */}
-                        {blockType !== 'recurring' && (
-                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                                <label className="block text-[10px] font-black uppercase tracking-[0.2em] mb-3 ml-1">Target Date</label>
-                                <div className="relative">
-                                    <DatePicker
-                                        selected={blockDate}
-                                        onChange={(date) => setBlockDate(date)}
-                                        minDate={new Date()}
-                                        className="w-full bg-[#FAF9F6] border border-[#EAE6E2] rounded-2xl px-5 py-4 text-sm font-black focus:ring-2 focus:ring-[#C48B28] transition-all outline-none"
-                                        dateFormat="MMMM d, yyyy"
-                                    />
-                                    <Calendar className="absolute right-5 top-1/2 -translate-y-1/2 text-[#402E11]/20 pointer-events-none" size={18} />
-                                </div>
-                            </motion.div>
-                        )}
-
-                        {/* Recurring Options */}
-                        {blockType === 'recurring' && (
-                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-[0.2em] mb-3 ml-1">Day of Week</label>
-                                        <select
-                                            value={dayOfWeek}
-                                            onChange={(e) => setDayOfWeek(parseInt(e.target.value))}
-                                            className="w-full bg-[#FAF9F6] border border-[#EAE6E2] rounded-2xl px-5 py-4 text-sm font-black focus:ring-2 focus:ring-[#C48B28] transition-all outline-none"
-                                        >
-                                            {daysOfWeek.map((day) => (
-                                                <option key={day.value} value={day.value}>{day.label}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-[0.2em] mb-3 ml-1">Recurrence</label>
-                                        <select
-                                            value={recurrencePattern}
-                                            onChange={(e) => setRecurrencePattern(e.target.value)}
-                                            className="w-full bg-[#FAF9F6] border border-[#EAE6E2] rounded-2xl px-5 py-4 text-sm font-black focus:ring-2 focus:ring-[#C48B28] transition-all outline-none"
-                                        >
-                                            <option value="weekly">Every Week</option>
-                                            <option value="biweekly">Every 2 Weeks</option>
-                                            <option value="monthly">Every Month</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        )}
-
-                        {/* Time Range (for single and recurring) */}
-                        {blockType !== 'all-day' && (
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] mb-3 ml-1">Starts At</label>
-                                    <input
-                                        type="time"
-                                        value={startTime}
-                                        onChange={(e) => setStartTime(e.target.value)}
-                                        className="w-full bg-[#FAF9F6] border border-[#EAE6E2] rounded-2xl px-5 py-4 text-sm font-black focus:ring-2 focus:ring-[#C48B28] transition-all outline-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] mb-3 ml-1">Ends At</label>
-                                    <input
-                                        type="time"
-                                        value={endTime}
-                                        onChange={(e) => setEndTime(e.target.value)}
-                                        className="w-full bg-[#FAF9F6] border border-[#EAE6E2] rounded-2xl px-5 py-4 text-sm font-black focus:ring-2 focus:ring-[#C48B28] transition-all outline-none"
-                                    />
-                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, is_recurring: true }))}
+                                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${formData.is_recurring ? 'bg-white text-[#402E11] shadow-sm' : 'text-[#402E11]/30'}`}
+                                >
+                                    <RefreshCcw size={11} />
+                                    Recurring
+                                </button>
                             </div>
-                        )}
 
-                        {/* Reason */}
-                        <div>
-                            <label className="block text-[10px] font-black uppercase tracking-[0.2em] mb-3 ml-1">Reason / Note</label>
-                            <textarea
-                                value={reason}
-                                onChange={(e) => setReason(e.target.value)}
-                                placeholder="e.g., Vacation, Family Commitment, Cleaning Day..."
-                                rows={3}
-                                className="w-full bg-[#FAF9F6] border border-[#EAE6E2] rounded-3xl px-6 py-5 text-sm font-bold focus:ring-2 focus:ring-[#C48B28] transition-all outline-none resize-none placeholder:text-[#402E11]/20"
-                            />
+                            {/* Date/Day Selection */}
+                            <div className="space-y-1.5">
+                                <label className="text-[9px] font-black text-[#402E11]/40 uppercase tracking-widest ml-1">
+                                    {formData.is_recurring ? 'Effective Day' : 'Target Date'}
+                                </label>
+                                {formData.is_recurring ? (
+                                    <div className="grid grid-cols-7 gap-1">
+                                        {days.map((day, idx) => (
+                                            <button
+                                                key={day}
+                                                type="button"
+                                                onClick={() => setFormData(prev => ({ ...prev, day_of_week: idx }))}
+                                                className={`h-7 rounded-lg flex items-center justify-center text-[9px] font-black border transition-all ${formData.day_of_week === idx ? 'bg-[#402E11] border-[#402E11] text-white' : 'bg-white border-[#EAE6E2] text-[#402E11]/40'}`}
+                                            >
+                                                {day[0]}
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="relative custom-datepicker">
+                                        <DatePicker
+                                            selected={formData.block_date}
+                                            onChange={(date) => setFormData(prev => ({ ...prev, block_date: date }))}
+                                            className="w-full bg-[#FAF9F6] border border-[#EAE6E2] rounded-xl px-3 py-2 text-[11px] font-bold text-[#402E11] focus:ring-1 focus:ring-[#C48B28] outline-none"
+                                            placeholderText="Select date"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Time Selection */}
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-[9px] font-black text-[#402E11]/40 uppercase tracking-widest ml-1">Temporal Scope</label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, is_all_day: !prev.is_all_day }))}
+                                        className={`text-[7px] font-black uppercase tracking-[0.15em] px-2 py-0.5 rounded-md transition-all ${formData.is_all_day ? 'bg-green-500 text-white' : 'bg-[#FAF9F6] text-[#402E11]/30 border border-[#EAE6E2]'}`}
+                                    >
+                                        All Day
+                                    </button>
+                                </div>
+
+                                {!formData.is_all_day && (
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex-1">
+                                            <input
+                                                type="time"
+                                                value={formData.start_time}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
+                                                className="w-full bg-[#FAF9F6] border border-[#EAE6E2] rounded-xl px-3 py-2 text-[11px] font-black text-[#402E11] outline-none"
+                                            />
+                                        </div>
+                                        <div className="w-2 h-[1px] bg-[#EAE6E2]" />
+                                        <div className="flex-1">
+                                            <input
+                                                type="time"
+                                                value={formData.end_time}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
+                                                className="w-full bg-[#FAF9F6] border border-[#EAE6E2] rounded-xl px-3 py-2 text-[11px] font-black text-[#402E11] outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Reason */}
+                            <div className="space-y-1.5">
+                                <label className="text-[9px] font-black text-[#402E11]/40 uppercase tracking-widest ml-1">Context</label>
+                                <textarea
+                                    value={formData.reason}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
+                                    placeholder="e.g. Doctor's appointment, Vacation..."
+                                    className="w-full bg-[#FAF9F6] border border-[#EAE6E2] rounded-xl px-3 py-2 text-[11px] font-bold text-[#402E11] focus:ring-1 focus:ring-[#C48B28] outline-none min-h-[60px] resize-none"
+                                />
+                            </div>
                         </div>
 
-                        {/* Actions */}
-                        <div className="flex gap-4 pt-6 border-t border-[#FAF9F6]">
-                            <Button
+                        <div className="mt-6 flex gap-2">
+                            <button
                                 type="button"
                                 onClick={onClose}
-                                variant="outline"
-                                className="flex-1 py-4 border-[#EAE6E2] text-[#402E11]/40 font-black uppercase tracking-widest text-[10px] rounded-2xl"
+                                className="flex-1 py-1.5 text-[9px] font-black text-[#402E11]/50 uppercase tracking-[0.1em] border border-[#EAE6E2] rounded-xl hover:bg-[#FAF9F6] hover:text-[#402E11] transition-all"
                             >
-                                Abandon
-                            </Button>
-                            <Button
+                                Cancel
+                            </button>
+                            <button
                                 type="submit"
-                                variant="primary"
-                                disabled={submitting}
-                                className="flex-1 py-4 bg-[#C48B28] text-white font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-xl shadow-[#C48B28]/20"
+                                disabled={loading}
+                                className="flex-[1.5] py-1.5 bg-[#C48B28] hover:bg-[#B37A1F] text-white rounded-xl font-black text-[9px] uppercase tracking-[0.1em] shadow-md shadow-[#C48B28]/10 disabled:opacity-50 transition-all flex items-center justify-center gap-2 border border-[#B37A1F]/20"
                             >
-                                {submitting ? 'Registering...' : 'Confirm Exception'}
-                            </Button>
+                                {loading ? (
+                                    <div className="w-2 h-2 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                    <Check size={12} strokeWidth={3} />
+                                )}
+                                Register
+                            </button>
                         </div>
                     </form>
                 </motion.div>
