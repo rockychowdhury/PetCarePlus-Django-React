@@ -7,7 +7,7 @@ api_key = config('GEMINI_API_KEY', default=None)
 if api_key:
     genai.configure(api_key=api_key)
 else:
-    print("Warning: GEMINI_API_KEY not found in environment variables.")
+    # Warning: GEMINI_API_KEY not found
 
 def generate_application_content(user, listing, form_data):
     """
@@ -139,7 +139,7 @@ def calculate_match_score(pet_details, applicant_details, message):
             time.sleep(wait_time)
             continue
         except Exception as e:
-            print(f"Match Analysis Error: {e}")
+            pass
             break
             
     return 0 # Error default

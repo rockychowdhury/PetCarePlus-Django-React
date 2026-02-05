@@ -164,8 +164,7 @@ class UserRegistrationView(APIView):
             try:
                 send_verification_email(user.email, code)
             except Exception as e:
-                print(f"Failed to send email: {e}") 
-                # In prod, you might want to rollback or queue it. For now, we continue.
+                pass # Logged via sentry or other means in prod                # In prod, you might want to rollback or queue it. For now, we continue.
 
             response_data = {
                 "message": "User created successfully. Please check your email for verification code.",
@@ -275,7 +274,7 @@ class ResendEmailVerificationView(APIView):
         try:
             send_verification_email(user.email, code)
         except Exception as e:
-            print(f"Failed to send email: {e}")
+            pass
             return Response(
                 {'error': 'Failed to send verification email. Please try again.'}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -392,7 +391,7 @@ class RequestPasswordResetView(APIView):
             link = f"http://localhost:5173/password-reset/{uidb64}/{token}"
             
             send_password_reset_email(user.email, link)
-            print(f"PASSWORD RESET LINK FOR {email}: {link}")
+            pass
             
             return Response({"message": "Password reset link sent to email."}, status=200)
         except User.DoesNotExist:

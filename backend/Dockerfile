@@ -21,7 +21,8 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # Copy project
 COPY . /app/
 
-# Run entrypoint.sh
-# COPY ./entrypoint.sh /entrypoint.sh
-# RUN chmod +x /entrypoint.sh
-# ENTRYPOINT ["/entrypoint.sh"]
+# Expose port
+EXPOSE 8000
+
+# Run gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "PetCarePlus.wsgi:application"]
