@@ -3,14 +3,15 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import useAPI from '../../hooks/useAPI';
-import Card from '../../components/common/Layout/Card';
 import Button from '../../components/common/Buttons/Button';
 import Avatar from '../../components/common/Display/Avatar';
 import PetCard from '../../components/Pet/PetCard';
+import NoResults from '../../components/common/Feedback/NoResults';
 import {
   MapPin, Calendar, CheckCircle, Phone, Mail, Edit2,
-  Star, Shield, Share2, Plus, Heart, User as UserIcon
+  Star, Share2, Plus, Heart, PawPrint
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const UserProfilePage = () => {
   const { user } = useAuth();
@@ -21,11 +22,6 @@ const UserProfilePage = () => {
   const { data: pets = [], isLoading: petsLoading } = useQuery({
     queryKey: ['myPets'],
     queryFn: async () => {
-      // Correct endpoint for 'My Pets' based on standard routes. 
-      // If /user/pets/ (UserPetViewSet) is correct, use that.
-      // Assuming UserPetViewSet is mapped to router.register('pets', ...) in users/urls.py inside 'user/' path?
-      // Wait, urls.py showed router.register(r'pets', UserPetViewSet, basename='user-pets')
-      // So the path is /user/pets/
       try {
         const res = await api.get('/user/pets/');
         return res.data.results || res.data;
@@ -40,296 +36,286 @@ const UserProfilePage = () => {
   const { data: listings = [], isLoading: listingsLoading } = useQuery({
     queryKey: ['myListings'],
     queryFn: async () => {
-      // Rehoming listings are standard pets with owner=me
       const res = await api.get('/pets/?owner=me&status=active');
       return res.data.results || res.data;
     }
   });
 
-  if (!user) return <div className="min-h-screen pt-20 text-center ">Loading profile...</div>;
+  if (!user) return (
+    <div className="min-h-screen pt-40 text-center bg-[#FEF9ED]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-[#C48B28]/20 border-t-[#C48B28] rounded-full animate-spin" />
+        <span className="text-[10px] font-black text-[#C48B28] uppercase tracking-[0.2em]">Loading Profile...</span>
+      </div>
+    </div>
+  );
+
+  const tabs = [
+    { id: 'about', label: 'About' },
+    { id: 'mypets', label: 'My Pets' },
+    { id: 'mylistings', label: 'Listings' },
+  ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 pb-20 pt-8">
+    <div className="min-h-screen bg-[#FEF9ED] pb-32">
+      {/* Visual Header Background */}
+      <div className="h-[40vh] bg-[#FDFBF7] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#EBC176_0%,_transparent_40%)] opacity-20" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_#C48B28_0%,_transparent_40%)] opacity-10" />
 
-      {/* 1. Header Section */}
-      <div className="relative mb-24">
-        {/* Cover Image */}
-        <div className="h-64 md:h-80 rounded-[48px] bg-gradient-to-r from-brand-primary/10 to-brand-secondary/10 relative overflow-hidden">
-          <div className="absolute inset-0 bg-brand-primary/5" />
-          {/* Decorative circles */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-brand-secondary/5 rounded-full -mr-32 -mt-32 blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-brand-primary/5 rounded-full -ml-32 -mb-32 blur-3xl" />
-        </div>
-
-        {/* Profile Card Overlay */}
-        <div className="absolute top-48 left-0 right-0 px-4 md:px-12">
-          <div className="bg-white rounded-[32px] p-6 md:p-8 shadow-xl border border-border flex flex-col md:flex-row gap-8 items-start relative backdrop-blur-sm bg-white/95">
-
-            {/* Avatar Section */}
-            <div className="relative -mt-20 md:-mt-24 shrink-0">
-              <div className="p-2 bg-white rounded-full inline-block shadow-sm">
-                <Avatar
-                  size="xl"
-                  initials={user?.first_name?.[0]}
-                  photoURL={user?.photoURL}
-                  className="w-32 h-32 md:w-40 md:h-40 border-4 border-white shadow-md text-4xl font-logo"
-                />
-              </div>
-              {/* Verified Badge if applicable */}
-              {user?.is_verified && (
-                <div className="absolute bottom-4 right-4 bg-blue-500 text-white p-1.5 rounded-full shadow-md border-2 border-white" title="Verified User">
-                  <CheckCircle size={16} strokeWidth={3} />
-                </div>
-              )}
-            </div>
-
-            {/* User Info Section */}
-            <div className="flex-1 w-full pt-2">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-                <div>
-                  <h1 className="text-3xl md:text-4xl font-logo font-bold text-text-primary mb-2">
-                    {user?.first_name} {user?.last_name}
-                  </h1>
-                  <div className="flex flex-wrap items-center gap-4 text-text-secondary text-sm ">
-                    <div className="flex items-center gap-1.5 bg-bg-secondary/50 px-3 py-1 rounded-full">
-                      <MapPin size={14} className="text-brand-primary" />
-                      {user?.location_city && user?.location_state
-                        ? `${user.location_city}, ${user.location_state}`
-                        : 'Location not set'}
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-bg-secondary/50 px-3 py-1 rounded-full">
-                      <Calendar size={14} className="text-brand-primary" />
-                      Member since {new Date(user?.date_joined || Date.now()).getFullYear()}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-3">
-                  <Link to="/dashboard/profile/edit">
-                    <Button variant="outline" className="rounded-full gap-2 border-border hover:bg-bg-secondary">
-                      <Edit2 size={16} /> Edit Profile
-                    </Button>
-                  </Link>
-                  <Button variant="ghost" className="rounded-full w-10 h-10 p-0 text-text-tertiary hover:bg-bg-secondary hover:text-text-primary">
-                    <Share2 size={18} />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Stats & Bio Snippet */}
-              <div className="flex flex-col md:flex-row gap-6 md:gap-12 md:items-center border-t border-border pt-6 mt-2">
-                <div className="flex items-center gap-8">
-                  <div className="text-center">
-                    <p className="text-xl font-bold font-logo text-text-primary">{pets.length}</p>
-                    <p className="text-xs font-bold text-text-tertiary uppercase tracking-wider">Pets</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xl font-bold font-logo text-text-primary">{listings.length}</p>
-                    <p className="text-xs font-bold text-text-tertiary uppercase tracking-wider">Listings</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <span className="text-xl font-bold font-logo text-text-primary">5.0</span>
-                      <Star size={14} className="fill-orange-400 text-orange-400" />
-                    </div>
-                    <p className="text-xs font-bold text-text-tertiary uppercase tracking-wider">Rating</p>
-                  </div>
-                </div>
-
-                {/* Bio Preview */}
-                {user?.bio && (
-                  <div className="flex-1 md:pl-6 md:border-l md:border-border">
-                    <p className="text-sm text-text-secondary line-clamp-2 ">"{user.bio}"</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Pattern Overlay */}
+        <div className="absolute inset-0 opacity-[0.03]"
+          style={{ backgroundImage: 'radial-gradient(#402E11 1px, transparent 1px)', backgroundSize: '32px 32px' }}
+        />
       </div>
 
-      {/* 2. Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-12">
+      <div className="max-w-7xl mx-auto px-6 -mt-32 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-        {/* Left Sidebar (Contact & Badges) */}
-        <div className="space-y-6">
-          <div className="bg-white rounded-[32px] p-6 border border-border shadow-soft">
-            <h3 className="font-logo font-bold text-xl text-text-primary mb-6">Contact Info</h3>
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 p-4 rounded-2xl bg-bg-secondary/30 transition-colors hover:bg-bg-secondary/50">
-                <div className="w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary">
-                  <Mail size={18} />
+          {/* Left Column: Profile Card */}
+          <div className="lg:col-span-4 space-y-6">
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="bg-white rounded-[3rem] p-8 border border-[#EBC176]/20 shadow-xl shadow-[#C48B28]/5 relative overflow-hidden"
+            >
+              {/* Verified Decorator */}
+              {user?.is_verified && (
+                <div className="absolute top-0 right-0 bg-[#C48B28] text-white px-6 py-2 rounded-bl-[2rem] font-bold text-[10px] uppercase tracking-widest flex items-center gap-2">
+                  Verified
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-text-tertiary uppercase tracking-wider">Email</p>
-                  <p className="text-sm font-semibold text-text-primary truncate">{user.email}</p>
+              )}
+
+              <div className="flex flex-col items-center text-center">
+                <div className="relative mb-6">
+                  <div className="p-1.5 bg-white rounded-full shadow-lg">
+                    <Avatar
+                      size="2xl"
+                      initials={user?.first_name?.[0]}
+                      photoURL={user?.photoURL}
+                      className="w-32 h-32 md:w-40 md:h-40 border-4 border-[#FDFBF7] shadow-inner text-5xl font-logo bg-[#FEF9ED] text-[#C48B28]"
+                    />
+                  </div>
+                </div>
+
+                <h1 className="text-3xl font-black text-[#402E11] mb-2 tracking-tight">
+                  {user?.first_name} {user?.last_name}
+                </h1>
+
+                <div className="flex flex-wrap items-center justify-center gap-3 text-[#402E11]/60 text-xs font-bold mb-8">
+                  {user?.location_city && (
+                    <span className="flex items-center gap-1 bg-[#FAF3E0] px-3 py-1.5 rounded-full text-[#C48B28]">
+                      <MapPin size={12} />
+                      {user.location_city}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1 bg-[#FAF3E0] px-3 py-1.5 rounded-full text-[#C48B28]">
+                    <Calendar size={12} />
+                    Joined {new Date(user?.date_joined || Date.now()).getFullYear()}
+                  </span>
+                </div>
+
+                {/* Quick Stats Grid */}
+                <div className="grid grid-cols-3 gap-2 w-full mb-8">
+                  <div className="bg-[#FEF9ED] rounded-2xl p-3 border border-[#EBC176]/20">
+                    <span className="block text-xl font-black text-[#402E11]">{pets.length}</span>
+                    <span className="text-[10px] font-bold text-[#402E11]/40 uppercase">Pets</span>
+                  </div>
+                  <div className="bg-[#FEF9ED] rounded-2xl p-3 border border-[#EBC176]/20">
+                    <span className="block text-xl font-black text-[#402E11]">{listings.length}</span>
+                    <span className="text-[10px] font-bold text-[#402E11]/40 uppercase">Listings</span>
+                  </div>
+                  <div className="bg-[#FEF9ED] rounded-2xl p-3 border border-[#EBC176]/20">
+                    <span className="block text-xl font-black text-[#402E11] flex items-center justify-center gap-1">
+                      5.0 <Star size={12} className="fill-[#C48B28] text-[#C48B28]" />
+                    </span>
+                    <span className="text-[10px] font-bold text-[#402E11]/40 uppercase">Rating</span>
+                  </div>
+                </div>
+
+                <div className="w-full space-y-3">
+                  <Link to="/dashboard/profile/edit" className="block w-full">
+                    <button className="w-full py-4 bg-[#402E11] text-[#EBC176] rounded-2xl font-black text-xs uppercase tracking-[0.15em] hover:bg-[#2A1E0B] transition-colors shadow-lg shadow-[#402E11]/20 flex items-center justify-center gap-2">
+                      <Edit2 size={14} /> Edit Profile
+                    </button>
+                  </Link>
+                  <button className="w-full py-4 bg-white border border-[#EBC176]/30 text-[#402E11] rounded-2xl font-black text-xs uppercase tracking-[0.15em] hover:bg-[#FEF9ED] transition-colors flex items-center justify-center gap-2">
+                    <Share2 size={14} /> Share Profile
+                  </button>
                 </div>
               </div>
-              {user.phone_number ? (
-                <div className="flex items-center gap-4 p-4 rounded-2xl bg-bg-secondary/30 transition-colors hover:bg-bg-secondary/50">
-                  <div className="w-10 h-10 rounded-full bg-brand-secondary/10 flex items-center justify-center text-brand-secondary">
-                    <Phone size={18} />
+            </motion.div>
+
+            {/* Contact Info Card */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="bg-white rounded-[2.5rem] p-8 border border-[#EBC176]/20"
+            >
+              <h3 className="text-sm font-black text-[#402E11] uppercase tracking-widest mb-6 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#C48B28]" /> Contact Info
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 group">
+                  <div className="w-10 h-10 rounded-2xl bg-[#FEF9ED] text-[#C48B28] flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Mail size={18} strokeWidth={2.5} />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-text-tertiary uppercase tracking-wider">Phone</p>
-                    <p className="text-sm font-semibold text-text-primary">{user.phone_number}</p>
+                  <div>
+                    <span className="block text-[10px] font-bold text-[#402E11]/40 uppercase">Email</span>
+                    <span className="text-sm font-bold text-[#402E11]">{user.email}</span>
                   </div>
                 </div>
-              ) : (
-                <div className="text-center p-4 bg-bg-secondary/20 rounded-2xl">
-                  <p className="text-xs text-text-tertiary mb-2">Phone number not set</p>
-                  <Link to="/dashboard/profile/settings" className="text-xs font-bold text-brand-primary hover:underline">Add Phone</Link>
+                <div className="flex items-center gap-4 group">
+                  <div className="w-10 h-10 rounded-2xl bg-[#FEF9ED] text-[#C48B28] flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Phone size={18} strokeWidth={2.5} />
+                  </div>
+                  <div>
+                    <span className="block text-[10px] font-bold text-[#402E11]/40 uppercase">Phone</span>
+                    {user.phone_number ? (
+                      <span className="text-sm font-bold text-[#402E11]">{user.phone_number}</span>
+                    ) : (
+                      <Link to="/dashboard/profile/settings" className="text-sm font-bold text-[#C48B28] hover:underline">Add Phone Number</Link>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
+            </motion.div>
           </div>
 
-          {/* Verifications Card */}
-          <div className="bg-white rounded-[32px] p-6 border border-border shadow-soft">
-            <h3 className="font-logo font-bold text-xl text-text-primary mb-6">Badges</h3>
-            <div className="flex flex-wrap gap-2">
-              {user.email_verified && (
-                <span className="px-3 py-1.5 bg-green-50 text-green-700 text-sm font-bold rounded-full flex items-center gap-1.5 border border-green-100">
-                  <Shield size={14} /> Email Verified
-                </span>
-              )}
-              {user.phone_verified && (
-                <span className="px-3 py-1.5 bg-blue-50 text-blue-700 text-sm font-bold rounded-full flex items-center gap-1.5 border border-blue-100">
-                  <Phone size={14} /> Phone Verified
-                </span>
-              )}
-              {!user.email_verified && !user.phone_verified && (
-                <span className="text-sm text-text-tertiary italic">No active badges</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content (Tabs) */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Tabs Navigation */}
-          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar border-b border-border/50">
-            {['About', 'My Pets', 'My Listings'].map((tab) => {
-              const isActive = activeTab === tab.toLowerCase().replace(' ', '');
-              return (
+          {/* Right Column: Content */}
+          <div className="lg:col-span-8 flex flex-col gap-8">
+            {/* Navigation Tabs */}
+            <div className="flex items-center gap-2 p-1.5 bg-white/60 backdrop-blur-sm rounded-[2rem] border border-[#EBC176]/10 w-fit">
+              {tabs.map((tab) => (
                 <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab.toLowerCase().replace(' ', ''))}
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
                   className={`
-                                px-6 py-2.5 rounded-full font-bold text-sm transition-all whitespace-nowrap
-                                ${isActive
-                      ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20'
-                      : 'bg-transparent text-text-tertiary hover:bg-bg-secondary hover:text-text-primary'}
+                                relative px-8 py-3 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all duration-300
+                                ${activeTab === tab.id
+                      ? 'text-white shadow-lg shadow-[#C48B28]/20'
+                      : 'text-[#402E11]/50 hover:text-[#402E11] hover:bg-[#FEF9ED]'
+                    }
                             `}
                 >
-                  {tab}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Tab Contents */}
-          <div className="min-h-[400px]">
-            {/* ABOUT TAB */}
-            {activeTab === 'about' && (
-              <div className="space-y-6">
-                <div className="bg-white rounded-[32px] p-8 border border-border shadow-soft">
-                  <h2 className="font-logo font-bold text-2xl text-text-primary mb-4">About Me</h2>
-                  <p className="text-text-secondary leading-relaxed ">
-                    {user.bio || (
-                      <span className="italic text-text-tertiary">
-                        This user hasn't written a bio yet.
-                      </span>
-                    )}
-                  </p>
-                  {!user.bio && (
-                    <div className="mt-6">
-                      <Link to="/dashboard/profile/settings">
-                        <Button size="sm" variant="outline">Write Bio</Button>
-                      </Link>
-                    </div>
+                  {activeTab === tab.id && (
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute inset-0 bg-[#C48B28] rounded-[1.5rem]"
+                    />
                   )}
-                </div>
-              </div>
-            )}
+                  <span className="relative z-10">{tab.label}</span>
+                </button>
+              ))}
+            </div>
 
-            {/* PETS TAB */}
-            {activeTab === 'mypets' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {pets.length > 0 ? (
-                  pets.map(pet => (
-                    <Link key={pet.id} to={`/pets/${pet.id}`} className="group block">
-                      <div className="bg-white rounded-[24px] overflow-hidden border border-border shadow-sm hover:shadow-lg transition-all hover:border-brand-primary/30">
-                        <div className="aspect-[1.1] relative">
-                          <img
-                            src={pet.image || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=800"}
-                            alt={pet.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
-                          <div className="absolute bottom-4 left-4 text-white">
-                            <h3 className="text-xl font-bold font-logo">{pet.pet_name}</h3>
-                            <p className="text-sm font-medium opacity-90">{pet.breed}</p>
+            <div className="min-h-[400px]">
+              <AnimatePresence mode="wait">
+                {/* ABOUT TAB */}
+                {activeTab === 'about' && (
+                  <motion.div
+                    key="about"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="bg-white rounded-[3rem] p-10 border border-[#EBC176]/20 relative overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#FEF9ED] rounded-full -mr-20 -mt-20 opacity-50 blur-3xl" />
+
+                    <h2 className="text-2xl font-black text-[#402E11] mb-6 relative">My Story</h2>
+                    {user.bio ? (
+                      <p className="text-[#402E11]/70 leading-relaxed text-lg font-medium relative max-w-2xl">
+                        "{user.bio}"
+                      </p>
+                    ) : (
+                      <div className="text-center py-12">
+                        <p className="text-[#402E11]/40 font-bold mb-4">You haven't written a bio yet.</p>
+                        <Link to="/dashboard/profile/settings" className="inline-flex items-center gap-2 text-[#C48B28] font-black uppercase text-xs tracking-widest hover:underline">
+                          <Edit2 size={14} /> Write your story
+                        </Link>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
+                {/* MY PETS TAB */}
+                {activeTab === 'mypets' && (
+                  <motion.div
+                    key="mypets"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-6"
+                  >
+                    {pets.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {pets.map(pet => (
+                          <Link key={pet.id} to={`/pets/${pet.id}`} className="block group">
+                            <div className="bg-white rounded-[2.5rem] p-3 border border-[#EBC176]/10 hover:border-[#C48B28]/30 transition-all hover:shadow-xl hover:shadow-[#C48B28]/5">
+                              <div className="aspect-[4/3] rounded-[2rem] overflow-hidden bg-[#FEF9ED] relative mb-4">
+                                <img
+                                  src={pet.image || "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=800"}
+                                  alt={pet.name}
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                />
+                                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-black text-[#402E11] uppercase tracking-wider">
+                                  {pet.species}
+                                </div>
+                              </div>
+                              <div className="px-4 pb-2">
+                                <h3 className="text-xl font-black text-[#402E11] mb-1">{pet.pet_name}</h3>
+                                <p className="text-[#402E11]/40 text-xs font-bold uppercase tracking-widest">{pet.breed}</p>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                        <Link to="/dashboard/pets/create" className="group flex flex-col items-center justify-center bg-[#FEF9ED] border-2 border-dashed border-[#EBC176] rounded-[2.5rem] min-h-[300px] hover:bg-white transition-all cursor-pointer">
+                          <div className="w-16 h-16 bg-[#FDFBF7] rounded-full flex items-center justify-center text-[#C48B28] shadow-sm mb-4 group-hover:scale-110 transition-transform border border-[#EBC176]/20">
+                            <Plus size={28} strokeWidth={2.5} />
                           </div>
-                        </div>
+                          <span className="text-[#C48B28] font-black uppercase text-xs tracking-[0.2em]">Add New Pet</span>
+                        </Link>
                       </div>
-                    </Link>
-                  ))
-                ) : (
-                  <div className="col-span-2 text-center py-12 bg-white rounded-[32px] border border-dashed border-border flex flex-col items-center">
-                    <div className="w-16 h-16 bg-bg-secondary rounded-full flex items-center justify-center text-text-tertiary mb-4">
-                      <Heart size={24} />
-                    </div>
-                    <h3 className="font-bold text-text-primary mb-2">No Pets Yet</h3>
-                    <p className="text-text-secondary text-sm mb-6">Add your beloved pets to your profile.</p>
-                    <Link to="/dashboard/pets/create">
-                      <Button variant="primary" className="rounded-full">
-                        <Plus size={18} className="mr-2" /> Add a Pet
-                      </Button>
-                    </Link>
-                  </div>
+                    ) : (
+                      <NoResults
+                        icon={PawPrint}
+                        title="No pets added yet"
+                        description="Add your furry friends to your profile to keep track of their care."
+                        actionLabel="Add a Pet"
+                        onReset={() => window.location.href = '/dashboard/pets/create'}
+                      />
+                    )}
+                  </motion.div>
                 )}
 
-                {/* Always show "Add Pet" card if there are pets */}
-                {pets.length > 0 && (
-                  <Link to="/dashboard/pets/create" className="flex flex-col items-center justify-center aspect-[1.1] rounded-[24px] border-2 border-dashed border-brand-primary/20 bg-brand-primary/5 hover:bg-brand-primary/10 transition-colors group">
-                    <div className="w-12 h-12 rounded-full bg-brand-primary text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform mb-3">
-                      <Plus size={24} />
-                    </div>
-                    <span className="font-bold text-brand-primary">Add Another Pet</span>
-                  </Link>
-                )}
-              </div>
-            )}
-
-            {/* LISTINGS TAB */}
-            {activeTab === 'mylistings' && (
-              <div className="space-y-6">
-                {listings.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {listings.map(pet => (
-                      <div key={pet.id} className="h-[420px]">
-                        <PetCard pet={pet} viewMode="grid" />
+                {/* LISTINGS TAB */}
+                {activeTab === 'mylistings' && (
+                  <motion.div
+                    key="mylistings"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                  >
+                    {listings.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {listings.map(pet => (
+                          <PetCard key={pet.id} pet={pet} viewMode="grid" />
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 bg-white rounded-[32px] border border-dashed border-border flex flex-col items-center">
-                    <div className="w-16 h-16 bg-bg-secondary rounded-full flex items-center justify-center text-text-tertiary mb-4">
-                      <Share2 size={24} />
-                    </div>
-                    <h3 className="font-bold text-text-primary mb-2">No Active Listings</h3>
-                    <p className="text-text-secondary text-sm mb-6">Ready to rehome a pet? Create a listing.</p>
-                    <Link to="/rehoming">
-                      <Button variant="outline" className="rounded-full">
-                        Create Listing
-                      </Button>
-                    </Link>
-                  </div>
+                    ) : (
+                      <NoResults
+                        icon={Share2}
+                        title="No active listings"
+                        description="You aren't currently rehoming any pets."
+                        actionLabel="Create Listing"
+                        onReset={() => window.location.href = '/rehoming'}
+                      />
+                    )}
+                  </motion.div>
                 )}
-              </div>
-            )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>
