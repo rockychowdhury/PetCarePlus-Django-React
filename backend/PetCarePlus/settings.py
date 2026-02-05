@@ -247,3 +247,13 @@ CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
+
+# SSL configuration for Redis (required for 'rediss://' URLs)
+import ssl
+if CELERY_BROKER_URL.startswith('rediss://'):
+    CELERY_BROKER_USE_SSL = {
+        'ssl_cert_reqs': ssl.CERT_NONE
+    }
+    CELERY_REDIS_BACKEND_USE_SSL = {
+        'ssl_cert_reqs': ssl.CERT_NONE
+    }
