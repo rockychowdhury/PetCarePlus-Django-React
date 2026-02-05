@@ -76,61 +76,6 @@
 
   }
 
-  .dark {
-    /* ========================================
-       DARK MODE - Sage & Stone Theme
-       Deep, calm, modern dark palette
-     ======================================== */
-
-    /* Background Colors */
-    --color-bg-primary: #121212;
-    /* Deep charcoal - Main */
-    --color-bg-secondary: #1E1E1E;
-    /* Dark gray - Cards */
-    --color-bg-surface: #252525;
-    /* Elevated dark - Surfaces */
-    --color-bg-overlay: rgba(0, 0, 0, 0.75);
-
-    /* Text Colors */
-    --color-text-primary: #F5F5F5;
-    /* Off-white - Headings */
-    --color-text-secondary: #A0A0A0;
-    /* Muted stone - Body */
-    --color-text-tertiary: #6B6B6B;
-    /* Dark gray - Hints */
-    --color-text-inverted: #121212;
-    /* Dark - On light backgrounds */
-    --color-text-muted: #4A4A4A;
-    /* Very dark - Disabled */
-
-    /* Brand Colors */
-    --color-brand-primary: #6BBFA3;
-    /* Muted Aqua - Primary actions */
-    --color-brand-secondary: #D4A373;
-    /* Champagne Gold - Accents (Fixed) */
-    --color-brand-accent: #3D5A4C;
-    /* Deep Sage - Highlights */
-
-    /* Border Colors */
-    --color-border: #333333;
-    /* Dark border */
-    --color-border-light: #404040;
-    /* Slightly lighter */
-    --color-border-focus: #6BBFA3;
-    /* Aqua - Focus state */
-    --color-border-error: #F08080;
-    /* Light coral - Error */
-
-    /* Status Colors */
-    --color-status-success: #6BCB8B;
-    /* Bright green */
-    --color-status-error: #F08080;
-    /* Light coral */
-    --color-status-warning: #F5C76B;
-    /* Warm yellow */
-    --color-status-info: #7CB9E8;
-    /* Light blue */
-  }
 }
 
 @layer components {
