@@ -25,7 +25,7 @@ from apps.pets.models import PetProfile
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from decouple import config
+import os
 import random
 from django.utils import timezone
 from django.core.mail import send_mail

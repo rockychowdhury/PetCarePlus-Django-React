@@ -1,9 +1,9 @@
 import google.generativeai as genai
-from decouple import config
+import os
 import json
 
 # Setup API Key
-api_key = config('GEMINI_API_KEY', default=None)
+api_key = os.environ.get('GEMINI_API_KEY', None)
 if api_key:
     genai.configure(api_key=api_key)
 else:
