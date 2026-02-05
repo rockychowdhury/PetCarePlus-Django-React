@@ -10,9 +10,25 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 from datetime import timedelta
-from decouple import config
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+def get_env(key, default=None, cast=None):
+    value = os.environ.get(key, default)
+    if value is None:
+        return None
+    if cast is bool:
+        return str(value).lower() in ('true', '1', 'yes', 't', 'y')
+    if cast is int:
+        return int(value)
+    if cast:
+        return cast(value)
+    return value
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,12 +36,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = get_env('SECRET_KEY', default='django-insecure-prod-fallback-replace-me-soon')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=lambda v: [s.strip() for s in v.split(',')])
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:5173', cast=lambda v: [s.strip() for s in v.split(',')])
+DEBUG = get_env('DEBUG', default=True, cast=bool)
+ALLOWED_HOSTS = get_env('ALLOWED_HOSTS', default='*', cast=lambda v: [s.strip() for s in v.split(',')])
+CSRF_TRUSTED_ORIGINS = get_env('CSRF_TRUSTED_ORIGINS', default='http://localhost:5173', cast=lambda v: [s.strip() for s in v.split(',')])
 
 
 REST_FRAMEWORK = {
@@ -62,15 +78,15 @@ SIMPLE_JWT = {
     "TOKEN_OBTAIN_SERIALIZER": "apps.users.serializers.CustomTokenObtainPairSerializer",
 }
 
-SESSION_COOKIE_SECURE = config('DJANGO_ENV')=='production'
-CSRF_COOKIE_SECURE = config('DJANGO_ENV')=='production'
+SESSION_COOKIE_SECURE = get_env('DJANGO_ENV') == 'production'
+CSRF_COOKIE_SECURE = get_env('DJANGO_ENV') == 'production'
 CSRF_COOKIE_HTTPONLY = True
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWS_CREDENTIALS = True
 APPEND_SLASH = False
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:5173', cast=lambda v: [s.strip() for s in v.split(',')])
+CORS_ALLOWED_ORIGINS = get_env('CORS_ALLOWED_ORIGINS', default='http://localhost:5173', cast=lambda v: [s.strip() for s in v.split(',')])
 # Application definition
 
 INSTALLED_APPS = [
@@ -139,15 +155,15 @@ AUTH_USER_MODEL ='users.User'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-if config('SQL_DATABASE', default=None):
+if get_env('SQL_DATABASE'):
     DATABASES = {
         'default': {
-            'ENGINE': config('SQL_ENGINE', default='django.db.backends.postgresql'),
-            'NAME': config('SQL_DATABASE'),
-            'USER': config('SQL_USER'),
-            'PASSWORD': config('SQL_PASSWORD'),
-            'HOST': config('SQL_HOST'),
-            'PORT': config('SQL_PORT'),
+            'ENGINE': get_env('SQL_ENGINE', default='django.db.backends.postgresql'),
+            'NAME': get_env('SQL_DATABASE'),
+            'USER': get_env('SQL_USER'),
+            'PASSWORD': get_env('SQL_PASSWORD'),
+            'HOST': get_env('SQL_HOST'),
+            'PORT': get_env('SQL_PORT'),
         }
     }
 else:
@@ -228,21 +244,21 @@ UNFOLD = {
 }
 
 # Email Configuration
-EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
-EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
-EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
-EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
-EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER', default='noreply@petcareplus.com')
+EMAIL_BACKEND = get_env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = get_env('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = get_env('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = get_env('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = get_env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = get_env('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = get_env('EMAIL_HOST_USER', default='noreply@petcareplus.com')
 
 # WhatsApp Verification (Meta Cloud API)
-WHATSAPP_VERIFY_TOKEN = config('WHATSAPP_VERIFY_TOKEN', default='test_verify_token_123')
-META_APP_SECRET = config('META_APP_SECRET', default='')
+WHATSAPP_VERIFY_TOKEN = get_env('WHATSAPP_VERIFY_TOKEN', default='test_verify_token_123')
+META_APP_SECRET = get_env('META_APP_SECRET', default='')
 
 # Celery Configuration
-CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/1')
+CELERY_BROKER_URL = get_env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = get_env('CELERY_RESULT_BACKEND', default='redis://localhost:6379/1')
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
