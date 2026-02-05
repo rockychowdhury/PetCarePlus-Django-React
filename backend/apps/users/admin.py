@@ -1,10 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from unfold.admin import ModelAdmin
+from django.contrib.admin import ModelAdmin
 from .models import User, RoleRequest, UserTrustReview
 
 @admin.register(User)
-class UserAdmin(BaseUserAdmin, ModelAdmin):
+class UserAdmin(BaseUserAdmin):
     list_display = ("email", "first_name", "last_name", "role", "email_verified", "is_staff")
     list_filter = ("role", "email_verified", "verified_identity", "is_staff", "is_active")
     search_fields = ("email", "first_name", "last_name")
