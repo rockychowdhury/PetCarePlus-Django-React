@@ -15,7 +15,7 @@ from .serializers import (
     PublicUserSerializer, RoleRequestSerializer, AdminUserDetailSerializer
 )
 from apps.pets.serializers import PetProfileSerializer
-from .utils.email import send_verification_email, send_password_reset_email
+from .utils.email import send_verification_email, send_password_reset_email, send_welcome_email
 from .utils.whatsapp import (
     generate_otp, format_whatsapp_link, verify_meta_signature,
     extract_message_from_webhook, extract_code_from_message
@@ -208,6 +208,12 @@ class VerifyEmailView(APIView):
         user.verification_code = None
         user.verification_code_expires_at = None
         user.save()
+
+        # Send Welcome Email
+        try:
+            send_welcome_email(user)
+        except Exception:
+            pass # Non-blocking
         
         # Generate tokens since they are now verified and can likely log in immediately
         refresh = RefreshToken.for_user(user)

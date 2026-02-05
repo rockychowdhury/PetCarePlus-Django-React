@@ -151,3 +151,28 @@ def send_password_reset_email(email, link):
         html_message=html_message,
         fail_silently=False,
     )
+
+def send_welcome_email(user):
+    subject = 'Welcome to PetCarePlus! 🐾'
+    title = f"Welcome, {user.first_name or 'Friend'}!"
+    
+    content_html = f"""
+        <p class="text">We're thrilled to have you join our community.</p>
+        <p class="text">You can now explore services, adopt pets, or list your own services.</p>
+        <p class="text">If you have any questions, feel free to reply to this email.</p>
+        <a href="{getattr(settings, 'FRONTEND_URL', 'https://petcarepp.netlify.app')}/dashboard" class="link-btn">Go to Dashboard</a>
+    """
+    
+    footer_text = "Welcome to the family!"
+    
+    html_message = get_email_template(title, content_html, footer_text)
+    plain_message = f"Welcome to PetCarePlus, {user.first_name}! We're glad you're here."
+    
+    send_mail(
+        subject,
+        plain_message,
+        settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@petcareplus.com',
+        [user.email],
+        html_message=html_message,
+        fail_silently=False,
+    )

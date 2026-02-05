@@ -3,6 +3,7 @@ URL configuration for FurEverHome project.
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.http import JsonResponse
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -18,6 +19,9 @@ urlpatterns = [
     path('api/notifications/', include('apps.notifications.urls')),
     path('api/analytics/', include('apps.analytics.urls')),
     # path('api/common/', include('apps.common.urls')),
+    
+    # Root Health Check
+    path('', lambda request: JsonResponse({"message": "Server is Healthy"})),
 ]
 
 if settings.DEBUG:
