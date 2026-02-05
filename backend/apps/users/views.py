@@ -388,7 +388,8 @@ class RequestPasswordResetView(APIView):
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
             
             # In production, send this link via email
-            link = f"http://localhost:5173/password-reset/{uidb64}/{token}"
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
+            link = f"{frontend_url}/password-reset/{uidb64}/{token}"
             
             send_password_reset_email(user.email, link)
             pass

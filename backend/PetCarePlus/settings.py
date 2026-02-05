@@ -41,7 +41,7 @@ SECRET_KEY = get_env('SECRET_KEY', default='django-insecure-prod-fallback-replac
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = get_env('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = get_env('ALLOWED_HOSTS', default='*', cast=lambda v: [s.strip() for s in v.split(',')])
-CSRF_TRUSTED_ORIGINS = get_env('CSRF_TRUSTED_ORIGINS', default='https://impressed-billi-backenddev-e631e481.koyeb.app', cast=lambda v: [s.strip() for s in v.split(',')])
+CSRF_TRUSTED_ORIGINS = get_env('CSRF_TRUSTED_ORIGINS', default='https://impressed-billi-backenddev-e631e481.koyeb.app,https://petcarepp.netlify.app', cast=lambda v: [s.strip() for s in v.split(',')])
 
 # Secure Proxy SSL Header (Required for Koyeb/Heroku/Vercel)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -92,7 +92,11 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWS_CREDENTIALS = True
 APPEND_SLASH = True
-CORS_ALLOWED_ORIGINS = get_env('CORS_ALLOWED_ORIGINS', default='http://localhost:5173', cast=lambda v: [s.strip() for s in v.split(',')])
+CORS_ALLOWED_ORIGINS = get_env('CORS_ALLOWED_ORIGINS', default='http://localhost:5173,https://petcarepp.netlify.app', cast=lambda v: [s.strip() for s in v.split(',')])
+
+# Frontend URL for email links
+FRONTEND_URL = get_env('FRONTEND_URL', default='https://petcarepp.netlify.app')
+
 # Application definition
 
 INSTALLED_APPS = [
