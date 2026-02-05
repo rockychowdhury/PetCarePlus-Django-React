@@ -96,7 +96,6 @@ CORS_ALLOWED_ORIGINS = get_env('CORS_ALLOWED_ORIGINS', default='http://localhost
 # Application definition
 
 INSTALLED_APPS = [
-    'unfold',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -223,30 +222,6 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-UNFOLD = {
-    "SITE_TITLE": "PetCarePlus Admin",
-    "SITE_HEADER": "PetCarePlus Management",
-    "SITE_SYMBOL": "pets",  # Material Symbols icon
-    "COLORS": {
-        "primary": {
-            "50": "255 247 237",
-            "100": "255 237 213",
-            "200": "254 215 170",
-            "300": "253 186 116",
-            "400": "251 146 60",
-            "500": "249 115 22",  # Orange 500
-            "600": "234 88 12",
-            "700": "194 65 12",
-            "800": "154 52 18",
-            "900": "124 45 18",
-            "950": "67 20 7",
-        },
-    },
-    "SIDEBAR": {
-        "show_search": True,
-        "show_all_applications": True,
-    },
-}
 
 # Email Configuration
 EMAIL_BACKEND = get_env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
