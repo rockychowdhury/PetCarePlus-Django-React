@@ -8,6 +8,7 @@ if api_key:
     genai.configure(api_key=api_key)
 else:
     # Warning: GEMINI_API_KEY not found
+    pass
 
 def generate_application_content(user, listing, form_data):
     """
