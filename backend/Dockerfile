@@ -24,7 +24,8 @@ COPY . /app/
 # Copy and set entrypoint permissions
 COPY entrypoint.sh /app/entrypoint.sh
 COPY celery_worker.sh /app/celery_worker.sh
-RUN chmod +x /app/entrypoint.sh /app/celery_worker.sh
+COPY start_all.sh /app/start_all.sh
+RUN chmod +x /app/entrypoint.sh /app/celery_worker.sh /app/start_all.sh
 
 # Expose port
 EXPOSE 8000
