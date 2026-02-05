@@ -460,9 +460,11 @@ class RoleRequestViewSet(viewsets.ModelViewSet):
     """
     serializer_class = RoleRequestSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_fields = ['status', 'requested_role']
     ordering_fields = ['created_at', 'updated_at']
     ordering = ['-created_at']
+    search_fields = ['user__email', 'user__first_name', 'user__last_name']
 
     def get_queryset(self):
         user = self.request.user

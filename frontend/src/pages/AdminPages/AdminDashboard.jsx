@@ -1,41 +1,16 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Users, List, Heart, Flag, ArrowUp, ArrowDown, Activity, CheckCircle, Clock } from 'lucide-react';
+import { Users, List, Heart, Flag, ArrowUp, ArrowDown, Activity, CheckCircle, Clock, Calendar } from 'lucide-react';
 import useAPI from '../../hooks/useAPI';
 import Card from '../../components/common/Layout/Card';
-import Badge from '../../components/common/Feedback/Badge';
 import { Link } from 'react-router-dom';
-
-const MockLineChart = () => (
-    <div className="h-64 flex items-end justify-between px-2 gap-2 mt-4">
-        {[40, 65, 50, 80, 75, 95, 120].map((h, i) => (
-            <div key={i} className="flex-1 group relative h-full flex items-end">
-                <div
-                    className="w-full bg-brand-primary/10 hover:bg-brand-primary/20 transition-all rounded-t-lg"
-                    style={{ height: `${h}%` }}
-                >
-                    <div
-                        className="absolute bottom-0 w-full bg-gradient-to-t from-brand-primary/40 to-brand-primary/10 transition-all duration-700 rounded-t-lg group-hover:from-brand-primary/60"
-                        style={{ height: '100%' }}
-                    ></div>
-                </div>
-            </div>
-        ))}
-    </div>
-);
-
-const MockBarChart = () => (
-    <div className="h-64 flex items-end justify-between px-4 gap-4 mt-4">
-        {[30, 45, 35, 60, 55, 70].map((h, i) => (
-            <div key={i} className="w-8 mx-auto bg-brand-secondary/20 rounded-t-xl overflow-hidden relative group">
-                <div
-                    className="absolute bottom-0 w-full bg-brand-secondary transition-all duration-500 group-hover:opacity-90 shadow-lg"
-                    style={{ height: `${h}%` }}
-                ></div>
-            </div>
-        ))}
-    </div>
-);
+import {
+    AreaChart,
+    Area,
+    ResponsiveContainer,
+    Tooltip
+} from 'recharts';
+import { format } from 'date-fns';
 
 const AdminDashboard = () => {
     const api = useAPI();
@@ -48,128 +23,217 @@ const AdminDashboard = () => {
         }
     });
 
-    if (isLoading || !analytics) return <div className="p-8 text-text-secondary">Loading dashboard...</div>;
+    if (isLoading || !analytics) return (
+        <div className="flex items-center justify-center min-h-[60vh] text-sky-900/60 font-medium animate-pulse">
+            Loading dashboard data...
+        </div>
+    );
+
+    const { kpi, pending_counts, recent_activity, charts } = analytics;
 
     const stats = [
-        { title: 'Total Users', value: analytics.total_users, change: `+${analytics.new_users_today} today`, isPositive: true, icon: Users, color: 'text-brand-primary', bg: 'bg-brand-primary/10', link: '/admin/users' },
-        { title: 'Active Listings', value: analytics.active_listings, change: '0%', isPositive: true, icon: List, color: 'text-brand-secondary', bg: 'bg-brand-secondary/10', link: '/admin/listings' },
-        { title: 'Total Applications', value: analytics.total_applications, change: '0%', isPositive: true, icon: Heart, color: 'text-status-info', bg: 'bg-status-info/10', link: '/admin/analytics' },
-        { title: 'Pending Listings', value: analytics.pending_listings, change: 'Action Req.', isPositive: false, icon: Flag, color: 'text-status-error', bg: 'bg-status-error/10', link: '/admin/listings' },
+        {
+            title: 'Total Users',
+            value: kpi.total_users,
+            change: `+${kpi.new_users_today} today`,
+            isPositive: kpi.new_users_today > 0,
+            icon: Users,
+            color: 'text-cyan-700',
+            bg: 'bg-cyan-700/10',
+            link: '/admin/users'
+        },
+        {
+            title: 'Active Listings',
+            value: kpi.active_listings,
+            change: 'Live',
+            isPositive: true,
+            icon: List,
+            color: 'text-sky-600',
+            bg: 'bg-sky-600/10',
+            link: '/admin/listings'
+        },
+        {
+            title: 'Adoption Apps',
+            value: kpi.total_applications || 0,
+            change: 'Inquiries',
+            isPositive: true,
+            icon: Heart,
+            color: 'text-rose-600',
+            bg: 'bg-rose-600/10',
+            link: '/admin/listings'
+        },
+        {
+            title: 'Total Revenue',
+            value: `$${Math.round(kpi.total_revenue).toLocaleString()}`,
+            change: 'Gross',
+            isPositive: true,
+            icon: Activity,
+            color: 'text-emerald-600',
+            bg: 'bg-emerald-600/10',
+            link: '/admin/analytics'
+        },
     ];
 
     const pendingActions = [
-        { label: 'Role Requests', count: analytics.pending_role_requests || 0, link: '/admin/role-requests', color: 'info' },
-        { label: 'Listings to Review', count: analytics.pending_listings, link: '/admin/listings', color: 'warning' },
-        { label: 'Pending Applications', count: analytics.pending_applications, link: '/admin/applications', color: 'info' },
-        { label: 'High Priority Reports', count: 0, link: '/admin/reports', color: 'error' },
-    ];
-
-    // Mock activities for MVP until we wire an Activity Log API
-    const activities = [
-        { id: 1, type: 'user', message: 'New user registration: Sarah Jenkins', time: '5 mins ago', icon: Users },
-        { id: 2, type: 'listing', message: 'New listing submitted: "Buddy" (Golden Retriever)', time: '15 mins ago', icon: List },
-        { id: 3, type: 'report', message: 'Report filed against Listing #452', time: '1 hour ago', icon: Flag },
+        {
+            label: 'Role Requests',
+            count: pending_counts?.role_requests || 0,
+            link: '/admin/role-requests',
+            color: 'info',
+            icon: Users
+        },
+        {
+            label: 'Provider Verifications',
+            count: pending_counts?.providers || 0,
+            link: '/admin/providers?status=pending',
+            color: 'warning',
+            icon: Flag
+        },
+        {
+            label: 'Listings Review',
+            count: pending_counts?.listings || 0,
+            link: '/admin/listings?status=pending_review',
+            color: 'error',
+            icon: List
+        },
     ];
 
     return (
-        <div className="min-h-screen bg-themev3-bg relative overflow-hidden -m-8 p-8">
-            {/* Background Decorative Elements */}
-            <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-themev3-primary/10 rounded-full blur-[120px] -z-10"></div>
-            <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-themev3-surface/10 rounded-full blur-[120px] -z-10"></div>
-
-            <div className="space-y-10 animate-in fade-in duration-700">
-                <div className="flex justify-between items-end">
-                    <div>
-                        <h1 className="text-4xl font-black text-themev3-text tracking-tight">Admin <span className="text-themev3-primary">Center</span></h1>
-                        <p className="text-themev3-text/60 font-medium mt-1">Platform overview and real-time moderation.</p>
-                    </div>
+        <div className="space-y-10 animate-in fade-in duration-700 pb-20">
+            <div className="flex justify-between items-end">
+                <div>
+                    <h1 className="text-4xl font-black text-sky-900 tracking-tight">Admin <span className="text-cyan-700">Center</span></h1>
+                    <p className="text-sky-900/60 font-medium mt-1">Platform overview and real-time moderation.</p>
                 </div>
+            </div>
 
-                {/* Stats Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {stats.map((stat, index) => (
-                        <Link key={index} to={stat.link} className="group">
-                            <div className="bg-white/70 backdrop-blur-md border border-themev3-surface/20 p-6 rounded-[2rem] shadow-xl hover:shadow-2xl hover:translate-y-[-4px] transition-all duration-300">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color} shadow-inner`}>
-                                        <stat.icon size={24} />
-                                    </div>
-                                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${stat.isPositive ? 'bg-status-success/10 text-status-success' : 'bg-status-error/10 text-status-error'}`}>
-                                        {stat.isPositive ? <ArrowUp size={12} strokeWidth={3} /> : <ArrowDown size={12} strokeWidth={3} />}
-                                        {stat.change}
-                                    </div>
+            {/* Stats Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {stats.map((stat, index) => (
+                    <Link key={index} to={stat.link} className="group">
+                        <div className="bg-white border border-sky-100 p-6 rounded-[2rem] hover:border-cyan-200 transition-all duration-300 shadow-sm hover:shadow-md">
+                            <div className="flex justify-between items-start mb-6">
+                                <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color}`}>
+                                    <stat.icon size={24} />
                                 </div>
-                                <h3 className="text-themev3-text/40 text-xs font-black uppercase tracking-widest">{stat.title}</h3>
-                                <p className="text-3xl font-black text-themev3-text mt-1">{stat.value}</p>
+                                <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${stat.isPositive ? 'bg-emerald-50 text-emerald-600 border border-emerald-100/50' : 'bg-red-50 text-red-600 border border-red-100/50'}`}>
+                                    {stat.isPositive ? <ArrowUp size={12} strokeWidth={3} /> : <ArrowDown size={12} strokeWidth={3} />}
+                                    {stat.change}
+                                </div>
                             </div>
-                        </Link>
-                    ))}
-                </div>
+                            <h3 className="text-sky-900/40 text-xs font-black uppercase tracking-widest">{stat.title}</h3>
+                            <p className="text-3xl font-black text-sky-900 mt-1">{stat.value}</p>
+                        </div>
+                    </Link>
+                ))}
+            </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Main Charts Area */}
-                    <div className="lg:col-span-2 space-y-8">
-                        <div className="bg-white/70 backdrop-blur-md border border-themev3-surface/20 p-8 rounded-[2.5rem] shadow-xl">
-                            <div className="flex justify-between items-center mb-10">
-                                <div>
-                                    <h3 className="text-xl font-black text-themev3-text tracking-tight">User Acquisition</h3>
-                                    <p className="text-xs text-themev3-text/60 font-medium mt-0.5">Registration trends over time</p>
-                                </div>
-                                <select className="bg-themev3-bg border-none rounded-xl px-4 py-2 text-xs font-bold text-themev3-text/60 outline-none focus:ring-2 focus:ring-themev3-primary/20">
-                                    <option>Last 7 Days</option>
-                                    <option>Last 30 Days</option>
-                                </select>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Main Charts Area */}
+                <div className="lg:col-span-2 space-y-8">
+                    <div className="bg-white border border-sky-100 p-8 rounded-[2.5rem]">
+                        <div className="flex justify-between items-center mb-10">
+                            <div>
+                                <h3 className="text-xl font-black text-sky-900 tracking-tight">User Acquisition</h3>
+                                <p className="text-xs text-sky-900/40 font-bold uppercase tracking-widest mt-0.5">Registration trends (Last 6 Months)</p>
                             </div>
-                            <MockLineChart />
+                        </div>
+
+                        <div className="h-64 mt-4">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={charts.user_growth}>
+                                    <defs>
+                                        <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#0e7490" stopOpacity={0.2} />
+                                            <stop offset="95%" stopColor="#0e7490" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#fff', borderRadius: '1rem', border: '1px solid #e0f2fe' }}
+                                        itemStyle={{ color: '#0c4a6e', fontWeight: 'bold' }}
+                                    />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="users"
+                                        stroke="#0e7490"
+                                        strokeWidth={3}
+                                        fillOpacity={1}
+                                        fill="url(#colorUsers)"
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
+                </div>
 
-                    {/* Sidebar Widgets */}
-                    <div className="space-y-8">
-                        {/* Pending Actions */}
-                        <div className="bg-white/70 backdrop-blur-md border border-themev3-surface/20 p-7 rounded-[2.5rem] shadow-xl">
-                            <h3 className="text-lg font-black text-themev3-text mb-6 flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-2xl bg-themev3-primary/10 text-themev3-primary flex items-center justify-center shadow-inner">
-                                    <Activity size={20} />
-                                </div>
-                                Needs Attention
-                            </h3>
-                            <div className="space-y-4">
-                                {pendingActions.map((action, idx) => (
-                                    <Link key={idx} to={action.link} className="flex justify-between items-center p-4 rounded-3xl bg-themev3-bg/50 hover:bg-white hover:shadow-lg transition-all border border-transparent hover:border-themev3-surface/20">
-                                        <span className="text-sm font-bold text-themev3-text/70">{action.label}</span>
-                                        <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-sm text-white
-                                            ${action.color === 'error' ? 'bg-status-error' :
-                                                action.color === 'warning' ? 'bg-status-warning' :
-                                                    'bg-status-info'}`}>
-                                            {action.count}
+                {/* Sidebar Widgets */}
+                <div className="space-y-8">
+                    {/* Pending Actions */}
+                    <div className="bg-white border border-sky-100 p-7 rounded-[2.5rem]">
+                        <h3 className="text-lg font-black text-sky-900 mb-6 flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-cyan-700/10 text-cyan-700 flex items-center justify-center">
+                                <Activity size={20} />
+                            </div>
+                            Action Center
+                        </h3>
+                        <div className="space-y-4">
+                            {pendingActions.map((action, idx) => (
+                                <Link key={idx} to={action.link} className="flex justify-between items-center p-4 rounded-3xl bg-sky-50/30 hover:bg-white transition-all border border-transparent hover:border-sky-100 group">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2 rounded-full ${action.count > 0 ? "bg-white text-cyan-700" : "bg-transparent text-sky-900/30"
+                                            }`}>
+                                            <action.icon size={16} />
                                         </div>
-                                    </Link>
-                                ))}
-                            </div>
+                                        <span className="text-sm font-bold text-sky-900/70 group-hover:text-cyan-700 transition-colors">{action.label}</span>
+                                    </div>
+                                    <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter text-white
+                                            ${action.count > 0 ?
+                                            (action.color === 'error' ? 'bg-red-500' :
+                                                action.color === 'warning' ? 'bg-amber-500' :
+                                                    'bg-cyan-600')
+                                            : 'bg-gray-300'}`}>
+                                        {action.count}
+                                    </div>
+                                </Link>
+                            ))}
                         </div>
+                    </div>
 
-                        {/* Recent Activity */}
-                        <div className="bg-white/70 backdrop-blur-md border border-themev3-surface/20 p-7 rounded-[2.5rem] shadow-xl">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-black text-themev3-text">Recent Stream</h3>
-                                <Link to="/admin/activity" className="text-[10px] font-bold text-themev3-primary uppercase tracking-widest hover:opacity-80 transition-colors">View All</Link>
-                            </div>
-                            <div className="space-y-6">
-                                {activities.map((activity) => (
+                    {/* Recent Stream */}
+                    <div className="bg-white border border-sky-100 p-7 rounded-[2.5rem] max-h-[600px] overflow-y-auto custom-scrollbar">
+                        <div className="flex justify-between items-center mb-6 sticky top-0 bg-white z-10 pb-4 border-b border-sky-50">
+                            <h3 className="text-lg font-black text-sky-900">Live Stream</h3>
+                            <span className="text-[10px] font-bold text-cyan-700 uppercase tracking-widest animate-pulse">● Live</span>
+                        </div>
+                        <div className="space-y-6">
+                            {recent_activity && recent_activity.length > 0 ? (
+                                recent_activity.map((activity) => (
                                     <div key={activity.id} className="flex gap-4 items-start group">
-                                        <div className="p-3 bg-themev3-bg rounded-2xl text-themev3-text/40 group-hover:text-themev3-primary group-hover:bg-white group-hover:shadow-md transition-all shadow-inner">
-                                            <activity.icon size={16} />
+                                        <div className={`p-3 rounded-2xl transition-all shrink-0 ${activity.type === 'user' ? 'bg-blue-50 text-blue-600' :
+                                                activity.type === 'booking' ? 'bg-purple-50 text-purple-600' :
+                                                    activity.type === 'role' ? 'bg-amber-50 text-amber-600' :
+                                                        'bg-emerald-50 text-emerald-600'
+                                            }`}>
+                                            {activity.type === 'user' && <Users size={14} />}
+                                            {activity.type === 'booking' && <Calendar size={14} />}
+                                            {activity.type === 'provider' && <Flag size={14} />}
+                                            {activity.type === 'role' && <Activity size={14} />}
                                         </div>
-                                        <div className="space-y-1">
-                                            <p className="text-sm text-themev3-text/70 font-bold leading-tight group-hover:text-themev3-text transition-colors">{activity.message}</p>
-                                            <p className="text-[10px] text-themev3-text/40 font-black uppercase tracking-widest flex items-center gap-1.5">
-                                                <Clock size={12} /> {activity.time}
+                                        <div className="space-y-1 min-w-0">
+                                            <p className="text-xs text-sky-900/80 font-bold leading-tight group-hover:text-cyan-700 transition-colors break-words">
+                                                {activity.message}
+                                            </p>
+                                            <p className="text-[10px] text-sky-900/40 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                                                <Clock size={10} /> {format(new Date(activity.time), 'MMM dd, HH:mm')}
                                             </p>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-8 text-sky-900/40 text-xs font-bold">
+                                    No recent activity
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

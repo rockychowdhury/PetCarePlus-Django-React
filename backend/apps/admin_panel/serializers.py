@@ -44,11 +44,12 @@ class AdminUserListSerializer(serializers.ModelSerializer):
     """Serializer for admin user list view"""
     pets_count = serializers.SerializerMethodField()
     reports_count = serializers.SerializerMethodField()
+    full_name = serializers.ReadOnlyField()
     
     class Meta:
         model = User
         fields = [
-            'id', 'email', 'first_name', 'last_name', 'role', 'photoURL',
+            'id', 'email', 'first_name', 'last_name', 'full_name', 'role', 'photoURL',
             'email_verified', 'verified_identity', 'is_active', 'account_status',
             'date_joined', 'last_login', 'pets_count', 'reports_count'
         ]
@@ -88,7 +89,22 @@ class AdminUserUpdateSerializer(serializers.ModelSerializer):
     """Serializer for admin to update user"""
     class Meta:
         model = User
-        fields = ['role', 'is_active', 'verified_identity', 'pet_owner_verified', 'email_verified']
+        fields = [
+            'first_name', 'last_name', 'role', 'is_active', 'account_status',
+            'bio', 'phone_number', 'location_city', 'location_state',
+            'verified_identity', 'pet_owner_verified', 'email_verified'
+        ]
+
+    def update(self, instance, validated_data):
+        # Auto-sync is_active based on account_status
+        if 'account_status' in validated_data:
+            status = validated_data['account_status']
+            if status in ['banned', 'suspended']:
+                validated_data['is_active'] = False
+            elif status == 'active':
+                validated_data['is_active'] = True
+        
+        return super().update(instance, validated_data)
 
 class UserReportListSerializer(serializers.ModelSerializer):
     """Serializer for listing reports"""

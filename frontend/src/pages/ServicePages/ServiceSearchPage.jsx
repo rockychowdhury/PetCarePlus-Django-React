@@ -130,8 +130,8 @@ const ServiceSearchPage = () => {
             <div className="max-w-[1600px] mx-auto px-10 py-12">
 
                 <div className="flex flex-col lg:flex-row gap-12">
-                    {/* Sidebar Container - Top Aligned */}
-                    <aside className="w-full lg:w-[320px] shrink-0 sticky top-8 h-fit">
+                    {/* Sidebar Container - Desktop Only */}
+                    <aside className="hidden lg:block w-[320px] shrink-0 sticky top-8 h-fit">
                         <ServiceFilterSidebar
                             filters={Object.fromEntries(searchParams.entries())}
                             onFilterChange={handleFilterChange}
@@ -161,7 +161,7 @@ const ServiceSearchPage = () => {
                             </div>
 
                             {/* Search & Quick Filters Row */}
-                            <div className="flex items-center gap-6">
+                            <div className="flex flex-col md:flex-row gap-4">
                                 <div className="relative flex-1">
                                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-themev2-text/30" size={18} />
                                     <input
@@ -173,20 +173,29 @@ const ServiceSearchPage = () => {
                                     />
                                 </div>
 
-                                <div className="flex items-center gap-4 shrink-0">
+                                <div className="flex items-center gap-4 shrink-0 overflow-x-auto pb-1 md:pb-0">
+                                    {/* Mobile Filter Toggle */}
+                                    <button
+                                        onClick={() => setIsFilterDrawerOpen(true)}
+                                        className="lg:hidden flex items-center gap-2 px-6 py-4 bg-white border border-[#EBC176]/20 rounded-2xl text-[10px] font-black text-themev2-text uppercase tracking-widest hover:bg-[#FAF3E0] transition-all shadow-sm"
+                                    >
+                                        <Filter size={14} className="text-[#C48B28]" />
+                                        Filters
+                                    </button>
+
                                     <SortDropdown
                                         currentSort={sortBy}
                                         onSortChange={(val) => handleFilterChange('ordering', val)}
                                         options={sortOptions}
                                         customTrigger={
-                                            <button className="flex items-center gap-4 px-6 py-4 bg-white border border-[#EBC176]/20 rounded-2xl text-[10px] font-black text-themev2-text uppercase tracking-widest hover:bg-[#FAF3E0] transition-all shadow-sm">
+                                            <button className="flex items-center gap-4 px-6 py-4 bg-white border border-[#EBC176]/20 rounded-2xl text-[10px] font-black text-themev2-text uppercase tracking-widest hover:bg-[#FAF3E0] transition-all shadow-sm whitespace-nowrap">
                                                 <span>Sort by: {currentSortLabel}</span>
                                                 <ChevronRight size={14} className="rotate-90 text-[#EBC176]" />
                                             </button>
                                         }
                                     />
 
-                                    <div className="flex items-center gap-1 bg-white border border-[#EBC176]/20 rounded-2xl p-1 shadow-sm">
+                                    <div className="hidden md:flex items-center gap-1 bg-white border border-[#EBC176]/20 rounded-2xl p-1 shadow-sm">
                                         <button
                                             onClick={() => setViewMode('grid')}
                                             className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-[#FAF3E0] text-[#C48B28]' : 'text-[#EBC176] hover:text-[#C48B28]'}`}
@@ -279,6 +288,41 @@ const ServiceSearchPage = () => {
                     </main>
                 </div>
             </div>
+
+            {/* Mobile Filter Drawer */}
+            <AnimatePresence>
+                {isFilterDrawerOpen && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsFilterDrawerOpen(false)}
+                            className="fixed inset-0 bg-black/50 z-[1000] backdrop-blur-sm lg:hidden"
+                        />
+                        <motion.div
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                            className="fixed top-0 right-0 h-full w-[320px] md:w-[400px] bg-[#FEF9ED] z-[1001] shadow-2xl lg:hidden overflow-y-auto"
+                        >
+                            <div className="p-4 flex justify-end">
+                                <button onClick={() => setIsFilterDrawerOpen(false)} className="p-2 hover:bg-black/5 rounded-full">
+                                    <X size={24} className="text-[#5A3C0B]" />
+                                </button>
+                            </div>
+                            <div className="px-4 pb-8">
+                                <ServiceFilterSidebar
+                                    filters={Object.fromEntries(searchParams.entries())}
+                                    onFilterChange={handleFilterChange}
+                                    onClearFilters={handleClearFilters}
+                                />
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
 
             <LocationMapModal
                 isOpen={isLocationModalOpen}

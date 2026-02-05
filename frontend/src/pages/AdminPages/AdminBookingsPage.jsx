@@ -2,10 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { Search, RotateCcw } from 'lucide-react';
 import useAdmin from '../../hooks/useAdmin';
 import Button from '../../components/common/Buttons/Button';
-import { toast } from 'react-toastify';
-import AdminProviderTable from './components/AdminProviderTable';
+import AdminBookingTable from './components/AdminBookingTable';
 
-const AdminProvidersPage = () => {
+const AdminBookingsPage = () => {
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
@@ -27,9 +26,8 @@ const AdminProvidersPage = () => {
         ordering: sorting.length > 0 ? (sorting[0].desc ? `-${sorting[0].id}` : sorting[0].id) : undefined,
     }), [pagination.pageIndex, statusFilter, debouncedSearch, sorting]);
 
-    const { useGetProviders, useUpdateProviderStatus } = useAdmin();
-    const { data: providers, isLoading, refetch } = useGetProviders(hookFilters);
-    const updateStatusMutation = useUpdateProviderStatus();
+    const { useGetBookings } = useAdmin();
+    const { data, isLoading, isError } = useGetBookings(hookFilters);
 
     // Handle Search Debounce
     React.useEffect(() => {
@@ -48,31 +46,16 @@ const AdminProvidersPage = () => {
         setPagination(prev => ({ ...prev, pageIndex: 0 }));
     };
 
-    const handleStatusUpdate = (id, newStatus) => {
-        const action = newStatus === 'verified' ? 'approve' : 'reject/revoke';
-        if (!confirm(`Are you sure you want to ${action} this provider?`)) return;
-
-        updateStatusMutation.mutate({ id, status: newStatus }, {
-            onSuccess: () => {
-                toast.success(`Provider status updated to ${newStatus}`);
-                refetch();
-            },
-            onError: () => {
-                toast.error('Failed to update status');
-            }
-        });
-    };
-
     // Calculate total pages
-    const pageCount = providers ? Math.ceil(providers.count / pagination.pageSize) : 0;
-    const providerList = providers?.results || [];
+    const pageCount = data ? Math.ceil(data.count / pagination.pageSize) : 0;
+    const bookingsList = data?.results || [];
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-black text-sky-900 tracking-tight">Service Providers</h1>
-                <p className="text-sky-900/60 font-medium">Manage verification and status of service providers.</p>
+                <h1 className="text-3xl font-black text-sky-900 tracking-tight">Booking Management</h1>
+                <p className="text-sky-900/60 font-medium">View and manage all service bookings across the platform.</p>
             </div>
 
             {/* Controls */}
@@ -83,7 +66,7 @@ const AdminProvidersPage = () => {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-sky-900/30" size={20} />
                         <input
                             type="text"
-                            placeholder="Search by name, email, business..."
+                            placeholder="Search client, provider, or ID..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="w-full pl-12 pr-4 py-3 rounded-full bg-sky-50 border-none text-sky-900 font-bold placeholder:text-sky-900/30 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all"
@@ -92,21 +75,21 @@ const AdminProvidersPage = () => {
                 </div>
 
                 <div className="flex gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-                    {/* Status Tabs as Pills */}
+                    {/* Status Tabs/Pills */}
                     <div className="flex bg-sky-50 p-1 rounded-full">
-                        {['All', 'pending', 'verified', 'rejected'].map((status) => (
+                        {['All', 'pending', 'confirmed', 'completed', 'cancelled'].map((status) => (
                             <button
                                 key={status}
                                 onClick={() => {
                                     setStatusFilter(status);
                                     setPagination(prev => ({ ...prev, pageIndex: 0 }));
                                 }}
-                                className={`px-6 py-2 rounded-full text-xs font-black uppercase tracking-wider transition-all ${statusFilter === status
+                                className={`px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider transition-all ${statusFilter === status
                                         ? 'bg-white text-cyan-700 shadow-sm shadow-sky-900/5'
                                         : 'text-sky-900/40 hover:text-sky-900/60'
                                     }`}
                             >
-                                {status === 'All' ? 'All Providers' : status}
+                                {status === 'All' ? 'All' : status}
                             </button>
                         ))}
                     </div>
@@ -125,12 +108,15 @@ const AdminProvidersPage = () => {
             {/* Table */}
             {isLoading ? (
                 <div className="p-20 text-center text-sky-900/30 font-bold uppercase tracking-widest animate-pulse">
-                    Loading providers...
+                    Loading bookings...
+                </div>
+            ) : isError ? (
+                <div className="p-20 text-center text-red-400 font-bold">
+                    Failed to load bookings. Please try again.
                 </div>
             ) : (
-                <AdminProviderTable
-                    data={providerList}
-                    onUpdateStatus={handleStatusUpdate}
+                <AdminBookingTable
+                    data={bookingsList}
                     isLoading={isLoading}
                     pagination={{ ...pagination, pageCount }}
                     onPaginationChange={setPagination}
@@ -142,4 +128,4 @@ const AdminProvidersPage = () => {
     );
 };
 
-export default AdminProvidersPage;
+export default AdminBookingsPage;

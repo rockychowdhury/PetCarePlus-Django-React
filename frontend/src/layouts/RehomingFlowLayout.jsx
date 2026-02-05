@@ -97,6 +97,23 @@ const RehomingFlowLayout = () => {
                         </h2>
                     </div>
 
+                    <div className="md:hidden w-full px-4 mb-4">
+                        <div className="flex justify-between items-center mb-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#C48B28]">
+                                Step {activeStep + 1}/{steps.length}
+                            </span>
+                            <span className="text-[10px] font-bold text-[#402E11]/50">
+                                {steps[activeStep].label}
+                            </span>
+                        </div>
+                        <div className="h-1.5 w-full bg-[#EBC176]/20 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-[#C48B28] transition-all duration-500 rounded-full"
+                                style={{ width: `${((activeStep + 1) / steps.length) * 100}%` }}
+                            />
+                        </div>
+                    </div>
+
                     <div className="relative">
                         {/* Desktop Stepper */}
                         <div className="hidden md:flex items-center justify-between relative z-10 w-full px-8">

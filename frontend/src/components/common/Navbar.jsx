@@ -77,7 +77,7 @@ const Navbar = () => {
 
     return (
         <>
-            <div className={`fixed left-1/2 -translate-x-1/2 w-full max-w-[1600px] z-[100] transition-all duration-500 ${isScrolled ? 'top-0 px-0' : 'top-6 px-6 md:px-10'}`}>
+            <div className={`fixed left-1/2 -translate-x-1/2 w-full max-w-[1600px] z-[100] transition-all duration-500 ${isScrolled ? 'top-0 px-0' : 'top-6 px-4 md:px-10'}`}>
                 <nav className={`w-full relative border border-[#C48B28]/10 h-16 flex items-center px-8 rounded-full transition-all duration-500 ${isScrolled ? 'bg-white/95 shadow-lg shadow-[#402E11]/5' : 'bg-white/80'}`}>
                     <div className="flex justify-between items-center w-full">
 

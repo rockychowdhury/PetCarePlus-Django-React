@@ -157,7 +157,7 @@ const HeroSection = () => {
                                 {/* Main Image */}
                                 <motion.div
                                     variants={itemVariants}
-                                    className="absolute top-20 right-20 w-[80%] h-[80%] rounded-[2.5rem] overflow-hidden  z-0"
+                                    className="absolute top-20 right-4 md:right-20 w-[80%] h-[80%] rounded-[2.5rem] overflow-hidden  z-0"
                                 >
                                     {/* Overlay for Dark Mode contrast */}
                                     <div className="absolute inset-0 bg-black/5 dark:bg-black/40 mix-blend-multiply z-20 pointer-events-none opacity-0 dark:opacity-100 transition-opacity duration-500"></div>

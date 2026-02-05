@@ -103,7 +103,10 @@ const RehomingSection = () => {
                             ></motion.div>
                         </div>
 
-                        <div className="space-y-12 md:space-y-0">
+                        <div className="space-y-12 md:space-y-0 relative">
+                            {/* Mobile Connector Line */}
+                            <div className="absolute left-6 top-6 bottom-6 w-[2px] bg-bg-secondary md:hidden" />
+
                             {rehomingSteps.map((item, index) => (
                                 <TimelineStep key={index} item={item} index={index} />
                             ))}

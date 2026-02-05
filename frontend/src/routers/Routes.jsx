@@ -94,6 +94,10 @@ import ReportManagementPage from "../pages/AdminPages/ReportManagementPage";
 import AdminAnalyticsPage from "../pages/AdminPages/AnalyticsPage";
 import RoleRequestsPage from "../pages/AdminPages/RoleRequestsPage";
 import AdminProvidersPage from "../pages/AdminPages/AdminProvidersPage";
+import AdminListingsPage from "../pages/AdminPages/AdminListingsPage";
+import AdminBookingsPage from "../pages/AdminPages/AdminBookingsPage";
+
+import AdminSettingsPage from "../pages/AdminPages/AdminSettingsPage";
 
 // Payment
 import PaymentCheckoutPage from "../pages/Payment/PaymentCheckoutPage";
@@ -308,8 +312,11 @@ const router = createBrowserRouter([
                     { path: "users", element: <UserManagementPage /> },
                     { path: "users/:id", element: <UserDetailPage /> },
                     { path: "providers", element: <AdminProvidersPage /> },
+                    { path: "listings", element: <AdminListingsPage /> },
+                    { path: "bookings", element: <AdminBookingsPage /> },
                     { path: "moderation", element: <ListingModerationPage /> },
                     { path: "reports", element: <ReportManagementPage /> },
+                    { path: "settings", element: <AdminSettingsPage /> },
                     { path: "analytics", element: <AdminAnalyticsPage /> },
                 ],
             },

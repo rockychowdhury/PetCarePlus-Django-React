@@ -67,6 +67,12 @@
     --color-status-info: #5B9BD5;
     /* Calm blue */
 
+    /* Logo Specific (Default) */
+    --logo-primary: #C48B28;
+    --logo-secondary: #EBC176;
+    --logo-bg: #FEF9ED;
+    --logo-text: #402E11;
+
 
   }
 
@@ -343,15 +349,21 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  background-color: #FEF9ED;
+  background-color: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #EBC176;
+  background-color: #cbd5e1;
+  /* slate-300 */
   border-radius: 10px;
-  border: 2px solid #FEF9ED;
+  border: 3px solid transparent;
+  background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #C48B28;
+  background-color: #94a3b8;
+  /* slate-400 */
 }
+
+/* Admin specific scrollbar overrides would be done via scope if needed, 
+   but clean slate/blue is better for both. */

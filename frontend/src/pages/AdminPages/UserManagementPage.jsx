@@ -1,273 +1,180 @@
 import React, { useState, useEffect } from 'react';
-import useAPI from '../../hooks/useAPI';
 import useAdmin from '../../hooks/useAdmin';
-import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, Mail, Shield, Check, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Search, Filter, UserPlus, Download, ChevronDown } from 'lucide-react';
 import Card from '../../components/common/Layout/Card';
 import Button from '../../components/common/Buttons/Button';
 import Badge from '../../components/common/Feedback/Badge';
 import { toast } from 'react-toastify';
+import AdminUserTable from './components/AdminUserTable';
 
 const UserManagementPage = () => {
-    const [filterStatus, setFilterStatus] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeTab, setActiveTab] = useState('users');
-    const api = useAPI();
-    const { useGetRoleRequests, useApproveRoleRequest, useRejectRoleRequest } = useAdmin();
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [filterRole, setFilterRole] = useState('All');
+    const [filterStatus, setFilterStatus] = useState('All');
+    const [pagination, setPagination] = useState({
+        pageIndex: 0,
+        pageSize: 10,
+    });
 
-    // Use the new admin hooks for role requests
-    const { data: roleRequestsData, refetch } = useGetRoleRequests({ status: 'pending' });
-    const approveMutation = useApproveRoleRequest();
-    const rejectMutation = useRejectRoleRequest();
+    const {
+        useGetUsers,
+        useToggleUserStatus,
+    } = useAdmin();
 
-    const roleRequests = roleRequestsData?.results || roleRequestsData || [];
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+            setPagination(prev => ({ ...prev, pageIndex: 0 }));
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
 
-    const handleRequestAction = async (id, action) => {
+    // Users Query
+    const { data: usersData, isLoading: isLoadingUsers, refetch: refetchUsers } = useGetUsers({
+        search: debouncedSearch,
+        role: filterRole,
+        status: filterStatus,
+        page: pagination.pageIndex + 1,
+    });
+
+    // Mutations
+    const toggleStatusMutation = useToggleUserStatus();
+
+    const users = usersData?.results || [];
+    const totalCount = usersData?.count || 0;
+    const pageCount = Math.ceil(totalCount / pagination.pageSize);
+
+    const handleToggleStatus = async (user) => {
         try {
-            if (action === 'approved') {
-                await approveMutation.mutateAsync({ id, admin_notes: 'Approved from user management' });
-                toast.success('Role request approved');
-            } else {
-                await rejectMutation.mutateAsync({ id, admin_notes: 'Rejected from user management' });
-                toast.success('Role request rejected');
-            }
-            refetch();
+            await toggleStatusMutation.mutateAsync(user.id);
+            toast.success(`User ${user.is_active ? 'deactivated' : 'activated'} successfully`);
+            refetchUsers();
         } catch (error) {
-            console.error("Failed to update status", error);
-            toast.error('Failed to update role request');
+            toast.error('Failed to update user status');
         }
     };
 
-    // Mock Data
-    const users = [
-        { id: 1, name: 'Sarah Jenkins', email: 'sarah.j@example.com', role: 'Adopter', status: 'Active', joinDate: 'Dec 10, 2023', verified: { email: true, id: true, owner: false }, avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=facearea&facepad=2&w=100&h=100&q=80' },
-        { id: 2, name: 'Michael Chen', email: 'm.chen@vetclinic.com', role: 'Vet Provider', status: 'Active', joinDate: 'Nov 22, 2023', verified: { email: true, id: true, owner: true }, avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=100&h=100&q=80' },
-        { id: 3, name: 'Jessica Smith', email: 'jess.smith@example.com', role: 'Pet Owner', status: 'Suspended', joinDate: 'Oct 05, 2023', verified: { email: true, id: false, owner: true }, avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=facearea&facepad=2&w=100&h=100&q=80' },
-        { id: 4, name: 'David Wilson', email: 'david.w@example.com', role: 'Adopter', status: 'Active', joinDate: 'Dec 15, 2023', verified: { email: false, id: false, owner: false }, avatar: null },
-    ];
+    const handleViewUser = (user) => {
+        // Navigate to detail page
+        window.location.href = `/admin/users/${user.id}`;
+    };
 
-    const getStatusVariant = (status) => {
-        switch (status) {
-            case 'Active': return 'success';
-            case 'Suspended': return 'warning';
-            case 'Banned': return 'error';
-            default: return 'neutral';
-        }
+    const handleEditUser = (user) => {
+        toast.info(`Edit mode for ${user.full_name} coming soon!`);
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-700">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-text-primary font-merriweather">User Management</h1>
-                    <p className="text-text-secondary text-sm">Manage user accounts, roles, and permissions.</p>
+                    <h1 className="text-4xl font-black text-sky-900 tracking-tight">User <span className="text-cyan-700">Management</span></h1>
+                    <p className="text-sky-900/60 font-medium mt-1">Oversee platform participants and enforce community standards.</p>
                 </div>
-                <div className="flex gap-2">
-                    <Button variant="outline"><Mail size={16} className="mr-2" /> Email All</Button>
-                    <Button variant="primary">Export CSV</Button>
+                <div className="flex gap-3">
+                    <Button variant="ghost" className="bg-white border border-sky-100 hover:bg-sky-50 text-sky-900 rounded-full px-6 font-bold hover:border-sky-200 transition-all">
+                        <Download size={18} className="mr-2" />
+                        Export
+                    </Button>
+                    <Button variant="primary" className="bg-cyan-700 hover:bg-cyan-800 text-white rounded-full px-6 border border-cyan-700 font-bold hover:shadow-md transition-all">
+                        <UserPlus size={18} className="mr-2" />
+                        Add User
+                    </Button>
                 </div>
             </div>
 
-            {/* Tabs */}
-            <div className="flex gap-4 border-b border-border">
-                <button
-                    onClick={() => setActiveTab('users')}
-                    className={`pb-2 font-medium ${activeTab === 'users' ? 'text-brand-primary border-b-2 border-brand-primary' : 'text-text-secondary'}`}
-                >
-                    All Users
-                </button>
-                <button
-                    onClick={() => setActiveTab('requests')}
-                    className={`pb-2 font-medium ${activeTab === 'requests' ? 'text-brand-primary border-b-2 border-brand-primary' : 'text-text-secondary'}`}
-                >
-                    Role Requests
-                </button>
-            </div>
-
-            {activeTab === 'users' ? (
-                <Card className="overflow-hidden">
-                    {/* Filters */}
-                    <div className="p-4 border-b border-border flex flex-col md:flex-row gap-4 justify-between items-center bg-bg-secondary/50">
-                        <div className="relative w-full md:w-96">
-                            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
+            <div className="space-y-6">
+                {/* Filters Bar */}
+                <Card className="p-6 bg-white border border-sky-100/50 rounded-[2rem]">
+                    <div className="flex flex-col lg:flex-row gap-6 justify-between items-center">
+                        <div className="relative w-full lg:max-w-md group">
+                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-sky-900/30 group-focus-within:text-cyan-700 transition-colors" />
                             <input
                                 type="text"
-                                placeholder="Search by name, email, or username..."
-                                className="w-full pl-10 pr-4 py-2 rounded-lg border border-border focus:ring-1 focus:ring-brand-primary outline-none bg-bg-surface text-text-primary"
+                                placeholder="Search accounts..."
+                                className="w-full pl-12 pr-4 py-3.5 rounded-full border border-sky-100 focus:ring-0 focus:border-cyan-700 outline-none bg-sky-50/30 text-sky-900 font-bold placeholder:text-sky-900/30 transition-all"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <div className="flex gap-2 w-full md:w-auto">
-                            <select className="px-3 py-2 rounded-lg border border-border text-sm focus:ring-brand-primary outline-none bg-bg-surface text-text-primary">
-                                <option>All Roles</option>
-                                <option>Pet Owner</option>
-                                <option>Adopter</option>
-                                <option>Service Provider</option>
-                                <option>Admin</option>
-                            </select>
-                            <select
-                                className="px-3 py-2 rounded-lg border border-border text-sm focus:ring-brand-primary outline-none bg-bg-surface text-text-primary"
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value)}
+                        <div className="flex flex-wrap gap-4 w-full lg:w-auto">
+                            <div className="relative group">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10 pointer-events-none text-sky-900/40">
+                                    <Filter size={14} />
+                                </div>
+                                <select
+                                    className="appearance-none pl-10 pr-10 py-3 bg-sky-50/30 border border-sky-100 rounded-full text-xs font-bold uppercase tracking-wider focus:outline-none focus:border-cyan-700 text-sky-900/70 min-w-[160px] cursor-pointer hover:bg-sky-50 hover:border-cyan-200 transition-all"
+                                    value={filterRole}
+                                    onChange={(e) => {
+                                        setFilterRole(e.target.value);
+                                        setPagination(prev => ({ ...prev, pageIndex: 0 }));
+                                    }}
+                                >
+                                    <option value="All">All Roles</option>
+                                    <option value="user">Adopters</option>
+                                    <option value="service_provider">Providers</option>
+                                    <option value="admin">Admins</option>
+                                    <option value="moderator">Moderators</option>
+                                </select>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-sky-900/30">
+                                    <ChevronDown size={14} strokeWidth={3} />
+                                </div>
+                            </div>
+
+                            <div className="relative group">
+                                <div className="absolute left-2 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
+                                    <Badge size="sm" variant="neutral" className="bg-transparent p-0 border-none"><div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm" /></Badge>
+                                </div>
+                                <select
+                                    className="appearance-none pl-8 pr-10 py-3 bg-sky-50/30 border border-sky-100 rounded-full text-xs font-bold uppercase tracking-wider focus:outline-none focus:border-cyan-700 text-sky-900/70 min-w-[160px] cursor-pointer hover:bg-sky-50 hover:border-cyan-200 transition-all"
+                                    value={filterStatus}
+                                    onChange={(e) => {
+                                        setFilterStatus(e.target.value);
+                                        setPagination(prev => ({ ...prev, pageIndex: 0 }));
+                                    }}
+                                >
+                                    <option value="All">All Status</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Banned">Banned</option>
+                                </select>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-sky-900/30">
+                                    <ChevronDown size={14} strokeWidth={3} />
+                                </div>
+                            </div>
+
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="rounded-full h-[42px] px-8 bg-transparent border border-sky-100 text-sky-900/40 text-[11px] font-bold uppercase tracking-widest hover:text-cyan-700 hover:border-cyan-200 transition-all hover:bg-cyan-50 focus:outline-none focus:ring-0"
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setFilterRole('All');
+                                    setFilterStatus('All');
+                                    setPagination({ pageIndex: 0, pageSize: 10 });
+                                }}
                             >
-                                <option>All Status</option>
-                                <option>Active</option>
-                                <option>Suspended</option>
-                                <option>Banned</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Table */}
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-bg-secondary border-b border-border text-xs font-bold text-text-tertiary uppercase tracking-wider">
-                                    <th className="p-4 w-10">
-                                        <input type="checkbox" className="rounded text-brand-primary focus:ring-brand-primary" />
-                                    </th>
-                                    <th className="p-4">User</th>
-                                    <th className="p-4">Role</th>
-                                    <th className="p-4">Status</th>
-                                    <th className="p-4">Verified</th>
-                                    <th className="p-4">Joined</th>
-                                    <th className="p-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border">
-                                {users.map((user) => (
-                                    <tr key={user.id} className="hover:bg-bg-secondary/50 transition">
-                                        <td className="p-4">
-                                            <input type="checkbox" className="rounded text-brand-primary focus:ring-brand-primary" />
-                                        </td>
-                                        <td className="p-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-bg-secondary overflow-hidden flex-shrink-0">
-                                                    {user.avatar ? (
-                                                        <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-text-tertiary font-bold">
-                                                            {user.name.charAt(0)}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold text-text-primary text-sm">{user.name}</p>
-                                                    <p className="text-xs text-text-secondary">{user.email}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="p-4">
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-bg-secondary text-text-secondary">
-                                                {user.role}
-                                            </span>
-                                        </td>
-                                        <td className="p-4">
-                                            <Badge variant={getStatusVariant(user.status)}>{user.status}</Badge>
-                                        </td>
-                                        <td className="p-4">
-                                            <div className="flex gap-1">
-                                                {user.verified.email && <div className="p-1 text-status-success bg-status-success/10 rounded" title="Email Verified"><Mail size={12} /></div>}
-                                                {user.verified.id && <div className="p-1 text-status-info bg-status-info/10 rounded" title="ID Verified"><Shield size={12} /></div>}
-                                                {user.verified.owner && <div className="p-1 text-brand-secondary bg-brand-secondary/10 rounded" title="Owner Verified"><Check size={12} /></div>}
-                                            </div>
-                                        </td>
-                                        <td className="p-4 text-sm text-text-secondary">
-                                            {user.joinDate}
-                                        </td>
-                                        <td className="p-4 text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <Link to={`/admin/users/${user.id}`}>
-                                                    <button className="p-2 text-text-tertiary hover:text-brand-primary rounded-lg hover:bg-brand-primary/10 transition">
-                                                        <Eye size={16} />
-                                                    </button>
-                                                </Link>
-                                                <button className="p-2 text-text-tertiary hover:text-status-info rounded-lg hover:bg-status-info/10 transition">
-                                                    <Edit size={16} />
-                                                </button>
-                                                <button className="p-2 text-text-tertiary hover:text-status-error rounded-lg hover:bg-status-error/10 transition">
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Pagination */}
-                    <div className="p-4 border-t border-border flex items-center justify-between text-sm text-text-secondary">
-                        <span>Showing 1 to 4 of 1248 results</span>
-                        <div className="flex gap-1">
-                            <button className="px-3 py-1 border border-border rounded hover:bg-bg-secondary">Previous</button>
-                            <button className="px-3 py-1 border border-border rounded bg-brand-primary text-text-inverted border-brand-primary">1</button>
-                            <button className="px-3 py-1 border border-border rounded hover:bg-bg-secondary">2</button>
-                            <button className="px-3 py-1 border border-border rounded hover:bg-bg-secondary">3</button>
-                            <button className="px-3 py-1 border border-border rounded hover:bg-bg-secondary">...</button>
-                            <button className="px-3 py-1 border border-border rounded hover:bg-bg-secondary">Next</button>
+                                Reset
+                            </Button>
                         </div>
                     </div>
                 </Card>
-            ) : (
-                <Card className="overflow-hidden">
-                    <div className="p-4 border-b border-border bg-bg-secondary/50">
-                        <h3 className="font-bold text-text-primary">Pending Role Requests</h3>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-bg-secondary border-b border-border text-xs font-bold text-text-tertiary uppercase tracking-wider">
-                                    <th className="p-4">User</th>
-                                    <th className="p-4">Requested Role</th>
-                                    <th className="p-4">Reason</th>
-                                    <th className="p-4">Status</th>
-                                    <th className="p-4">Date</th>
-                                    <th className="p-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border">
-                                {roleRequests.length > 0 ? roleRequests.map((req) => (
-                                    <tr key={req.id} className="hover:bg-bg-secondary/50 transition">
-                                        <td className="p-4 font-medium">{req.user_email}</td>
-                                        <td className="p-4 capitalize">{req.requested_role?.replace('_', ' ')}</td>
-                                        <td className="p-4 text-sm text-text-secondary max-w-xs truncate" title={req.reason}>{req.reason}</td>
-                                        <td className="p-4">
-                                            <Badge variant={req.status === 'approved' ? 'success' : req.status === 'rejected' ? 'error' : 'warning'}>
-                                                {req.status}
-                                            </Badge>
-                                        </td>
-                                        <td className="p-4 text-sm text-text-tertiary">{new Date(req.created_at).toLocaleDateString()}</td>
-                                        <td className="p-4 text-right">
-                                            {req.status === 'pending' && (
-                                                <div className="flex justify-end gap-2">
-                                                    <button
-                                                        onClick={() => handleRequestAction(req.id, 'approved')}
-                                                        className="text-status-success hover:bg-status-success/10 p-1 rounded" title="Approve"
-                                                    >
-                                                        <Check size={18} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleRequestAction(req.id, 'rejected')}
-                                                        className="text-status-error hover:bg-status-error/10 p-1 rounded" title="Reject"
-                                                    >
-                                                        <X size={18} />
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </td>
-                                    </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan="6" className="p-8 text-center text-text-tertiary">No requests found.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </Card>
-            )}
+
+                {/* Table Section */}
+                <div className="bg-white rounded-[2.5rem] border border-sky-100/50 overflow-hidden">
+                    <AdminUserTable
+                        data={users}
+                        isLoading={isLoadingUsers}
+                        onView={handleViewUser}
+                        onEdit={handleEditUser}
+                        onToggleStatus={handleToggleStatus}
+                        pagination={pagination}
+                        setPagination={setPagination}
+                        pageCount={pageCount}
+                    />
+                </div>
+            </div>
         </div>
     );
 };
