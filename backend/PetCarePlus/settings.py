@@ -41,7 +41,7 @@ SECRET_KEY = get_env('SECRET_KEY', default='django-insecure-prod-fallback-replac
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = get_env('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = get_env('ALLOWED_HOSTS', default='*', cast=lambda v: [s.strip() for s in v.split(',')])
-CSRF_TRUSTED_ORIGINS = get_env('CSRF_TRUSTED_ORIGINS', default='https://*.koyeb.app', cast=lambda v: [s.strip() for s in v.split(',')])
+CSRF_TRUSTED_ORIGINS = get_env('CSRF_TRUSTED_ORIGINS', default='https://impressed-billi-backenddev-e631e481.koyeb.app', cast=lambda v: [s.strip() for s in v.split(',')])
 
 # Secure Proxy SSL Header (Required for Koyeb/Heroku/Vercel)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -215,9 +215,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
