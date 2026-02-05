@@ -39,7 +39,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = get_env('SECRET_KEY', default='django-insecure-prod-fallback-replace-me-soon')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = get_env('DEBUG', default=True, cast=bool)
+DEBUG = get_env('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = get_env('ALLOWED_HOSTS', default='*', cast=lambda v: [s.strip() for s in v.split(',')])
 CSRF_TRUSTED_ORIGINS = get_env('CSRF_TRUSTED_ORIGINS', default='https://impressed-billi-backenddev-e631e481.koyeb.app', cast=lambda v: [s.strip() for s in v.split(',')])
 
@@ -91,7 +91,7 @@ CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWS_CREDENTIALS = True
-APPEND_SLASH = False
+APPEND_SLASH = True
 CORS_ALLOWED_ORIGINS = get_env('CORS_ALLOWED_ORIGINS', default='http://localhost:5173', cast=lambda v: [s.strip() for s in v.split(',')])
 # Application definition
 
@@ -124,7 +124,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
-    'middlewares.append_slash.AppendSlashMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
