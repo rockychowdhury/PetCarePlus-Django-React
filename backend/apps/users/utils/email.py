@@ -2,6 +2,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+from apps.users.tasks import send_email_task
 
 def get_email_template(title, content_html, footer_text=""):
     """
@@ -117,13 +118,12 @@ def send_verification_email(email, code):
     html_message = get_email_template(title, content_html, footer_text)
     plain_message = f"Your verification code is: {code}"
     
-    send_mail(
+    # Send Async
+    send_email_task.delay(
         subject,
         plain_message,
-        settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@petcircle.com',
         [email],
-        html_message=html_message,
-        fail_silently=False,
+        html_message=html_message
     )
 
 def send_password_reset_email(email, link):
@@ -143,13 +143,12 @@ def send_password_reset_email(email, link):
     html_message = get_email_template(title, content_html, footer_text)
     plain_message = f"Use this link to reset your password: {link}"
     
-    send_mail(
+    # Send Async
+    send_email_task.delay(
         subject,
         plain_message,
-        settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@petcircle.com',
         [email],
-        html_message=html_message,
-        fail_silently=False,
+        html_message=html_message
     )
 
 def send_welcome_email(user):
@@ -168,11 +167,10 @@ def send_welcome_email(user):
     html_message = get_email_template(title, content_html, footer_text)
     plain_message = f"Welcome to PetCarePlus, {user.first_name}! We're glad you're here."
     
-    send_mail(
+    # Send Async
+    send_email_task.delay(
         subject,
         plain_message,
-        settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@petcareplus.com',
         [user.email],
-        html_message=html_message,
-        fail_silently=False,
+        html_message=html_message
     )
