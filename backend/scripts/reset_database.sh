@@ -16,8 +16,8 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# Navigate to backend directory
-cd /home/rocky/Projects/PetCarePlus-Django-React/backend
+# Navigate to backend root
+cd "$(dirname "$0")/.."
 
 # Activate virtual environment
 echo -e "${YELLOW}Activating virtual environment...${NC}"
@@ -28,7 +28,7 @@ source venv/bin/activate
 # python manage.py dumpdata > backup_$(date +%Y%m%d_%H%M%S).json
 # echo -e "${GREEN}✓ Backup created${NC}"
 
-# Drop and recreate database
+# Resetting database
 echo -e "${YELLOW}Resetting database...${NC}"
 read -p "This will DELETE all data. Are you sure? (yes/no): " confirm
 if [ "$confirm" != "yes" ]; then
@@ -70,9 +70,18 @@ echo -e "${YELLOW}Creating superuser...${NC}"
 echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin@petcareplus.com', 'admin123', first_name='Admin', last_name='User') if not User.objects.filter(email='admin@petcareplus.com').exists() else None" | python manage.py shell
 echo -e "${GREEN}✓ Superuser created (email: admin@petcareplus.com, password: admin123)${NC}"
 
-# Populate with seed data
-echo -e "${YELLOW}Populating database with seed data...${NC}"
-python manage.py seed_database --users 50 --listings 50 --applications 30
+# Run the population scripts
+# Ensure the python path includes the current directory
+export PYTHONPATH=$PYTHONPATH:.
+
+echo "Populating default data..."
+python scripts/populate_defaults.py
+
+echo "Populating services data..."
+python scripts/populate_services.py
+
+echo "Populating full dummy data..."
+python scripts/populate_full_data.py seed_database --users 50 --listings 50 --applications 30
 echo -e "${GREEN}✓ Seed data populated${NC}"
 
 echo ""

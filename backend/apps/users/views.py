@@ -618,7 +618,7 @@ class UserManagementViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('-date_joined')
     permission_classes = [permissions.IsAdminUser]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['role', 'is_active', 'email_verified', 'is_service_provider']
+    filterset_fields = ['role', 'is_active', 'email_verified']
     search_fields = ['email', 'first_name', 'last_name']
     ordering_fields = ['date_joined', 'last_login']
 
