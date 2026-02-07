@@ -1,2 +1,2 @@
-web: bash /app/entrypoint.sh
-worker: bash /app/celery_worker.sh
+web: bash /app/scripts/start_dev_server.sh
+worker: bash /app/scripts/celery_worker.sh

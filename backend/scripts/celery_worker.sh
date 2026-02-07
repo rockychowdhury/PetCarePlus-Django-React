@@ -1,4 +1,6 @@
-#!/bin/bash
+# Navigate to backend root
+cd "$(dirname "$0")/.."
+
 set -e
 
 echo "Starting Celery Worker..."
