@@ -12,8 +12,8 @@ class UserAdmin(BaseUserAdmin):
     
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'phone_number', 'photoURL', 'bio', 'location_city', 'location_state', 'location_country', 'zip_code')}),
-        ('Verification', {'fields': ('email_verified', 'phone_verified', 'verified_identity', 'pet_owner_verified')}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'phone_number', 'photoURL', 'bio', 'location_city', 'location_state', 'location_country', 'latitude', 'longitude', 'zip_code')}),
+        ('Verification', {'fields': ('email_verified','verification_code', 'phone_verified', 'verified_identity', 'pet_owner_verified')}),
         ('Role & Status', {'fields': ('role', 'account_status', 'is_active', 'is_staff', 'is_superuser')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
         ('Permissions', {'fields': ('groups', 'user_permissions')}),
@@ -22,7 +22,7 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'first_name', 'last_name', 'password', 'role'),
+            'fields': ('email', 'first_name', 'last_name', 'location_country', 'password', 'role'),
         }),
     )
     

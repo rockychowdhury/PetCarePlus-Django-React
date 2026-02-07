@@ -175,6 +175,7 @@ if get_env('SQL_DATABASE'):
             'PORT': get_env('SQL_PORT'),
         }
     }
+    
 else:
     DATABASES = {
         'default': {

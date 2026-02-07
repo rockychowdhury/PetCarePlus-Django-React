@@ -17,9 +17,6 @@ from .views import (
     VerifyEmailView,
     ResendEmailVerificationView,
     RoleRequestViewSet,
-    InitiatePhoneVerifyView,
-    VerifyPhoneCodeView,
-    WhatsAppWebhookView,
     UserManagementViewSet,
 )
 from rest_framework.routers import DefaultRouter
@@ -46,8 +43,5 @@ urlpatterns = [
     path('change-password/',PasswordChangeView.as_view(),name="change_password"),
     path('public-profile/<int:pk>/', PublicUserProfileView.as_view(), name='public_profile'),
     
-    # WhatsApp Verification
-    path('request-phone-verify/', InitiatePhoneVerifyView.as_view(), name='request-phone-verify'),
-    path('verify-phone-code/', VerifyPhoneCodeView.as_view(), name='verify-phone-code'),
-    path('webhooks/whatsapp/', WhatsAppWebhookView.as_view(), name='whatsapp-webhook'),
+
 ] + router.urls

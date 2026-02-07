@@ -1,5 +1,6 @@
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
+import requests
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
@@ -16,10 +17,6 @@ from .serializers import (
 )
 from apps.pets.serializers import PetProfileSerializer
 from .utils.email import send_verification_email, send_password_reset_email, send_welcome_email
-from .utils.whatsapp import (
-    generate_otp, format_whatsapp_link, verify_meta_signature,
-    extract_message_from_webhook, extract_code_from_message
-)
 from .models import RoleRequest
 from apps.pets.models import PetProfile
 from django.contrib.auth import get_user_model
@@ -165,6 +162,31 @@ class UserRegistrationView(APIView):
                 send_verification_email(user.email, code)
             except Exception as e:
                 pass # Logged via sentry or other means in prod                # In prod, you might want to rollback or queue it. For now, we continue.
+
+            # Attempt to populate location from IP
+            try:
+                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                if x_forwarded_for:
+                    ip = x_forwarded_for.split(',')[0]
+                else:
+                    ip = request.META.get('REMOTE_ADDR')
+                
+                if ip:
+                    # Using ip-api.com (free, no key required for non-commercial)
+                    # In production, consider a paid service or local DB (GeoIP2)
+                    response = requests.get(f'http://ip-api.com/json/{ip}', timeout=3)
+                    if response.status_code == 200:
+                        data = response.json()
+                        if data.get('status') == 'success':
+                            user.location_city = data.get('city')
+                            user.location_state = data.get('regionName')
+                            user.location_country = data.get('country')
+                            user.latitude = data.get('lat')
+                            user.longitude = data.get('lon')
+                            user.save(update_fields=['location_city', 'location_state', 'location_country', 'latitude', 'longitude'])
+            except Exception:
+                # Non-blocking, just ignore if location fetch fails
+                pass
 
             response_data = {
                 "message": "User created successfully. Please check your email for verification code.",
@@ -586,236 +608,7 @@ class RoleRequestViewSet(viewsets.ModelViewSet):
         })
 
 
-class InitiatePhoneVerifyView(APIView):
-    """
-    Initiate phone verification using WhatsApp.
-    Sends OTP code directly to user's WhatsApp number.
-    """
-    permission_classes = [IsAuthenticated]
-    
-    def post(self, request):
-        from .utils.whatsapp import send_otp_via_whatsapp
-        
-        user = request.user
-        phone_number = request.data.get('phone_number')
-        
-        # Update phone number if provided
-        if phone_number:
-            # Basic validation - just check it's not empty
-            phone_number = phone_number.strip()
-            if not phone_number:
-                return Response(
-                    {'error': 'Phone number cannot be empty'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            user.phone_number = phone_number
-        
-        # Check if user has a phone number
-        if not user.phone_number:
-            return Response(
-                {'error': 'Phone number is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Generate OTP
-        otp_code = generate_otp()
-        
-        # Save code and timestamp to user
-        user.phone_verification_code = otp_code
-        user.phone_verification_sent_at = timezone.now()
-        user.save()
-        
-        # Get WhatsApp API credentials from settings
-        access_token = getattr(settings, 'WHATSAPP_ACCESS_TOKEN', '')
-        phone_number_id = getattr(settings, 'WHATSAPP_PHONE_NUMBER_ID', '')
-        
-        if not access_token or not phone_number_id:
-            return Response(
-                {
-                    'error': 'WhatsApp API not configured',
-                    'message': 'Please configure WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID in settings'
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        
-        # Send OTP via WhatsApp
-        result = send_otp_via_whatsapp(
-            user.phone_number,
-            otp_code,
-            access_token,
-            phone_number_id
-        )
-        
-        if not result.get('success'):
-            return Response(
-                {
-                    'error': 'Failed to send verification code',
-                    'message': result.get('message', 'Unknown error'),
-                    'details': result.get('error', '')
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        
-        return Response({
-            'success': True,
-            'message': 'Verification code sent to your WhatsApp number',
-            'phone_number': user.phone_number
-        }, status=status.HTTP_200_OK)
 
-
-class VerifyPhoneCodeView(APIView):
-    """
-    Verify the OTP code entered by the user.
-    """
-    permission_classes = [IsAuthenticated]
-    
-    def post(self, request):
-        user = request.user
-        code = request.data.get('code', '').strip()
-        
-        if not code:
-            return Response(
-                {'error': 'Verification code is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Check if user has a verification code
-        if not user.phone_verification_code:
-            return Response(
-                {'error': 'No verification code found. Please request a new code.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Validate code
-        if user.phone_verification_code != code:
-            return Response(
-                {'error': 'Invalid verification code'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Check if code is expired (15 minutes)
-        if user.phone_verification_sent_at:
-            expiry_time = user.phone_verification_sent_at + timedelta(minutes=15)
-            if timezone.now() > expiry_time:
-                return Response(
-                    {'error': 'Verification code has expired. Please request a new code.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        
-        # Success! Mark phone as verified
-        user.phone_verified = True
-        user.phone_verification_code = None
-        user.phone_verification_sent_at = None
-        user.save()
-        
-        return Response({
-            'success': True,
-            'message': 'Phone number verified successfully',
-            'phone_verified': True
-        }, status=status.HTTP_200_OK)
-
-
-class WhatsAppWebhookView(APIView):
-    """
-    Handle WhatsApp webhook calls from Meta Cloud API.
-    - GET: Webhook verification
-    - POST: Process incoming messages for phone verification
-    """
-    permission_classes = [AllowAny]
-    authentication_classes = []
-    
-    def get(self, request):
-        """
-        Meta webhook verification endpoint.
-        Meta will send a GET request with hub.mode, hub.challenge, and hub.verify_token.
-        """
-        mode = request.query_params.get('hub.mode')
-        token = request.query_params.get('hub.verify_token')
-        challenge = request.query_params.get('hub.challenge')
-        
-        verify_token = getattr(settings, 'WHATSAPP_VERIFY_TOKEN', '')
-        
-        if mode == 'subscribe' and token == verify_token:
-            # Return challenge to complete verification
-            return Response(int(challenge), status=status.HTTP_200_OK)
-        else:
-            return Response(
-                {'error': 'Verification failed'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-    
-    def post(self, request):
-        """
-        Process incoming WhatsApp messages.
-        Extract sender and message, validate OTP, and update user verification status.
-        """
-        # Verify Meta signature for security (optional but recommended)
-        signature = request.headers.get('X-Hub-Signature-256', '')
-        if not verify_meta_signature(request.body, signature):
-            return Response(
-                {'error': 'Invalid signature'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Extract message data
-        webhook_data = request.data
-        sender_phone, message_text = extract_message_from_webhook(webhook_data)
-        
-        if not sender_phone or not message_text:
-            # Not a message we care about, or invalid format
-            # Return 200 to acknowledge receipt
-            return Response({'status': 'ignored'}, status=status.HTTP_200_OK)
-        
-        # Extract code from message
-        code = extract_code_from_message(message_text)
-        
-        if not code:
-            # No valid code found in message
-            return Response({'status': 'no_code_found'}, status=status.HTTP_200_OK)
-        
-        # Find user by phone number
-        try:
-            # Try with current sender_phone format
-            user = User.objects.get(phone_number=sender_phone)
-        except User.DoesNotExist:
-            # Try without '+' prefix
-            sender_phone_alt = sender_phone.lstrip('+')
-            try:
-                user = User.objects.get(phone_number=sender_phone_alt)
-            except User.DoesNotExist:
-                # Also try with '+' prefix if it wasn't there
-                try:
-                    user = User.objects.get(phone_number=f'+{sender_phone_alt}')
-                except User.DoesNotExist:
-                    # User not found
-                    return Response(
-                        {'status': 'user_not_found'},
-                        status=status.HTTP_200_OK
-                    )
-        
-        # Validate OTP
-        if user.phone_verification_code != code:
-            return Response(
-                {'status': 'invalid_code'},
-                status=status.HTTP_200_OK
-            )
-        
-        # Check if code is expired (15 minutes)
-        if user.phone_verification_sent_at:
-            expiry_time = user.phone_verification_sent_at + timedelta(minutes=15)
-            if timezone.now() > expiry_time:
-                return Response(
-                    {'status': 'code_expired'},
-                    status=status.HTTP_200_OK
-                )
-        
-        # Success! Mark phone as verified
-        user.phone_verified = True
-        user.phone_verification_code = None
-        user.phone_verification_sent_at = None
-        user.save()
-        
-        return Response({'status': 'verified'}, status=status.HTTP_200_OK)
 
 class UserManagementViewSet(viewsets.ModelViewSet):
     """

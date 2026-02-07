@@ -41,7 +41,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email                   = models.EmailField(unique=True)
     first_name              = models.CharField(max_length=50)
     last_name               = models.CharField(max_length=50)
-    phone_number            = models.CharField(max_length=15, blank=True, null=True)
+    phone_number            = models.CharField(max_length=15, default = "01639066718")
     photoURL                = models.URLField(max_length=200, blank=True, null=True, default='https://i.ibb.co.com/hWK4ZpT/petDP.jpg')
     bio                     = models.TextField(max_length=500, blank=True, null=True)
     date_of_birth           = models.DateField(blank=True, null=True)
@@ -49,14 +49,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Location Fields
     location_city           = models.CharField(max_length=100, blank=True, null=True)
     location_state          = models.CharField(max_length=100, blank=True, null=True)
-    location_country        = models.CharField(max_length=100, default='USA')
+    location_country        = models.CharField(max_length=100,)
     zip_code                = models.CharField(max_length=10, blank=True, null=True)
     latitude                = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude               = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     
     # Verification (Directly on User now)
     email_verified          = models.BooleanField(default=False)
-    phone_verified          = models.BooleanField(default=False)
+    phone_verified          = models.BooleanField(default=True)
     verified_identity       = models.BooleanField(default=False)
     pet_owner_verified      = models.BooleanField(default=False)
     
@@ -138,9 +138,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         if not self.last_name or not str(self.last_name).strip(): missing.append('last_name')
         if not self.email: missing.append('email') # Should be present as username
         
-        # if not self.phone_number or not str(self.phone_number).strip(): missing.append('phone_number')
+        if not self.phone_number or not str(self.phone_number).strip(): missing.append('phone_number')
         if not self.location_city or not str(self.location_city).strip(): missing.append('location_city')
         if not self.location_state or not str(self.location_state).strip(): missing.append('location_state')
+        if not self.location_country or not str(self.location_country).strip(): missing.append('location_country')
         if not self.date_of_birth: missing.append('date_of_birth')
         
         return missing
