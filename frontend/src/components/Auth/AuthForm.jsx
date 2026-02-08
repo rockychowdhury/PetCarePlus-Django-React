@@ -231,10 +231,70 @@ const AuthForm = ({ initialMode = 'login', onSuccess }) => {
                 </div>
 
                 {mode === 'login' && (
-                    <div className="flex justify-end animate-fade-in">
-                        <Link to="/forgot-password" title="Forgot Password?" className="text-[10px] font-black text-[#C48B28] uppercase tracking-wider hover:underline">
-                            Forgot Password?
-                        </Link>
+                    <>
+                        {/* Demo Credential Buttons */}
+                        <div className="space-y-2 animate-fade-in">
+                            <p className="text-[9px] font-black text-[#402E11]/40 uppercase tracking-widest text-center">Quick Demo Access</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, email: 'rocky20809@gmail.com', password: 'petcareplus' }))}
+                                    className="group relative overflow-hidden px-4 py-2.5 bg-gradient-to-r from-[#C48B28] to-[#EBC176] hover:from-[#A37320] hover:to-[#C48B28] text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 shadow-lg shadow-[#C48B28]/30 hover:shadow-xl hover:shadow-[#C48B28]/40 active:scale-95"
+                                >
+                                    <span className="relative z-10 flex items-center justify-center gap-2">
+                                        <User size={14} />
+                                        Pet Owner
+                                    </span>
+                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, email: 'provider@pcp.com', password: 'petcareplus' }))}
+                                    className="group relative overflow-hidden px-4 py-2.5 bg-gradient-to-r from-[#8B5CF6] to-[#A78BFA] hover:from-[#7C3AED] hover:to-[#8B5CF6] text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 shadow-lg shadow-[#8B5CF6]/30 hover:shadow-xl hover:shadow-[#8B5CF6]/40 active:scale-95"
+                                >
+                                    <span className="relative z-10 flex items-center justify-center gap-2">
+                                        <Check size={14} />
+                                        Service Provider
+                                    </span>
+                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end">
+                            <Link to="/forgot-password" title="Forgot Password?" className="text-[10px] font-black text-[#C48B28] uppercase tracking-wider hover:underline">
+                                Forgot Password?
+                            </Link>
+                        </div>
+                    </>
+                )}
+
+
+                {/* Demo Access Button for Register Mode */}
+                {mode === 'register' && (
+                    <div className="space-y-2 animate-fade-in">
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-[#402E11]/10"></div>
+                            </div>
+                            <div className="relative flex justify-center text-[9px] font-black uppercase tracking-[0.2em]">
+                                <span className="px-3 bg-white text-[#402E11]/40">For Recruiters</span>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setMode('login')}
+                            className="w-full group relative overflow-hidden px-4 py-3 bg-gradient-to-r from-[#C48B28] via-[#EBC176] to-[#8B5CF6] hover:from-[#A37320] hover:via-[#C48B28] hover:to-[#7C3AED] text-white rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-300 shadow-lg shadow-[#C48B28]/30 hover:shadow-xl hover:shadow-[#C48B28]/50 active:scale-95 border-2 border-white/20"
+                        >
+                            <span className="relative z-10 flex items-center justify-center gap-2">
+                                <User size={16} />
+                                Try Demo Accounts
+                            </span>
+                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                        </button>
+                        <p className="text-[9px] font-bold text-center text-[#402E11]/50 leading-tight">
+                            Switch to login to access demo credentials
+                        </p>
                     </div>
                 )}
 
