@@ -125,10 +125,10 @@ const AnalyticsPage = () => {
             className="space-y-6"
         >
             {/* Header Area */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                 <div className="space-y-1">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-themev2-primary/10 flex items-center justify-center text-themev2-primary border border-themev2-primary/20">
+                        <div className="w-8 h-8 rounded-xl bg-themev2-primary/10 flex items-center justify-center text-themev2-primary border border-themev2-primary/20 shrink-0">
                             <TrendingUp size={16} />
                         </div>
                         <div>
@@ -142,13 +142,13 @@ const AnalyticsPage = () => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <div className="flex bg-white/50 p-1 rounded-full border border-border-light shadow-sm">
+                <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+                    <div className="flex bg-white/50 p-1 rounded-full border border-border-light shadow-sm overflow-x-auto no-scrollbar">
                         {['1m', '3m', '6m', '1y'].map((p) => (
                             <button
                                 key={p}
                                 onClick={() => setPeriod(p)}
-                                className={`px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${period === p ? 'bg-white text-themev2-text shadow-md border border-themev2-primary/20 ring-[0.5px] ring-themev2-primary/10' : 'text-themev2-text/30 hover:text-themev2-text/60'}`}
+                                className={`px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${period === p ? 'bg-white text-themev2-text shadow-md border border-themev2-primary/20 ring-[0.5px] ring-themev2-primary/10' : 'text-themev2-text/30 hover:text-themev2-text/60'}`}
                             >
                                 {p}
                             </button>
@@ -156,7 +156,7 @@ const AnalyticsPage = () => {
                     </div>
                     <button
                         onClick={handleDownload}
-                        className="p-2.5 rounded-full bg-white border border-border-light text-themev2-text/40 hover:text-themev2-primary hover:border-themev2-primary/50 transition-all shadow-sm"
+                        className="p-3 rounded-full bg-white border border-border-light text-themev2-text/40 hover:text-themev2-primary hover:border-themev2-primary/50 transition-all shadow-sm shrink-0"
                     >
                         <Download size={14} />
                     </button>
@@ -164,11 +164,11 @@ const AnalyticsPage = () => {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {stats.map((stat, idx) => {
                     const Icon = stat.icon;
                     return (
-                        <div key={idx} className="bg-white p-5 rounded-[2rem] border border-border-light shadow-md shadow-themev2-text/5 relative overflow-hidden group">
+                        <div key={idx} className="bg-white p-5 rounded-2xl sm:rounded-[2rem] border border-border-light shadow-md shadow-themev2-text/5 relative overflow-hidden group">
                             <div className="flex items-center justify-between mb-3">
                                 <div className="p-2.5 bg-themev2-bg rounded-xl text-themev2-text/30 group-hover:text-themev2-primary transition-colors">
                                     <Icon size={16} />
@@ -190,21 +190,21 @@ const AnalyticsPage = () => {
             {/* Main Visualizations */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Revenue Stream Chart */}
-                <div className="lg:col-span-2 bg-white rounded-[2.5rem] p-8 border border-border-light shadow-xl shadow-themev2-text/5 relative overflow-hidden">
-                    <div className="flex items-center justify-between mb-8">
+                <div className="lg:col-span-2 bg-white rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-8 border border-border-light shadow-xl shadow-themev2-text/5 relative overflow-hidden">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                         <div>
                             <h3 className="text-sm font-black text-themev2-text tracking-tight">Revenue Trajectory</h3>
                             <p className="text-[9px] text-themev2-text/30 font-bold uppercase tracking-widest mt-1">Financial performance over time</p>
                         </div>
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-themev2-bg rounded-full border border-border-light">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-themev2-bg rounded-full border border-border-light w-fit">
                             <div className="w-1.5 h-1.5 bg-themev2-primary rounded-full animate-pulse" />
                             <span className="text-[8px] font-black text-themev2-text/50 uppercase tracking-widest">Live Flow</span>
                         </div>
                     </div>
 
-                    <div className="h-[280px] w-full">
+                    <div className="h-[240px] sm:h-[280px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={timeline} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <AreaChart data={timeline} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorEarnings" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#C48B28" stopOpacity={0.15} />
@@ -216,13 +216,13 @@ const AnalyticsPage = () => {
                                     dataKey="month"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fontSize: 8, fontWeight: 700, fill: '#8A725B', opacity: 0.7 }}
+                                    tick={{ fontSize: 7, fontWeight: 700, fill: '#8A725B', opacity: 0.7 }}
                                     dy={10}
                                 />
                                 <YAxis
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fontSize: 8, fontWeight: 700, fill: '#8A725B', opacity: 0.7 }}
+                                    tick={{ fontSize: 7, fontWeight: 700, fill: '#8A725B', opacity: 0.7 }}
                                 />
                                 <Tooltip content={<CustomTooltip />} />
                                 <Area
@@ -240,25 +240,25 @@ const AnalyticsPage = () => {
                 </div>
 
                 {/* Booking Volume List */}
-                <div className="bg-white rounded-[2.5rem] p-8 border border-border-light shadow-xl shadow-themev2-text/5">
+                <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-8 border border-border-light shadow-xl shadow-themev2-text/5">
                     <div className="mb-8">
                         <h3 className="text-sm font-black text-themev2-text tracking-tight">Booking Volume</h3>
                         <p className="text-[9px] text-themev2-text/30 font-bold uppercase tracking-widest mt-1">Monthly throughput data</p>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                         {timeline.slice(-5).reverse().map((month, idx) => (
                             <div key={idx} className="flex items-center justify-between p-3 rounded-2xl bg-themev2-bg/50 border border-transparent hover:border-border-light hover:bg-white transition-all group">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-xl bg-white border border-border-light flex items-center justify-center text-[9px] font-black text-themev2-text shadow-sm group-hover:bg-themev2-text group-hover:text-white transition-all">
+                                    <div className="w-8 h-8 rounded-xl bg-white border border-border-light flex items-center justify-center text-[9px] font-black text-themev2-text shadow-sm group-hover:bg-themev2-text group-hover:text-white transition-all shrink-0">
                                         {month.month.substring(0, 3)}
                                     </div>
-                                    <div className="space-y-0.5">
-                                        <p className="text-[10px] font-black text-themev2-text">{month.month}</p>
-                                        <p className="text-[8px] text-themev2-text/30 font-bold uppercase tracking-widest">{month.bookings} Service Events</p>
+                                    <div className="space-y-0.5 truncate">
+                                        <p className="text-[10px] font-black text-themev2-text truncate">{month.month}</p>
+                                        <p className="text-[8px] text-themev2-text/30 font-bold uppercase tracking-widest truncate">{month.bookings} Service Events</p>
                                     </div>
                                 </div>
-                                <div className="text-right">
+                                <div className="text-right shrink-0">
                                     <p className="text-[10px] font-black text-themev2-primary">${month.earnings.toLocaleString()}</p>
                                     <div className="flex items-center justify-end gap-1 mt-0.5">
                                         <div className="w-8 h-1 bg-border-light rounded-full overflow-hidden">
@@ -275,7 +275,7 @@ const AnalyticsPage = () => {
 
                     <button
                         onClick={() => navigate('/provider/bookings')}
-                        className="mt-8 w-full py-2.5 rounded-xl border border-border-light text-[9px] font-black uppercase tracking-widest text-themev2-text/40 hover:text-themev2-primary hover:bg-themev2-bg transition-all flex items-center justify-center gap-2"
+                        className="mt-8 w-full py-3 rounded-xl border border-border-light text-[9px] font-black uppercase tracking-widest text-themev2-text/40 hover:text-themev2-primary hover:bg-themev2-bg transition-all flex items-center justify-center gap-2"
                     >
                         View Full History
                         <ChevronRight size={12} />
@@ -329,8 +329,8 @@ const AnalyticsPage = () => {
                     </div>
 
                     {distribution.length > 0 ? (
-                        <div className="flex items-center gap-8 h-[200px]">
-                            <div className="w-1/2 h-full">
+                        <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8 min-h-[200px]">
+                            <div className="w-full sm:w-1/2 h-[200px] sm:h-full">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
@@ -351,15 +351,15 @@ const AnalyticsPage = () => {
                                     </PieChart>
                                 </ResponsiveContainer>
                             </div>
-                            <div className="w-1/2 space-y-3">
+                            <div className="w-full sm:w-1/2 space-y-3">
                                 {distribution.map((item, idx) => (
                                     <div key={idx} className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <div
-                                                className="w-1.5 h-1.5 rounded-full"
+                                                className="w-1.5 h-1.5 rounded-full shrink-0"
                                                 style={{ backgroundColor: ['#C48B28', '#8A725B', '#EBC176', '#FAF3E0'][idx % 4] }}
                                             />
-                                            <span className="text-[9px] font-bold text-themev2-text/60 uppercase tracking-widest truncate max-w-[80px]">{item.name}</span>
+                                            <span className="text-[9px] font-bold text-themev2-text/60 uppercase tracking-widest truncate max-w-[120px]">{item.name}</span>
                                         </div>
                                         <span className="text-[9px] font-black text-themev2-text">{item.value}%</span>
                                     </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Eye, EyeOff, Check } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
@@ -21,7 +22,13 @@ const AuthForm = ({ initialMode = 'login', onSuccess }) => {
         last_name: '',
         email: '',
         password: '',
-        termsAccepted: false
+        termsAccepted: false,
+        location_city: '',
+        location_state: '',
+        location_country: '',
+        zip_code: '',
+        latitude: null,
+        longitude: null
     });
 
     // Default showPassword to true for Registration as requested
@@ -35,6 +42,43 @@ const AuthForm = ({ initialMode = 'login', onSuccess }) => {
             setShowPassword(false);
         }
     }, [mode]);
+
+    // Auto-detect location on mount if in register mode
+    useEffect(() => {
+        if (mode === 'register') {
+            detectLocation();
+        }
+    }, [mode]);
+
+    const detectLocation = () => {
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const { latitude, longitude } = position.coords;
+                    try {
+                        const response = await axios.get(
+                            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
+                        );
+                        const address = response.data.address;
+                        setFormData(prev => ({
+                            ...prev,
+                            latitude: parseFloat(latitude.toFixed(6)),
+                            longitude: parseFloat(longitude.toFixed(6)),
+                            location_city: address.city || address.town || address.village || address.hamlet || '',
+                            location_state: address.state || '',
+                            location_country: address.country || '',
+                            zip_code: address.postcode || ''
+                        }));
+                    } catch (error) {
+                        console.error("Failed to reverse geocode:", error);
+                    }
+                },
+                (error) => {
+                    console.log("Geolocation permission denied or failed:", error);
+                }
+            );
+        }
+    };
 
     const [isLoading, setIsLoading] = useState(false);
     const [fieldErrors, setFieldErrors] = useState({});
@@ -86,7 +130,13 @@ const AuthForm = ({ initialMode = 'login', onSuccess }) => {
                     last_name: formData.last_name,
                     email: formData.email,
                     password: formData.password,
-                    phone_number: ''
+                    phone_number: '',
+                    location_city: formData.location_city,
+                    location_state: formData.location_state,
+                    location_country: formData.location_country,
+                    zip_code: formData.zip_code,
+                    latitude: formData.latitude,
+                    longitude: formData.longitude
                 });
                 navigate('/verify-email', { state: { email: formData.email } });
                 if (onSuccess) onSuccess({ preventRedirect: true });
@@ -197,7 +247,7 @@ const AuthForm = ({ initialMode = 'login', onSuccess }) => {
                                 name="termsAccepted"
                                 checked={formData.termsAccepted}
                                 onChange={handleChange}
-                                className="mt-1 w-4 h-4 rounded border-[#402E11]/20 text-[#C48B28] focus:ring-[#C48B28]"
+                                className="mt-1 w-4 h-4 rounded border-[#402E11]/20 text-[#C48B28] focus:ring-0 focus:ring-offset-0 focus:outline-none"
                             />
                             <span className="text-[11px] font-bold text-[#402E11]/60 leading-tight">
                                 I agree to the <Link to="/terms" className="text-[#402E11] font-black hover:underline">Terms</Link> and <Link to="/privacy" className="text-[#402E11] font-black hover:underline">Privacy Policy</Link>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Search, List as ListIcon, Loader2, X, MapPin, ChevronLeft, ChevronRight, Plus, LayoutGrid, Filter
+    Search, List as ListIcon, Loader2, X, MapPin, ChevronLeft, ChevronRight, ChevronDown, Plus, LayoutGrid, Filter
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -103,11 +103,11 @@ const PetListingPage = () => {
     return (
         <div className="min-h-screen bg-[#FEF9ED]">
 
-            <div className="max-w-[1600px] mx-auto px-10 py-12">
+            <div className="max-w-[1600px] mx-auto px-4 md:px-10 py-8 md:py-12">
 
                 <div className="flex flex-col lg:flex-row gap-12">
-                    {/* Sidebar Container - Top Aligned */}
-                    <aside className="w-full lg:w-[320px] shrink-0 sticky top-8 h-fit">
+                    {/* Sidebar Container - Desktop Only */}
+                    <aside className="hidden lg:block w-[320px] shrink-0 sticky top-8 h-fit">
                         <FilterSidebar
                             filters={filters}
                             onFilterChange={handleFilterChange}
@@ -122,37 +122,39 @@ const PetListingPage = () => {
                             <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-8">
                                 <div className="max-w-2xl">
                                     <span className="text-[10px] font-black text-[#C48B28] uppercase tracking-[0.2em] mb-4 block">Pet Adoption</span>
-                                    <h1 className="text-3xl font-black text-themev2-text tracking-tighter mb-2 leading-none">Find your new best friend</h1>
-                                    <p className="text-xs font-bold text-themev2-text/40 max-w-lg leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis">
+                                    <h1 className="text-2xl sm:text-3xl font-black text-themev2-text tracking-tighter mb-2 leading-none">Find your new best friend</h1>
+                                    <p className="text-[10px] sm:text-xs font-bold text-themev2-text/40 max-w-lg leading-relaxed">
                                         Connect with verified owners and give a loving home to {totalCount || 0} pets waiting for you.
                                     </p>
                                 </div>
 
                                 {/* Matches Badge */}
                                 <div className="hidden md:block">
-                                    <div className="px-6 py-3 bg-[#FEF2D5] border border-[#EBC176]/30 rounded-2xl flex items-center gap-3">
+                                    <div className="px-5 py-2.5 bg-[#FEF2D5]/50 border border-[#EBC176]/20 rounded-xl flex items-center gap-2.5">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#C48B28]" />
                                         <span className="text-[10px] font-black text-[#C48B28] whitespace-nowrap uppercase tracking-widest">{totalCount} matches found</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* --- Search & Controls Bar --- */}
-                            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                                <div className="relative flex-1 w-full">
-                                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-themev2-text/30" size={18} />
+                            <div className="flex flex-col md:flex-row gap-4">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-themev2-text/20" size={16} />
                                     <input
                                         type="text"
                                         placeholder="Search by breed, name or personality..."
                                         value={filters.search}
                                         onChange={handleSearchInput}
-                                        className="w-full pl-16 pr-8 py-4 bg-white border border-[#EBC176]/20 rounded-2xl text-sm font-bold text-themev2-text placeholder:text-themev2-text/20 shadow-sm focus:border-[#C48B28] outline-none transition-all"
+                                        className="w-full pl-14 pr-8 py-4 bg-white border border-[#EBC176]/20 rounded-2xl text-[13px] font-bold text-themev2-text placeholder:text-themev2-text/20 shadow-sm focus:border-[#C48B28]/40 outline-none transition-all"
                                     />
                                 </div>
 
-                                <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+                                <div className="flex items-center gap-3 shrink-0 pb-1 md:pb-0 overflow-x-auto md:overflow-visible no-scrollbar">
+                                    {/* Mobile Filter Toggle */}
                                     <button
                                         onClick={() => setIsSidebarOpen(true)}
-                                        className="lg:hidden flex items-center gap-3 px-6 py-4 bg-white border border-[#EBC176]/20 rounded-2xl text-[10px] font-black text-themev2-text uppercase tracking-widest shadow-sm active:scale-95 whitespace-nowrap"
+                                        className="lg:hidden flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 bg-white border border-[#EBC176]/20 rounded-2xl text-[9px] sm:text-[10px] font-black text-themev2-text uppercase tracking-widest hover:bg-[#FAF3E0] transition-all shadow-sm"
                                     >
                                         <Filter size={14} className="text-[#C48B28]" />
                                         Filters
@@ -166,9 +168,21 @@ const PetListingPage = () => {
                                             { value: 'created_at', label: 'Oldest First' },
                                             ...(filters.nearby ? [{ value: 'distance', label: 'Nearest to Me' }] : [])
                                         ]}
+                                        customTrigger={
+                                            <button className="flex items-center gap-3 sm:gap-4 px-5 sm:px-8 py-3 sm:py-4 bg-white border border-[#EBC176]/20 rounded-2xl text-[10px] font-black text-themev2-text uppercase tracking-widest hover:bg-[#FAF3E0] hover:border-[#C48B28]/40 transition-all shadow-sm whitespace-nowrap group">
+                                                <span>Sort by: {
+                                                    [
+                                                        { value: '-published_at', label: 'Newest First' },
+                                                        { value: 'created_at', label: 'Oldest First' },
+                                                        { value: 'distance', label: 'Nearest' }
+                                                    ].find(o => o.value === filters.ordering)?.label || 'Sort'
+                                                }</span>
+                                                <ChevronDown size={14} className="text-[#EBC176] group-hover:text-[#C48B28] transition-all" />
+                                            </button>
+                                        }
                                     />
 
-                                    <div className="hidden sm:flex items-center gap-1 bg-white border border-[#EBC176]/20 rounded-2xl p-1 shadow-sm">
+                                    <div className="hidden md:flex items-center gap-1 bg-white border border-[#EBC176]/20 rounded-2xl p-1 shadow-sm">
                                         <button
                                             onClick={() => setViewMode('grid')}
                                             className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-[#FAF3E0] text-[#C48B28]' : 'text-[#EBC176] hover:text-[#C48B28]'}`}
@@ -256,7 +270,7 @@ const PetListingPage = () => {
                 </div>
             </div>
 
-            {/* Mobile Sidebar Overlay */}
+            {/* Mobile Filter Drawer */}
             <AnimatePresence>
                 {isSidebarOpen && (
                     <>
@@ -265,28 +279,28 @@ const PetListingPage = () => {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setIsSidebarOpen(false)}
-                            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] lg:hidden"
+                            className="fixed inset-0 bg-black/50 z-[1000] backdrop-blur-sm lg:hidden"
                         />
-                        <motion.aside
+                        <motion.div
                             initial={{ x: '100%' }}
                             animate={{ x: 0 }}
                             exit={{ x: '100%' }}
-                            className="fixed right-0 top-0 bottom-0 w-[320px] bg-[#FEF9ED] z-[101] overflow-y-auto lg:hidden"
+                            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                            className="fixed top-0 right-0 h-full w-[320px] md:w-[400px] bg-[#FEF9ED] z-[1001] shadow-2xl lg:hidden overflow-y-auto"
                         >
-                            <div className="flex items-center justify-between p-6 border-b border-[#EBC176]/10">
-                                <h3 className="font-black text-themev2-text uppercase tracking-widest text-sm">Filters</h3>
-                                <button onClick={() => setIsSidebarOpen(false)} className="p-2 text-themev2-text/40 hover:text-themev2-text">
-                                    <X size={20} />
+                            <div className="p-4 flex justify-end">
+                                <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-black/5 rounded-full">
+                                    <X size={24} className="text-[#5A3C0B]" />
                                 </button>
                             </div>
-                            <div className="p-4">
+                            <div className="px-4 pb-8">
                                 <FilterSidebar
                                     filters={filters}
                                     onFilterChange={handleFilterChange}
                                     onClearFilters={() => { clearFilters(); setIsSidebarOpen(false); }}
                                 />
                             </div>
-                        </motion.aside>
+                        </motion.div>
                     </>
                 )}
             </AnimatePresence>

@@ -94,7 +94,7 @@ const UserDashboardOverview = () => {
     }
 
     return (
-        <div className="w-full md:p-12 lg:p-20 space-y-12 bg-[#FEF9ED]/30 min-h-screen">
+        <div className="w-full pt-32 p-6 md:p-12 lg:p-20 space-y-12 bg-[#FEF9ED]/30 min-h-screen">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div>
@@ -253,27 +253,28 @@ const UserDashboardOverview = () => {
                             {services.recent_bookings?.length > 0 ? (
                                 services.recent_bookings.map((booking) => (
                                     <div key={booking.id} className="bg-white p-6 rounded-[2.5rem] border border-[#EBC176]/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0 hover:shadow-2xl transition-all group shadow-xl shadow-[#402E11]/5">
-                                        <div className="flex items-center gap-6 w-full md:w-auto">
-                                            <div className="w-14 h-14 rounded-2xl bg-[#FAF3E0]/50 flex items-center justify-center text-[#402E11]/20 group-hover:bg-[#C48B28]/10 group-hover:text-[#C48B28] transition-all shadow-inner shrink-0">
-                                                <Sparkles size={24} />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <h4 className="font-black text-[#402E11] text-base group-hover:text-[#C48B28] transition-colors leading-tight mb-1 truncate">{booking.provider?.business_name}</h4>
-                                                <p className="text-[10px] font-black text-[#402E11]/30 uppercase tracking-[0.2em]">
-                                                    {format(new Date(booking.start_datetime), 'MMM dd')} • {booking.booking_type}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-between w-full md:w-auto gap-4 md:gap-10 pl-[80px] md:pl-0">
-                                            <div className="text-left md:text-right">
-                                                <p className="text-lg font-black text-[#402E11] group-hover:text-[#C48B28] transition-colors leading-none mb-1">${booking.agreed_price}</p>
-                                                <p className="text-[8px] font-black text-[#402E11]/20 uppercase tracking-[0.2em]">{booking.status}</p>
-                                            </div>
-                                            <Link to="/dashboard/bookings">
-                                                <div className="w-10 h-10 bg-[#FAF3E0]/30 flex items-center justify-center text-[#402E11]/20 group-hover:bg-[#C48B28] group-hover:text-white transition-all rounded-xl">
-                                                    <ChevronRight size={20} />
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-[#FEF9ED] rounded-2xl flex items-center justify-center text-[#C48B28] shadow-inner shrink-0 leading-none">
+                                                    <span className="font-logo font-black text-xl">{booking.provider?.business_name?.[0]}</span>
                                                 </div>
-                                            </Link>
+                                                <div className="min-w-0">
+                                                    <h4 className="text-sm font-black text-[#402E11] truncate">{booking.provider?.business_name}</h4>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <MapPin size={10} className="text-[#402E11]/30" />
+                                                        <span className="text-[9px] font-bold text-[#402E11]/40 uppercase tracking-widest truncate">{booking.booking_type}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <div className="text-right shrink-0">
+                                                    <p className="text-[10px] font-black text-[#402E11] leading-none mb-1">{format(new Date(booking.start_datetime), 'MMM dd')}</p>
+                                                    <p className="text-[8px] font-black text-[#C48B28] uppercase tracking-widest">{booking.status}</p>
+                                                </div>
+                                                <Link to="/dashboard/bookings" className="w-8 h-8 rounded-full bg-[#FAF3E0] flex items-center justify-center text-[#C48B28] hover:bg-[#C48B28] hover:text-white transition-all">
+                                                    <ChevronRight size={14} strokeWidth={3} />
+                                                </Link>
+                                            </div>
                                         </div>
                                     </div>
                                 ))

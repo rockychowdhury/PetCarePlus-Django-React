@@ -11,28 +11,70 @@ import ApplicationOptionsModal from '../../components/common/Modals/ApplicationO
 
 const RehomingListingDetailPage = () => {
     const { id } = useParams();
-    const { user } = useAuth();
+    const { user, getUser } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [currentImage, setCurrentImage] = useState(0);
     const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false);
 
     // Hooks
     const { useGetListingDetail } = useRehoming();
     const { data: listing, isLoading, error } = useGetListingDetail(id);
 
-    if (isLoading) return (
-        <div className="min-h-screen flex items-center justify-center bg-[#FEF9ED]">
-            <div className="w-12 h-12 rounded-full border-4 border-[#C48B28]/10 border-t-[#C48B28] animate-spin" />
-        </div>
-    );
-    if (error || !listing) return <div className="min-h-screen flex items-center justify-center bg-[#FEF9ED]">Listing not found.</div>;
-
     const nextImage = () => setCurrentImage((prev) => (prev + 1) % (listing.pet.photos?.length || 1));
     const prevImage = () => setCurrentImage((prev) => (prev - 1 + (listing.pet.photos?.length || 1)) % (listing.pet.photos?.length || 1));
 
-    const photos = listing.pet.photos || [];
+    const photos = listing?.pet?.photos || [];
     const displayPhotos = photos.length > 0 ? photos.map(p => p.url || p) : ['https://via.placeholder.com/800x600?text=No+Photo'];
+
+    const handleStartApplication = async (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        if (!user) {
+            toast.error("Please login to apply");
+            navigate('/login', { state: { from: location.pathname } });
+            return;
+        }
+
+        setIsVerifying(true);
+        try {
+            await getUser();
+            setIsApplicationModalOpen(true);
+        } catch (err) {
+            console.error("Profile check failed:", err);
+            setIsApplicationModalOpen(true);
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
+    if (isLoading && !listing) return (
+        <div className="min-h-screen flex items-center justify-center bg-[#FEF9ED]">
+            <div className="w-12 h-12 rounded-full border-4 border-[#C48B28]/10 border-t-[#C48B28] animate-spin" />
+            <ApplicationOptionsModal
+                isOpen={isApplicationModalOpen}
+                onClose={() => setIsApplicationModalOpen(false)}
+                listingId={id}
+            />
+            <Toaster position="bottom-center" />
+        </div>
+    );
+
+    if (error || !listing) return (
+        <div className="min-h-screen flex items-center justify-center bg-[#FEF9ED]">
+            Listing not found.
+            <ApplicationOptionsModal
+                isOpen={isApplicationModalOpen}
+                onClose={() => setIsApplicationModalOpen(false)}
+                listingId={id}
+            />
+            <Toaster position="bottom-center" />
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-[#FEF9ED] pb-24 font-sans text-[#402E11]">
@@ -218,21 +260,13 @@ const RehomingListingDetailPage = () => {
                                         {user?.id !== listing.owner?.id ? (
                                             <>
                                                 <button
-                                                    onClick={() => {
-                                                        if (!user) {
-                                                            toast.error("Please login to apply for adoption");
-                                                            navigate('/login', { state: { from: location.pathname } });
-                                                            return;
-                                                        }
-                                                        if (user.role === 'service_provider') {
-                                                            toast.error("Service Providers cannot submit adoption applications");
-                                                            return;
-                                                        }
-                                                        setIsApplicationModalOpen(true);
-                                                    }}
+                                                    type="button"
+                                                    onClick={handleStartApplication}
+                                                    disabled={isVerifying}
                                                     className="w-full py-4 text-[#402E11] bg-[#FAF3E0] hover:bg-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-lg shadow-black/5 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2"
                                                 >
-                                                    Start Application <ChevronRight size={16} strokeWidth={3} />
+                                                    {isVerifying ? "Verifying..." : "Start Application"}
+                                                    {!isVerifying && <ChevronRight size={16} strokeWidth={3} />}
                                                 </button>
 
                                                 {listing.owner?.phone_number ? (

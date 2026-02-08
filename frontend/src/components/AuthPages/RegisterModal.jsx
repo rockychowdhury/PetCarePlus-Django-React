@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Eye, EyeOff, User, Mail, Lock, Phone, AlertCircle, Check } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 import Modal from '../common/Modal/Modal';
@@ -22,7 +23,13 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
         phone_number: '',
         password: '',
         confirm_password: '',
-        termsAccepted: false
+        termsAccepted: false,
+        location_city: '',
+        location_state: '',
+        location_country: '',
+        zip_code: '',
+        latitude: null,
+        longitude: null
     });
 
     const [localError, setLocalError] = useState('');
@@ -38,6 +45,43 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
     useEffect(() => {
         validatePassword(formData.password);
     }, [formData.password]);
+
+    // Auto-detect location on mount
+    useEffect(() => {
+        if (isOpen) {
+            detectLocation();
+        }
+    }, [isOpen]);
+
+    const detectLocation = () => {
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const { latitude, longitude } = position.coords;
+                    try {
+                        const response = await axios.get(
+                            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
+                        );
+                        const address = response.data.address;
+                        setFormData(prev => ({
+                            ...prev,
+                            latitude: parseFloat(latitude.toFixed(6)),
+                            longitude: parseFloat(longitude.toFixed(6)),
+                            location_city: address.city || address.town || address.village || address.hamlet || '',
+                            location_state: address.state || '',
+                            location_country: address.country || '',
+                            zip_code: address.postcode || ''
+                        }));
+                    } catch (error) {
+                        console.error("Failed to reverse geocode:", error);
+                    }
+                },
+                (error) => {
+                    console.log("Geolocation permission denied or failed:", error);
+                }
+            );
+        }
+    };
 
     const validatePassword = (pwd) => {
         const criteria = {
@@ -88,7 +132,13 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
                 last_name: formData.last_name,
                 email: formData.email,
                 phone_number: formData.phone_number,
-                password: formData.password
+                password: formData.password,
+                location_city: formData.location_city,
+                location_state: formData.location_state,
+                location_country: formData.location_country,
+                zip_code: formData.zip_code,
+                latitude: formData.latitude,
+                longitude: formData.longitude
             });
             onClose();
             navigate('/verify-email', { state: { email: formData.email } });

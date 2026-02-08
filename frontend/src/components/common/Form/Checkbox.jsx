@@ -30,7 +30,7 @@ const Checkbox = ({
                 />
                 <div className={`
                 h-5 w-5 rounded border flex items-center justify-center transition-all duration-200
-                peer-focus:ring-2 peer-focus:ring-offset-1 peer-focus:ring-brand-secondary
+                peer-focus:border-brand-secondary
                 ${checked ? 'bg-brand-secondary border-brand-secondary' : 'bg-bg-surface border-border'}
                 ${isDisabled ? 'opacity-50 bg-bg-secondary' : 'hover:border-brand-secondary'}
                 ${error ? 'border-status-error' : ''}

@@ -138,7 +138,7 @@ const AvailabilityManager = () => {
     return (
         <div className="w-full pb-12 animate-in fade-in duration-300">
             {/* Inner Tabs Navigation */}
-            <div className="flex gap-1.5 bg-[#FAF9F6] p-1.5 rounded-full mb-8 border border-[#EAE6E2] w-fit shadow-sm">
+            <div className="flex gap-1.5 bg-[#FAF9F6] p-1.5 rounded-full mb-8 border border-[#EAE6E2] w-full sm:w-fit shadow-sm overflow-x-auto no-scrollbar flex-nowrap shrink-0">
                 {tabs.map((tab) => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.id;
@@ -146,7 +146,7 @@ const AvailabilityManager = () => {
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-5 py-2 rounded-full text-[9px] font-bold uppercase tracking-[0.15em] transition-all duration-300 relative ${isActive
+                            className={`flex items-center gap-2 px-5 py-2 rounded-full text-[9px] font-bold uppercase tracking-[0.15em] transition-all duration-300 relative whitespace-nowrap shrink-0 ${isActive
                                 ? 'bg-white text-[#402E11] shadow-md shadow-[#C48B28]/10 border border-[#C48B28] ring-[0.5px] ring-[#C48B28]/20'
                                 : 'text-[#402E11]/30 hover:text-[#402E11]/50 hover:bg-white/40'
                                 }`}
@@ -169,8 +169,8 @@ const AvailabilityManager = () => {
                 >
                     {activeTab === 'schedule' && (
                         <div className="space-y-4">
-                            <div className="bg-white rounded-[2rem] p-6 shadow-xl shadow-[#402E11]/5 border border-[#FAF9F6] relative overflow-hidden">
-                                <div className="flex items-center justify-between mb-8">
+                            <div className="bg-white rounded-[2rem] p-4 sm:p-6 shadow-xl shadow-[#402E11]/5 border border-[#FAF9F6] relative overflow-hidden">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                                     <div className="space-y-1">
                                         <h2 className="text-sm font-black text-[#402E11] tracking-tight">Weekly Hours</h2>
                                         <p className="text-[#402E11]/30 text-[9px] font-medium">Operational baseline for standard service days.</p>
@@ -178,7 +178,7 @@ const AvailabilityManager = () => {
                                     <Button
                                         onClick={handleSaveHours}
                                         disabled={isSavingHours}
-                                        className="bg-[#C48B28] hover:bg-[#B37A1F] text-white rounded-xl px-4 py-2 font-bold text-[9px] uppercase tracking-[0.1em] transition-all shadow-md shadow-[#C48B28]/20 disabled:opacity-50"
+                                        className="w-full sm:w-auto bg-[#C48B28] hover:bg-[#B37A1F] text-white rounded-xl px-4 py-3 sm:py-2 font-bold text-[9px] uppercase tracking-[0.1em] transition-all shadow-md shadow-[#C48B28]/20 disabled:opacity-50"
                                     >
                                         {isSavingHours ? 'Syncing...' : 'Commit Changes'}
                                     </Button>
@@ -190,50 +190,57 @@ const AvailabilityManager = () => {
                                         const isClosed = !hour || hour.is_closed;
 
                                         return (
-                                            <div key={dayName} className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${isClosed ? 'bg-[#FAF9F6]/30 border-[#EAE6E2]/50' : 'bg-white border-[#EAE6E2] shadow-sm'}`}>
-                                                <div className="flex items-center gap-5">
-                                                    <div className="w-9 h-9 rounded-xl bg-[#FDFBF7] border border-[#EAE6E2] flex items-center justify-center font-bold text-[#402E11] text-[10px] shadow-sm">
-                                                        {dayName.substring(0, 3)}
+                                            <div key={dayName} className={`flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-4 rounded-2xl border transition-all gap-4 ${isClosed ? 'bg-[#FAF9F6]/30 border-[#EAE6E2]/50' : 'bg-white border-[#EAE6E2] shadow-sm'}`}>
+                                                <div className="flex items-center justify-between sm:justify-start gap-4 sm:gap-5 w-full sm:w-auto">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-9 h-9 shrink-0 rounded-xl bg-[#FDFBF7] border border-[#EAE6E2] flex items-center justify-center font-bold text-[#402E11] text-[10px] shadow-sm">
+                                                            {dayName.substring(0, 3)}
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <span className={`block text-xs font-bold ${isClosed ? 'text-[#402E11]/40' : 'text-[#402E11]'}`}>{dayName}</span>
+                                                            <div className="sm:hidden">
+                                                                {isClosed && (
+                                                                    <span className="text-[7px] font-black uppercase tracking-widest text-[#402E11]/20">Closed</span>
+                                                                )}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div className="space-y-1">
-                                                        <span className={`block text-xs font-bold ${isClosed ? 'text-[#402E11]/40' : 'text-[#402E11]'}`}>{dayName}</span>
-                                                        <button
-                                                            onClick={() => toggleDayStatus(idx)}
-                                                            className={`text-[7px] font-black uppercase tracking-[0.15em] px-2 py-1 rounded-md border transition-all ${isClosed
-                                                                ? 'text-brand-primary bg-[#FDFBF7] border-brand-secondary/40 hover:bg-brand-accent/30'
-                                                                : 'text-[#402E11]/30 bg-[#FAF9F6] border-[#EAE6E2] hover:text-[#402E11] hover:bg-white'}`}
-                                                        >
-                                                            {isClosed ? 'Mark Open' : 'Mark Closed'}
-                                                        </button>
-                                                    </div>
+                                                    <button
+                                                        onClick={() => toggleDayStatus(idx)}
+                                                        className={`text-[7px] font-black uppercase tracking-[0.15em] px-2.5 py-1.5 rounded-md border transition-all ${isClosed
+                                                            ? 'text-brand-primary bg-white border-brand-primary/20 hover:bg-brand-primary/5'
+                                                            : 'text-[#402E11]/30 bg-[#FAF9F6] border-[#EAE6E2] hover:text-[#402E11] hover:bg-white'}`}
+                                                    >
+                                                        {isClosed ? 'Open' : 'Close'}
+                                                    </button>
                                                 </div>
 
                                                 {!isClosed && (
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="relative group">
+                                                    <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                                                        <div className="relative flex-1 sm:w-32">
                                                             <input
                                                                 type="time"
                                                                 value={hour.open_time || '09:00'}
                                                                 onChange={(e) => updateTime(idx, 'open_time', e.target.value)}
-                                                                className="bg-[#FDFBF7] border border-[#EAE6E2] rounded-xl pl-3 pr-8 py-2 text-[10px] font-bold text-[#402E11] focus:ring-1 focus:ring-brand-primary focus:border-brand-primary outline-none shadow-sm transition-all w-32 uppercase"
+                                                                className="w-full bg-[#FDFBF7] border border-[#EAE6E2] rounded-xl pl-3 pr-8 py-2.5 text-[10px] font-bold text-[#402E11] focus:ring-1 focus:ring-brand-primary focus:border-brand-primary outline-none shadow-sm transition-all uppercase"
                                                             />
-                                                            <Clock size={10} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#402E11]/30" />
+                                                            <Clock size={10} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#402E11]/30 pointer-events-none" />
                                                         </div>
-                                                        <div className="w-2 h-[1px] bg-[#EAE6E2]" />
-                                                        <div className="relative group">
+                                                        <div className="w-2 h-[1px] bg-[#EAE6E2] shrink-0" />
+                                                        <div className="relative flex-1 sm:w-32">
                                                             <input
                                                                 type="time"
                                                                 value={hour.close_time || '17:00'}
                                                                 onChange={(e) => updateTime(idx, 'close_time', e.target.value)}
-                                                                className="bg-[#FDFBF7] border border-[#EAE6E2] rounded-xl pl-3 pr-8 py-2 text-[10px] font-bold text-[#402E11] focus:ring-1 focus:ring-brand-primary focus:border-brand-primary outline-none shadow-sm transition-all w-32 uppercase"
+                                                                className="w-full bg-[#FDFBF7] border border-[#EAE6E2] rounded-xl pl-3 pr-8 py-2.5 text-[10px] font-bold text-[#402E11] focus:ring-1 focus:ring-brand-primary focus:border-brand-primary outline-none shadow-sm transition-all uppercase"
                                                             />
-                                                            <Clock size={10} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#402E11]/30" />
+                                                            <Clock size={10} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#402E11]/30 pointer-events-none" />
                                                         </div>
                                                     </div>
                                                 )}
 
                                                 {isClosed && (
-                                                    <div className="px-5 py-2 rounded-xl bg-[#FDFBF7] border border-[#EAE6E2] text-[#402E11]/20 text-[8px] font-black uppercase tracking-[.2em]">
+                                                    <div className="hidden sm:block px-5 py-2 rounded-xl bg-[#FDFBF7] border border-[#EAE6E2] text-[#402E11]/20 text-[8px] font-black uppercase tracking-[.2em]">
                                                         Unavailable
                                                     </div>
                                                 )}

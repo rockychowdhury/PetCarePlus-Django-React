@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
-import { Search, MapPin, Filter, Map as MapIcon, List as ListIcon, LayoutGrid, ChevronRight, Info, ArrowUpDown, X, List, SlidersHorizontal, Star } from 'lucide-react';
+import { Search, MapPin, Filter, Map as MapIcon, List as ListIcon, LayoutGrid, ChevronRight, ChevronDown, Info, ArrowUpDown, X, List, SlidersHorizontal, Star } from 'lucide-react';
 import Button from '../../components/common/Buttons/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -37,11 +37,12 @@ const ServiceSearchPage = () => {
     const categoryMapping = {
         'vet': 'veterinary',
         'trainer': 'training',
-        'foster': 'foster',
+        'foster': 'foster-care',
         'groomer': 'grooming',
-        'sitter': 'boarding'
+        'sitter': 'pet-sitting'
     };
     const categorySlug = categoryMapping[providerType] || undefined;
+
 
     // Location & IP Detection
     const [suggestedLocation, setSuggestedLocation] = useState(null);
@@ -127,7 +128,7 @@ const ServiceSearchPage = () => {
     return (
         <div className="min-h-screen bg-[#FEF9ED]">
 
-            <div className="max-w-[1600px] mx-auto px-10 py-12">
+            <div className="max-w-[1600px] mx-auto px-4 md:px-10 py-8 md:py-12">
 
                 <div className="flex flex-col lg:flex-row gap-12">
                     {/* Sidebar Container - Desktop Only */}
@@ -146,16 +147,17 @@ const ServiceSearchPage = () => {
                             <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-8">
                                 <div className="max-w-2xl">
                                     <span className="text-[10px] font-black text-[#C48B28] uppercase tracking-[0.2em] mb-4 block">Pet services near you</span>
-                                    <h1 className="text-3xl font-black text-themev2-text tracking-tighter mb-2 leading-none">Find trusted care for your pet</h1>
-                                    <p className="text-xs font-bold text-themev2-text/40 max-w-lg leading-relaxed whitespace-nowrap overflow-hidden text-ellipsis">
+                                    <h1 className="text-2xl sm:text-3xl font-black text-themev2-text tracking-tighter mb-2 leading-none">Find trusted care for your pet</h1>
+                                    <p className="text-[10px] sm:text-xs font-bold text-themev2-text/40 max-w-lg leading-relaxed">
                                         Browse highly rated foster homes, vets, and trainers loved by pet parents like you.
                                     </p>
                                 </div>
 
                                 {/* Matches Badge */}
                                 <div className="hidden md:block">
-                                    <div className="px-6 py-3 bg-[#FEF2D5] border border-[#EBC176]/30 rounded-2xl flex items-center gap-3">
-                                        <span className="text-[10px] font-black text-[#C48B28] whitespace-nowrap uppercase tracking-widest">{totalCount} matches based on your filters</span>
+                                    <div className="px-5 py-2.5 bg-[#FEF2D5]/50 border border-[#EBC176]/20 rounded-xl flex items-center gap-2.5">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#C48B28]" />
+                                        <span className="text-[10px] font-black text-[#C48B28] whitespace-nowrap uppercase tracking-widest">{totalCount} matches found</span>
                                     </div>
                                 </div>
                             </div>
@@ -163,21 +165,21 @@ const ServiceSearchPage = () => {
                             {/* Search & Quick Filters Row */}
                             <div className="flex flex-col md:flex-row gap-4">
                                 <div className="relative flex-1">
-                                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-themev2-text/30" size={18} />
+                                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-themev2-text/20" size={16} />
                                     <input
                                         type="text"
                                         placeholder="Search by name, service, or keyword"
                                         value={search}
                                         onChange={(e) => handleFilterChange('search', e.target.value)}
-                                        className="w-full pl-16 pr-8 py-4 bg-white border border-[#EBC176]/20 rounded-2xl text-sm font-bold text-themev2-text placeholder:text-themev2-text/20 shadow-sm focus:border-[#C48B28] outline-none transition-all"
+                                        className="w-full pl-14 pr-8 py-4 bg-white border border-[#EBC176]/20 rounded-2xl text-[13px] font-bold text-themev2-text placeholder:text-themev2-text/20 shadow-sm focus:border-[#C48B28]/40 outline-none transition-all"
                                     />
                                 </div>
 
-                                <div className="flex items-center gap-4 shrink-0 overflow-x-auto pb-1 md:pb-0">
+                                <div className="flex items-center gap-3 sm:gap-4 shrink-0 pb-1 md:pb-0 overflow-x-auto md:overflow-visible no-scrollbar">
                                     {/* Mobile Filter Toggle */}
                                     <button
                                         onClick={() => setIsFilterDrawerOpen(true)}
-                                        className="lg:hidden flex items-center gap-2 px-6 py-4 bg-white border border-[#EBC176]/20 rounded-2xl text-[10px] font-black text-themev2-text uppercase tracking-widest hover:bg-[#FAF3E0] transition-all shadow-sm"
+                                        className="lg:hidden flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 bg-white border border-[#EBC176]/20 rounded-2xl text-[9px] sm:text-[10px] font-black text-themev2-text uppercase tracking-widest hover:bg-[#FAF3E0] transition-all shadow-sm"
                                     >
                                         <Filter size={14} className="text-[#C48B28]" />
                                         Filters
@@ -188,9 +190,9 @@ const ServiceSearchPage = () => {
                                         onSortChange={(val) => handleFilterChange('ordering', val)}
                                         options={sortOptions}
                                         customTrigger={
-                                            <button className="flex items-center gap-4 px-6 py-4 bg-white border border-[#EBC176]/20 rounded-2xl text-[10px] font-black text-themev2-text uppercase tracking-widest hover:bg-[#FAF3E0] transition-all shadow-sm whitespace-nowrap">
+                                            <button className="flex items-center gap-3 sm:gap-4 px-5 sm:px-8 py-3 sm:py-4 bg-white border border-[#EBC176]/20 rounded-2xl text-[10px] font-black text-themev2-text uppercase tracking-widest hover:bg-[#FAF3E0] hover:border-[#C48B28]/40 transition-all shadow-sm whitespace-nowrap group">
                                                 <span>Sort by: {currentSortLabel}</span>
-                                                <ChevronRight size={14} className="rotate-90 text-[#EBC176]" />
+                                                <ChevronDown size={14} className="text-[#EBC176] group-hover:text-[#C48B28] transition-all" />
                                             </button>
                                         }
                                     />

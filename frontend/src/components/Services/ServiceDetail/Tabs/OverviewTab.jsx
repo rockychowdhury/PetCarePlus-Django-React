@@ -15,20 +15,23 @@ const OverviewTab = ({ provider, onViewMap, onReadReviews }) => {
         const details = provider.service_specific_details || {};
         const slug = provider.category?.slug;
 
-        const isFoster = slug === 'foster';
+        const isFoster = slug === 'foster-care';
         const isTrainer = slug === 'training';
         const isVet = slug === 'veterinary';
         const isGroomer = slug === 'grooming';
-        const isSitter = slug === 'pet_sitting';
+        const isSitter = slug === 'pet-sitting';
+
+        // service_specific_details IS the nested object (foster_details, trainer_details, etc.)
+        // No need for double nesting
 
         const items = [];
 
         // 1. Capacity / Type / Experience
         if (isFoster) items.push({ label: 'Capacity', value: `${details.current_count || 0} / ${details.capacity || 0} animals`, icon: PawPrint });
-        if (isTrainer) items.push({ label: 'Experience', value: `${details.years_experience} Years`, icon: GraduationCap });
-        if (isVet) items.push({ label: 'Clinic Type', value: details.clinic_type, icon: Building2 });
-        if (isGroomer) items.push({ label: 'Salon Type', value: details.salon_type, icon: Scissors });
-        if (isSitter) items.push({ label: 'Experience', value: `${details.years_experience} Years`, icon: Award });
+        if (isTrainer) items.push({ label: 'Experience', value: `${details.years_experience || 0} Years`, icon: GraduationCap });
+        if (isVet) items.push({ label: 'Clinic Type', value: details.clinic_type || 'General', icon: Building2 });
+        if (isGroomer) items.push({ label: 'Salon Type', value: details.salon_type || 'Salon', icon: Scissors });
+        if (isSitter) items.push({ label: 'Experience', value: `${details.years_experience || 0} Years`, icon: Award });
 
         // 2. Species / Focus
         const speciesList = details.species_accepted || details.species_trained || details.species_treated || [];
@@ -36,15 +39,18 @@ const OverviewTab = ({ provider, onViewMap, onReadReviews }) => {
         if (species) items.push({ label: 'Species Accepted', value: species, icon: PawPrint });
 
         // 3. Environment / Specialties
-        if (isFoster) items.push({ label: 'Environment', value: details.environment_details?.type || 'Home Environment', icon: Building2 });
+        if (isFoster && details.environment_details) {
+            const envType = details.environment_details.indoor_space ? 'Indoor + Outdoor' : 'Home Environment';
+            items.push({ label: 'Environment', value: envType, icon: Building2 });
+        }
         if (isTrainer && details.specializations?.[0]) items.push({ label: 'Specialty', value: details.specializations[0].name, icon: Star });
         if (isSitter) items.push({ label: 'Transport', value: details.has_transport ? 'Provided' : 'Not Provided', icon: Car });
 
         // 4. Rate
-        if (isFoster) items.push({ label: 'Daily Rate', value: `$${details.daily_rate} / night`, icon: DollarSign });
-        if (isTrainer) items.push({ label: 'Session Rate', value: `$${details.private_session_rate} / hr`, icon: DollarSign });
-        if (isGroomer) items.push({ label: 'Starting Rate', value: `$${details.base_price}`, icon: DollarSign });
-        if (isSitter) items.push({ label: 'Walk Rate', value: `$${details.walking_rate} / walk`, icon: DollarSign });
+        if (isFoster && details.daily_rate) items.push({ label: 'Daily Rate', value: `$${details.daily_rate} / night`, icon: DollarSign });
+        if (isTrainer && details.private_session_rate) items.push({ label: 'Session Rate', value: `$${details.private_session_rate} / hr`, icon: DollarSign });
+        if (isGroomer && details.base_price) items.push({ label: 'Starting Rate', value: `$${details.base_price}`, icon: DollarSign });
+        if (isSitter && details.walking_rate) items.push({ label: 'Walk Rate', value: `$${details.walking_rate} / walk`, icon: DollarSign });
 
         return (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-10">

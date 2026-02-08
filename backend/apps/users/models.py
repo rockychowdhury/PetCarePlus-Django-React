@@ -41,7 +41,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email                   = models.EmailField(unique=True)
     first_name              = models.CharField(max_length=50)
     last_name               = models.CharField(max_length=50)
-    phone_number            = models.CharField(max_length=15, default = "01639066718")
+    phone_number            = models.CharField(max_length=15, blank=True, null=True, default = "01639066718")
     photoURL                = models.URLField(max_length=200, blank=True, null=True, default='https://i.ibb.co.com/hWK4ZpT/petDP.jpg')
     bio                     = models.TextField(max_length=500, blank=True, null=True)
     date_of_birth           = models.DateField(blank=True, null=True)
@@ -49,7 +49,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Location Fields
     location_city           = models.CharField(max_length=100, blank=True, null=True)
     location_state          = models.CharField(max_length=100, blank=True, null=True)
-    location_country        = models.CharField(max_length=100,)
+    location_country        = models.CharField(max_length=100)
     zip_code                = models.CharField(max_length=10, blank=True, null=True)
     latitude                = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude               = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)

@@ -1,20 +1,34 @@
-import google.generativeai as genai
+from google import genai
 import os
 import json
+import time
+import logging
 
-# Setup API Key
-api_key = os.environ.get('GEMINI_API_KEY', None)
-if api_key:
-    genai.configure(api_key=api_key)
-else:
-    # Warning: GEMINI_API_KEY not found
-    pass
+logger = logging.getLogger(__name__)
+
+def get_ai_client():
+    """
+    Helper to safely initialize the AI client.
+    Ensures environment variables are loaded.
+    """
+    api_key = os.environ.get('GEMINI_API_KEY')
+    if not api_key:
+        logger.error("GEMINI_API_KEY not found in environment variables.")
+        return None
+    try:
+        return genai.Client(api_key=api_key)
+    except Exception as e:
+        logger.error(f"Failed to initialize Gemini client: {e}")
+        return None
 
 def generate_application_content(user, listing, form_data):
     """
     Generates a personalized adoption application using Google Gemini.
     """
-    
+    client = get_ai_client()
+    if not client:
+        return f"Dear {listing.owner.first_name},\n\nI am interested in adopting {listing.pet.name}. I have reviewed the profile and believe I can provide a loving home. I look forward to hearing from you.\n\nSincerely,\n{user.first_name}"
+
     # 1. Extract Context
     pet_name = listing.pet.name
     species = listing.pet.species
@@ -65,26 +79,23 @@ def generate_application_content(user, listing, form_data):
     - Keep it under 300 words.
     """
     
-    # Retry logic for Rate Limits (429)
-    # Try up to 4 times with exponential backoff
-    import time
-    from google.api_core import exceptions
-    
     for attempt in range(4):
         try:
-            # Using stable flash model for better reliability
-            model = genai.GenerativeModel('gemini-flash-latest')
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt
+            )
             return response.text.replace('**', '').strip() 
             
-        except exceptions.ResourceExhausted:
-            wait_time = 3 * (attempt + 1)
-            time.sleep(wait_time)
-            continue
-            
-        except Exception:
-            # For other errors, log (optionally) and break to fallback
-            break
+        except Exception as e:
+            logger.warning(f"AI Generation attempt {attempt + 1} failed: {e}")
+            if attempt < 3:
+                wait_time = 3 * (attempt + 1)
+                time.sleep(wait_time)
+                continue
+            else:
+                 logger.error(f"All AI generation attempts failed. Last error: {e}")
+                 break
             
     # Fallback to a basic template if all retries fail
     return f"Dear {owner_name},\n\nI am writing to apply for {pet_name}. I have reviewed the profile and believe I can provide a loving home. I live in a {living.get('home_type')} and have a plan for daily care. I look forward to hearing from you.\n\nSincerely,\n{applicant_name}"
@@ -95,11 +106,10 @@ def calculate_match_score(pet_details, applicant_details, message):
     Analyzes the match between a pet and an applicant.
     Returns: integer percentage (0-100)
     """
-    
-    # Retry logic details...
-    import time
-    from google.api_core import exceptions
-    
+    client = get_ai_client()
+    if not client:
+        return 0
+
     prompt = f"""
     You are an expert pet adoption counselor. Evaluate the compatibility between this pet and the applicant.
     
@@ -125,8 +135,10 @@ def calculate_match_score(pet_details, applicant_details, message):
 
     for attempt in range(4):
         try:
-            model = genai.GenerativeModel('gemini-flash-latest')
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt
+            )
             text = response.text.strip()
             # Extract number
             import re
@@ -135,12 +147,15 @@ def calculate_match_score(pet_details, applicant_details, message):
                 return int(match.group())
             return 50 # Default if no number found
             
-        except exceptions.ResourceExhausted:
-            wait_time = 3 * (attempt + 1)
-            time.sleep(wait_time)
-            continue
         except Exception as e:
-            pass
-            break
+            logger.warning(f"AI Match Score attempt {attempt + 1} failed: {e}")
+            if attempt < 3:
+                wait_time = 3 * (attempt + 1)
+                time.sleep(wait_time)
+                continue
+            else:
+                logger.error(f"All AI match score attempts failed. Last error: {e}")
+                break
             
     return 0 # Error default
+

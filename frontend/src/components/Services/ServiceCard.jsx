@@ -76,20 +76,47 @@ const ServiceCard = ({ provider, viewMode = 'grid' }) => {
             priceDisplay = `$${Math.round(details.private_session_rate)}`;
             pricingUnit = '/ hour';
         }
-    } else if (category?.slug === 'foster' || category?.slug === 'pet_sitting') {
+    } else if (category?.slug === 'foster-care') {
         TypeIcon = Home;
-        typeLabel = category?.slug === 'foster' ? 'Foster home' : 'Pet sitter';
+        typeLabel = 'FOSTER CARE';
         headerColor = 'bg-[#8B5E34]'; // Darker earthy brown
-        headerLabel = 'PetCare+ Home';
+        headerLabel = 'PetCare+ Foster';
         secondaryBadge = "Verified host";
+
+        // service_specific_details IS the foster_details object
         if (details.current_availability === 'available') tags.push('Available now');
         if (details.capacity) tags.push(`Up to ${details.capacity} pets`);
         tags.push('Daily photo updates');
 
-        const rate = details.daily_rate || details.house_sitting_rate || details.walking_rate;
-        if (rate) {
-            priceDisplay = `$${Math.round(rate)}`;
-            pricingUnit = category?.slug === 'foster' ? '/ day' : '/ service';
+        // Extract daily_rate directly from details
+        const dailyRate = details.daily_rate;
+        if (dailyRate) {
+            priceDisplay = `$${Math.round(parseFloat(dailyRate))}`;
+            pricingUnit = '/ day';
+        }
+    } else if (category?.slug === 'pet-sitting') {
+        TypeIcon = Armchair;
+        typeLabel = 'PET SITTING';
+        headerColor = 'bg-[#8B5E34]'; // Darker earthy brown
+        headerLabel = 'PetCare+ Sitter';
+        secondaryBadge = "Verified sitter";
+
+        // service_specific_details IS the sitter_details object
+        if (details.offers_dog_walking) tags.push('Dog walking');
+        if (details.offers_house_sitting) tags.push('House sitting');
+        if (details.offers_drop_in_visits) tags.push('Drop-in visits');
+
+        // Extract lowest rate directly from details
+        const rates = [
+            details.walking_rate,
+            details.house_sitting_rate,
+            details.drop_in_rate
+        ].filter(r => r).map(r => parseFloat(r));
+
+        if (rates.length > 0) {
+            const lowestRate = Math.min(...rates);
+            priceDisplay = `$${Math.round(lowestRate)}`;
+            pricingUnit = 'starts at';
         }
     } else if (category?.slug === 'grooming') {
         TypeIcon = Scissors;

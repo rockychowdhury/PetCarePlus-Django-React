@@ -216,8 +216,8 @@ const OwnerApplicationDetailPage = () => {
                     {appData.status === 'pending_review' && (
                         <div className="px-8 pb-8 flex gap-3 justify-end">
                             <Button
-                                variant="outline"
-                                className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 font-bold"
+                                variant="danger"
+                                className="font-bold"
                                 onClick={() => setIsRejectModalOpen(true)}
                             >
                                 Reject Application
@@ -234,8 +234,8 @@ const OwnerApplicationDetailPage = () => {
                     {appData.status === 'approved_meet_greet' && (
                         <div className="px-8 pb-8 flex gap-3 justify-end">
                             <Button
-                                variant="outline"
-                                className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 font-bold"
+                                variant="danger"
+                                className="font-bold"
                                 onClick={() => setIsRejectModalOpen(true)}
                             >
                                 Reject Application

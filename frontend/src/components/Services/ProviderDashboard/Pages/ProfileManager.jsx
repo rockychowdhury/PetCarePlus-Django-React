@@ -119,13 +119,13 @@ const ProfileManager = () => {
 
             {/* Tabs */}
             <div className="border-b border-gray-200">
-                <nav className="-mb-px flex space-x-6 overflow-x-auto no-scrollbar">
+                <nav className="-mb-px flex space-x-4 sm:space-x-6 overflow-x-auto no-scrollbar px-1">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`
-                                whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-all
+                                whitespace-nowrap pb-3 sm:pb-4 px-1 border-b-2 font-black sm:font-medium text-[10px] sm:text-sm transition-all uppercase sm:normal-case tracking-widest sm:tracking-normal
                                 ${activeTab === tab.id
                                     ? 'border-teal-500 text-teal-600'
                                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -143,7 +143,7 @@ const ProfileManager = () => {
                 {activeTab === 'basic' && (
                     <div className="animate-in fade-in duration-300 space-y-6">
                         {/* Business Information Card */}
-                        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+                        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm">
                             <h3 className="text-lg font-bold text-gray-900 mb-1">Business Information</h3>
                             <p className="text-sm text-gray-500 mb-6">General details about your service visible to clients.</p>
 
@@ -214,7 +214,7 @@ const ProfileManager = () => {
                         </div>
 
                         {/* Contact & Location Card */}
-                        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+                        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm">
                             <h3 className="text-lg font-bold text-gray-900 mb-1">Contact & Location</h3>
                             <p className="text-sm text-gray-500 mb-6">How clients can reach you and find your location.</p>
 
@@ -271,13 +271,13 @@ const ProfileManager = () => {
                         </div>
 
                         {/* Actions */}
-                        <div className="flex justify-end gap-3 pt-4">
-                            <Button variant="outline" className="border-gray-200 text-gray-700 hover:bg-gray-50">
+                        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+                            <Button variant="outline" className="w-full sm:w-auto border-gray-200 text-gray-700 hover:bg-gray-50">
                                 Cancel
                             </Button>
                             <Button
                                 variant="primary"
-                                className="bg-teal-600 hover:bg-teal-700 text-white shadow-sm"
+                                className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white shadow-sm"
                                 onClick={handleSaveBasic}
                                 disabled={updateProfile.isPending}
                             >

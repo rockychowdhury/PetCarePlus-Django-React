@@ -17,7 +17,7 @@ const ServiceHero = ({ provider, onBook, onContact, onShare, onFavorite, isFavor
     else if (details.walking_rate) priceString = `From $${details.walking_rate}`;
 
     return (
-        <div className="w-full bg-[#FEF9ED] pt-12 pb-8">
+        <div className="w-full bg-[#FEF9ED] pt-8 md:pt-12 pb-6 md:pb-8">
             <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
                 {/* Back Link */}
                 <button
@@ -31,8 +31,8 @@ const ServiceHero = ({ provider, onBook, onContact, onShare, onFavorite, isFavor
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
                     {/* Left: Provider Brief */}
                     <div className="flex-1">
-                        <div className="flex items-center gap-4 mb-3 flex-wrap">
-                            <h1 className="text-3xl lg:text-4xl font-black text-themev2-text tracking-tighter leading-tight" id="provider-name">
+                        <div className="flex items-center gap-3 sm:gap-4 mb-3 flex-wrap">
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-themev2-text tracking-tighter leading-tight" id="provider-name">
                                 {provider.business_name}
                             </h1>
                             {provider.is_verified && (
@@ -63,12 +63,12 @@ const ServiceHero = ({ provider, onBook, onContact, onShare, onFavorite, isFavor
                     </div>
 
                     {/* Right: Actions */}
-                    <div className="flex items-center gap-3 w-full lg:w-auto">
-                        <div className="flex items-center gap-3 flex-1 lg:flex-none">
+                    <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+                        <div className="flex items-center gap-3 w-full sm:w-auto">
                             <button
                                 onClick={onFavorite}
                                 id="toggle-favorite"
-                                className={`p-4 rounded-2xl bg-white border transition-all shadow-sm active:scale-95 ${isFavorite ? 'border-red-500/20 text-red-500 bg-red-50/30' : 'border-[#EBC176]/20 text-themev2-text/40 hover:text-themev2-text'}`}
+                                className={`flex-1 sm:flex-none p-3.5 sm:p-4 rounded-2xl bg-white border transition-all shadow-sm active:scale-95 flex items-center justify-center ${isFavorite ? 'border-red-500/20 text-red-500 bg-red-50/30' : 'border-[#EBC176]/20 text-themev2-text/40 hover:text-themev2-text'}`}
                             >
                                 <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
                             </button>
@@ -76,35 +76,37 @@ const ServiceHero = ({ provider, onBook, onContact, onShare, onFavorite, isFavor
                             <button
                                 onClick={onShare}
                                 id="share-button"
-                                className="p-4 rounded-2xl bg-white border border-[#EBC176]/20 text-themev2-text/40 hover:text-themev2-text transition-all shadow-sm active:scale-95"
+                                className="flex-1 sm:flex-none p-3.5 sm:p-4 rounded-2xl bg-white border border-[#EBC176]/20 text-themev2-text/40 hover:text-themev2-text transition-all shadow-sm active:scale-95 flex items-center justify-center"
                             >
                                 <Share2 size={20} />
                             </button>
                         </div>
 
-                        <button
-                            onClick={() => {
-                                if (provider.phone) {
-                                    const phone = provider.phone.replace(/\D/g, '');
-                                    window.open(`https://wa.me/${phone}`, '_blank');
-                                } else {
-                                    onContact();
-                                }
-                            }}
-                            id="whatsapp-contact"
-                            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-8 py-4 bg-[#22C55E] border border-green-500/10 rounded-full text-[11px] font-black text-white uppercase tracking-widest hover:bg-[#1BA94C] transition-all shadow-lg shadow-green-500/10 active:scale-95 min-w-[160px]"
-                        >
-                            <MessageCircle size={18} className="text-white" />
-                            WhatsApp
-                        </button>
+                        <div className="flex flex-col sm:flex-row gap-3 w-full">
+                            <button
+                                onClick={() => {
+                                    if (provider.phone) {
+                                        const phone = provider.phone.replace(/\D/g, '');
+                                        window.open(`https://wa.me/${phone}`, '_blank');
+                                    } else {
+                                        onContact();
+                                    }
+                                }}
+                                id="whatsapp-contact"
+                                className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-8 py-3.5 sm:py-4 bg-[#22C55E] border border-green-500/10 rounded-full text-[10px] sm:text-[11px] font-black text-white uppercase tracking-widest hover:bg-[#1BA94C] transition-all shadow-lg shadow-green-500/10 active:scale-95 sm:min-w-[160px]"
+                            >
+                                <MessageCircle size={18} className="text-white" />
+                                WhatsApp
+                            </button>
 
-                        <button
-                            onClick={onBook}
-                            id="book-now"
-                            className="flex-1 lg:flex-none px-10 py-4 bg-[#C48B28] text-white rounded-full text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[#C48B28]/20 hover:bg-[#A6751F] transition-all active:scale-95 min-w-[160px]"
-                        >
-                            Book Now
-                        </button>
+                            <button
+                                onClick={onBook}
+                                id="book-now"
+                                className="w-full sm:w-auto px-6 sm:px-10 py-3.5 sm:py-4 bg-[#C48B28] text-white rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[#C48B28]/20 hover:bg-[#A6751F] transition-all active:scale-95 sm:min-w-[160px]"
+                            >
+                                Book Now
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

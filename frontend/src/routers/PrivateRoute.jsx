@@ -12,7 +12,7 @@ export const AdminRoute = ({ children }) => {
     const { user, loading } = useAuth();
     const location = useLocation();
 
-    if (loading) return <Spinner />;
+    if (loading && !user) return <Spinner />;
 
     if (!user) {
         return <Navigate to="/login" state={{ from: location.pathname }} replace />;
@@ -37,7 +37,7 @@ export const ServiceProviderRoute = ({ children }) => {
     const { user, loading } = useAuth();
     const location = useLocation();
 
-    if (loading) return <Spinner />;
+    if (loading && !user) return <Spinner />;
 
     if (!user) {
         return <Navigate to="/login" state={{ from: location.pathname }} replace />;
@@ -62,7 +62,7 @@ const PrivateRoute = ({ children }) => {
     const { user, loading } = useAuth();
     const location = useLocation();
 
-    if (loading) return <Spinner />;
+    if (loading && !user) return <Spinner />;
 
     if (user && user?.email) {
         return children;
@@ -83,7 +83,7 @@ export const GuestRoute = ({ children }) => {
     const { user, loading } = useAuth();
     const location = useLocation();
 
-    if (loading) return <Spinner />;
+    if (loading && !user) return <Spinner />;
 
     if (user) {
         const redirectPath = getRoleBasedRedirect(user);
@@ -106,7 +106,7 @@ export const PetOwnerRoute = ({ children }) => {
     const { user, loading } = useAuth();
     const location = useLocation();
 
-    if (loading) return <Spinner />;
+    if (loading && !user) return <Spinner />;
 
     // 1. Must be logged in
     if (!user) {

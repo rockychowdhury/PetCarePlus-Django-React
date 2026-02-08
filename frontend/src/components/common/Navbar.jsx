@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Logo from './Logo';
 import { Menu, X, LayoutDashboard, User, Settings as SettingsIcon, LogOut, Calendar, ClipboardList, PawPrint, Grid3x3 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import useAuth from '../../hooks/useAuth';
 import useServices from '../../hooks/useServices';
 import Button from './Buttons/Button';
@@ -77,8 +78,8 @@ const Navbar = () => {
 
     return (
         <>
-            <div className={`fixed left-1/2 -translate-x-1/2 w-full max-w-[1600px] z-[100] transition-all duration-500 ${isScrolled ? 'top-0 px-0' : 'top-6 px-4 md:px-10'}`}>
-                <nav className={`w-full relative border border-[#C48B28]/10 h-16 flex items-center px-8 rounded-full transition-all duration-500 ${isScrolled ? 'bg-white/95 shadow-lg shadow-[#402E11]/5' : 'bg-white/80'}`}>
+            <div className={`fixed left-1/2 -translate-x-1/2 w-full max-w-[1600px] z-[100] transition-all duration-500 pointer-events-none ${isScrolled ? 'top-0 px-0' : 'top-6 px-4 md:px-10'}`}>
+                <nav className={`w-full relative border border-[#C48B28]/10 h-16 flex items-center px-8 rounded-full transition-all duration-500 pointer-events-auto ${isScrolled ? 'bg-white/95 shadow-lg shadow-[#402E11]/5' : 'bg-white/80'}`}>
                     <div className="flex justify-between items-center w-full">
 
                         {/* Logo (Left) */}
@@ -164,11 +165,10 @@ const Navbar = () => {
                                                 {/* Account Settings */}
                                                 <div className="mb-1">
                                                     <p className="px-4 py-1.5 text-[9px] font-bold text-gray-400 uppercase tracking-wider">Account</p>
-                                                    <DropdownLink to={user.role === 'service_provider' ? "/provider/settings" : "/dashboard/profile"} icon={<User />} label="My Profile" />
+                                                    <DropdownLink to={user.role === 'service_provider' ? "/provider/settings" : "/dashboard/profile/settings"} icon={<SettingsIcon />} label="Settings" />
                                                     {user.role === 'admin' && (
                                                         <DropdownLink to="/admin" icon={<SettingsIcon />} label="Admin Panel" />
                                                     )}
-                                                    <DropdownLink to={user.role === 'service_provider' ? "/provider/settings" : "/dashboard/profile/settings"} icon={<SettingsIcon />} label="Settings" />
                                                 </div>
                                             </div>
 
@@ -217,28 +217,105 @@ const Navbar = () => {
                 </nav>
             </div>
 
-            {/* Mobile Menu (simplified for now) */}
-            {isMenuOpen && (
-                <div className="md:hidden bg-[#FAF3E0] border-t border-[#EBC176]/20 absolute top-full left-0 w-full shadow-xl p-4 flex flex-col gap-4 animate-fade-in">
-                    <MobileNavLink to="/services" label="Services" onClick={() => setIsMenuOpen(false)} active={isActive('/services')} />
+            {/* Mobile Menu */}
+            <AnimatePresence>
+                {isMenuOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                        className="md:hidden fixed top-[88px] left-4 right-4 bg-white/95 backdrop-blur-xl border border-[#C48B28]/20 shadow-2xl z-[90] max-h-[calc(100vh-120px)] overflow-y-auto rounded-[2.5rem]"
+                    >
+                        <div className="p-6 flex flex-col gap-2">
+                            {/* Main Navigation */}
+                            <div className="space-y-1">
+                                <MobileNavLink to="/services" label="Services" onClick={() => setIsMenuOpen(false)} active={isActive('/services')} />
 
-                    {(!user || (user.role !== 'service_provider' && user.role !== 'admin')) && (
-                        <MobileNavLink to="/pets" label="Find a Pet" onClick={() => setIsMenuOpen(false)} active={isActive('/pets')} />
-                    )}
+                                {(!user || (user.role !== 'service_provider' && user.role !== 'admin')) && (
+                                    <MobileNavLink to="/pets" label="Find a Pet" onClick={() => setIsMenuOpen(false)} active={isActive('/pets')} />
+                                )}
 
-                    {user && user.role !== 'service_provider' && user.role !== 'admin' && (
-                        <MobileNavLink to="/rehoming" label="Rehome" onClick={() => setIsMenuOpen(false)} active={isActive('/rehoming')} />
-                    )}
+                                {user && user.role !== 'service_provider' && user.role !== 'admin' && (
+                                    <MobileNavLink to="/rehoming" label="Rehome" onClick={() => setIsMenuOpen(false)} active={isActive('/rehoming')} />
+                                )}
 
-                    <MobileNavLink to="/about" label="About" onClick={() => setIsMenuOpen(false)} active={isActive('/about')} />
-                    {!user && (
-                        <div className="flex flex-col gap-3 pt-4 border-t border-border/50">
-                            <Button onClick={() => openAuth('login')} variant="outline">Log In</Button>
-                            <Button onClick={() => openAuth('register')} variant="primary">Sign Up</Button>
+                                <MobileNavLink to="/about" label="About" onClick={() => setIsMenuOpen(false)} active={isActive('/about')} />
+                            </div>
+
+                            {/* Mobile Menu Actions for Logged In Users */}
+                            {user ? (
+                                <div className="mt-4 pt-6 border-t border-gray-100 flex flex-col gap-6">
+                                    {/* User Profil Card */}
+                                    <div className="flex items-center gap-4 px-3 py-4 bg-[#FEF9ED]/50 rounded-[1.5rem] border border-[#C48B28]/5">
+                                        <Avatar
+                                            initials={user.first_name ? user.first_name[0] : 'U'}
+                                            src={user.photoURL || user.profile_image}
+                                            size="md"
+                                            className="border-2 border-white shadow-sm"
+                                        />
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="text-base font-black text-gray-900 truncate tracking-tight">{user.first_name} {user.last_name}</span>
+                                            <span className="text-xs font-bold text-gray-500 truncate lowercase">{user.email}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Dashboard Links */}
+                                    <div className="space-y-1">
+                                        <p className="px-4 py-2 text-[10px] font-black text-[#C48B28] uppercase tracking-[0.2em]">Dashboard</p>
+                                        {user.role === 'service_provider' ? (
+                                            <MobileNavLink to="/provider/dashboard" icon={<Grid3x3 size={18} />} label="Overview" onClick={() => setIsMenuOpen(false)} active={isActive('/provider/dashboard')} />
+                                        ) : (
+                                            <>
+                                                <MobileNavLink to="/dashboard" icon={<Grid3x3 size={18} />} label="Overview" onClick={() => setIsMenuOpen(false)} active={isActive('/dashboard')} />
+                                                <MobileNavLink to="/dashboard/bookings" icon={<Calendar size={18} />} label="My Bookings" onClick={() => setIsMenuOpen(false)} active={isActive('/dashboard/bookings')} />
+                                                <MobileNavLink to="/dashboard/applications" icon={<ClipboardList size={18} />} label="Applications" onClick={() => setIsMenuOpen(false)} active={isActive('/dashboard/applications')} />
+                                                <MobileNavLink to="/dashboard/my-pets" icon={<PawPrint size={18} />} label="My Pets" onClick={() => setIsMenuOpen(false)} active={isActive('/dashboard/my-pets')} />
+                                            </>
+                                        )}
+                                    </div>
+
+                                    {/* Account Links */}
+                                    <div className="space-y-1">
+                                        <p className="px-4 py-2 text-[10px] font-black text-[#C48B28] uppercase tracking-[0.2em]">Account</p>
+                                        <MobileNavLink to={user.role === 'service_provider' ? "/provider/settings" : "/dashboard/profile/settings"} icon={<SettingsIcon size={18} />} label="Settings" onClick={() => setIsMenuOpen(false)} active={isActive('/settings')} />
+                                        {user.role === 'admin' && (
+                                            <MobileNavLink to="/admin" icon={<SettingsIcon size={18} />} label="Admin Panel" onClick={() => setIsMenuOpen(false)} active={isActive('/admin')} />
+                                        )}
+                                    </div>
+
+                                    {/* Sign Out Action */}
+                                    <button
+                                        onClick={() => {
+                                            handleLogout();
+                                            setIsMenuOpen(false);
+                                        }}
+                                        className="w-full flex items-center justify-center gap-3 px-6 py-4 text-[10px] font-black text-white bg-[#C48B28] hover:bg-[#A9761F] uppercase tracking-[0.3em] transition-all rounded-2xl shadow-xl shadow-[#C48B28]/20"
+                                    >
+                                        <LogOut size={16} />
+                                        Sign Out
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="mt-4 pt-6 border-t border-gray-100 flex flex-col gap-3">
+                                    <button
+                                        onClick={() => openAuth('login')}
+                                        className="w-full py-4 text-sm font-black text-themev2-text/60 hover:text-[#C48B28] uppercase tracking-widest border border-gray-100 rounded-2xl transition-all"
+                                    >
+                                        Log In
+                                    </button>
+                                    <button
+                                        onClick={() => openAuth('register')}
+                                        className="w-full py-4 bg-[#C48B28] text-white rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-[#C48B28]/20 transition-all active:scale-95"
+                                    >
+                                        Sign Up
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
-            )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <AuthModal
                 isOpen={isAuthModalOpen}

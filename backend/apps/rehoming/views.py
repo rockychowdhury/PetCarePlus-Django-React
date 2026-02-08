@@ -3,6 +3,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, NotFound
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_headers, vary_on_cookie
 from django.db.models import Q
 from .models import RehomingListing, RehomingRequest, AdoptionInquiry
 from .serializers import (
@@ -12,6 +15,7 @@ from .serializers import (
     RehomingRequestSerializer,
     AdoptionInquirySerializer
 )
+from .pagination import ListingPagination
 from apps.users.permissions import IsAdmin, IsOwnerOrReadOnly
 from apps.common.logging_utils import log_business_event
 import datetime
@@ -134,11 +138,16 @@ class RehomingRequestViewSet(viewsets.ModelViewSet):
 class ListingListCreateView(generics.ListCreateAPIView):
     queryset = RehomingListing.objects.all()
     serializer_class = ListingSerializer
+    pagination_class = ListingPagination
     
     def get_permissions(self):
         if self.request.method == 'POST':
             return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
+
+    @method_decorator(cache_page(60 * 5)) # Cache for 5 minutes
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.request.method == 'POST':

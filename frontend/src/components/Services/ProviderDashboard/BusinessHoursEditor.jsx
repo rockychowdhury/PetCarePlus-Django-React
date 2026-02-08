@@ -45,54 +45,65 @@ const BusinessHoursEditor = ({ initialHours = [], onSave, isLoading }) => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
                 <div>
-                    <h3 className="text-lg font-bold text-text-primary">Business Hours</h3>
-                    <p className="text-sm text-text-secondary">Set your availability for standard bookings.</p>
+                    <h3 className="text-lg font-bold text-text-primary">Weekly Hours</h3>
+                    <p className="text-xs text-text-secondary">Operational baseline for standard service days</p>
                 </div>
                 <Button
                     variant="primary"
                     onClick={handleSave}
                     disabled={isLoading}
+                    className="w-full sm:w-auto"
                 >
-                    {isLoading ? 'Saving...' : 'Save Hours'}
+                    {isLoading ? 'Saving...' : 'Commit Changes'}
                 </Button>
             </div>
 
-            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+            <div className="bg-gray-50 rounded-xl p-3 sm:p-4 space-y-3">
                 {hours.map((day) => (
-                    <div key={day.day} className="flex items-center justify-between gap-4 p-3 bg-white rounded-lg border border-border shadow-sm">
-                        <div className="w-28 font-medium text-text-primary">{day.day_display}</div>
+                    <div key={day.day} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-lg border border-border shadow-sm">
+                        {/* Day Label */}
+                        <div className="flex items-center justify-between sm:block sm:w-24 lg:w-28">
+                            <span className="font-medium text-text-primary text-sm sm:text-base">{day.day_display}</span>
+                            {/* Mobile: Show closed badge inline */}
+                            {day.is_closed && (
+                                <span className="sm:hidden text-xs text-text-tertiary italic px-2 py-1 bg-gray-100 rounded">Mark Closed</span>
+                            )}
+                        </div>
 
-                        <div className="flex-1 flex items-center gap-4">
-                            <label className="flex items-center gap-2 cursor-pointer">
+                        {/* Controls */}
+                        <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                            {/* Open/Closed Toggle */}
+                            <label className="flex items-center gap-2 cursor-pointer shrink-0">
                                 <input
                                     type="checkbox"
                                     checked={!day.is_closed}
                                     onChange={(e) => handleChange(day.day, 'is_closed', !e.target.checked)}
                                     className="w-4 h-4 text-brand-primary rounded focus:ring-brand-primary"
                                 />
-                                <span className="text-sm text-text-secondary">Open</span>
+                                <span className="text-xs sm:text-sm text-text-secondary whitespace-nowrap">Mark Closed</span>
                             </label>
 
+                            {/* Time Inputs */}
                             {!day.is_closed ? (
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-1">
                                     <input
                                         type="time"
                                         value={day.open_time || ''}
                                         onChange={(e) => handleChange(day.day, 'open_time', e.target.value)}
-                                        className="p-1.5 border border-border rounded-md text-sm"
+                                        className="flex-1 sm:flex-none p-2 border border-border rounded-md text-sm min-w-0"
                                     />
-                                    <span className="text-text-tertiary">-</span>
+                                    <span className="text-text-tertiary shrink-0">-</span>
                                     <input
                                         type="time"
                                         value={day.close_time || ''}
                                         onChange={(e) => handleChange(day.day, 'close_time', e.target.value)}
-                                        className="p-1.5 border border-border rounded-md text-sm"
+                                        className="flex-1 sm:flex-none p-2 border border-border rounded-md text-sm min-w-0"
                                     />
                                 </div>
                             ) : (
-                                <span className="text-sm text-text-tertiary italic px-2">Closed</span>
+                                <span className="hidden sm:inline text-sm text-text-tertiary italic px-2">Closed</span>
                             )}
                         </div>
                     </div>

@@ -594,7 +594,7 @@ const ProfileSettingsPage = () => {
   };
 
   return (
-    <div className="w-full md:p-12 lg:p-20 space-y-12 bg-[#FEF9ED]/30 min-h-screen">
+    <div className="w-full p-4 md:p-12 lg:p-20 space-y-12 bg-[#FEF9ED]/30 min-h-screen pt-20 md:pt-12">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>

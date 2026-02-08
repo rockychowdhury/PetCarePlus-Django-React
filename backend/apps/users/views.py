@@ -28,6 +28,9 @@ from django.utils import timezone
 from django.core.mail import send_mail
 from datetime import timedelta
 from django.conf import settings
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_headers, vary_on_cookie
 
 User = get_user_model()
 
@@ -125,6 +128,8 @@ class CustomTokenRefreshView(APIView):
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(cache_page(60 * 5)) # Cache for 5 minutes
+    @method_decorator(vary_on_headers('Authorization', 'Cookie'))
     def get(self, request):
         user = request.user
         serializer = UserSerializer(user)

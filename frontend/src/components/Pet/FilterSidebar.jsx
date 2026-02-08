@@ -110,17 +110,17 @@ const FilterSidebar = ({ filters, onFilterChange, onClearFilters }) => {
         const rawPercent = (e.clientX - rect.left) / rect.width;
         // Clamp between 0 and 1
         const percent = Math.max(0, Math.min(1, rawPercent));
-        // Interpolate value between 5 and 500
-        const val = Math.round(5 + (500 - 5) * percent);
+        // Interpolate value between 5 and 100
+        const val = Math.round(5 + (100 - 5) * percent);
 
         setHoverValue(val);
         setHoverPercent(percent * 100);
     };
 
     return (
-        <div className="w-full flex flex-col p-8 bg-[#FEF9ED] rounded-[2.5rem] border border-[#EBC176]/20 shadow-sm overflow-hidden h-full">
+        <div className="w-full flex flex-col p-6 md:p-8 bg-[#FEF9ED] rounded-[2.5rem] border border-[#EBC176]/20 shadow-sm overflow-hidden h-full">
             {/* Sidebar Header */}
-            <div className="mb-10 pt-2">
+            <div className="mb-8 pt-2">
                 <h2 className="text-xl font-black text-themev2-text tracking-tighter mb-2 leading-none">Refine your search</h2>
                 <p className="text-[11px] font-bold text-themev2-text/30 leading-relaxed">
                     Narrow down your search results to find the perfect pet.
@@ -190,8 +190,7 @@ const FilterSidebar = ({ filters, onFilterChange, onClearFilters }) => {
                         <input
                             type="range"
                             min="5"
-                            max="500"
-                            step="5"
+                            max="100"
                             value={radiusInput}
                             onChange={handleRadiusChange}
                             className="w-full h-1.5 bg-[#EBC176]/20 rounded-full appearance-none cursor-pointer accent-[#C48B28] range-slider"
@@ -220,7 +219,7 @@ const FilterSidebar = ({ filters, onFilterChange, onClearFilters }) => {
 
                     <div className="flex items-center justify-between px-0.5 mt-[-4px]">
                         <span className="text-[11px] font-black text-[#402E11]/30 uppercase tracking-widest">5km</span>
-                        <span className="text-[11px] font-black text-[#402E11]/30 uppercase tracking-widest">500km</span>
+                        <span className="text-[11px] font-black text-[#402E11]/30 uppercase tracking-widest">100km</span>
                     </div>
                 </div>
             </div>

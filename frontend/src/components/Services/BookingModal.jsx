@@ -20,11 +20,30 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
     const [availableSlots, setAvailableSlots] = useState([]);
     const [loadingAvailability, setLoadingAvailability] = useState(false);
 
+    // Pet selection state
+    const [petSearchQuery, setPetSearchQuery] = useState('');
+    const [currentPetPage, setCurrentPetPage] = useState(1);
+    const PETS_PER_PAGE = 6;
+
     const { useCreateBooking } = useServices();
     const createBooking = useCreateBooking();
 
     const { useGetMyPets } = usePets();
-    const { data: myPets, isLoading: petsLoading } = useGetMyPets();
+    const { data: myPets, isLoading: petsLoading, refetch: refetchPets } = useGetMyPets();
+
+    // Refetch pets when modal opens to ensure fresh data
+    React.useEffect(() => {
+        if (isOpen) {
+            refetchPets();
+        } else {
+            // Reset state when modal closes
+            setStep(1);
+            setSelectedPet(null);
+            setPetSearchQuery('');
+            setCurrentPetPage(1);
+            setNotes('');
+        }
+    }, [isOpen, refetchPets]);
 
     // Determine booking type logic
     const getBookingType = () => {
@@ -66,21 +85,13 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
             const data = await providerService.getAvailability(provider.id, dateStr);
 
             setAvailableSlots(data.available_slots || []);
-            // Set first available slot as default
-            const firstAvailable = data.available_slots?.find(slot => slot.available !== false); // API returns strings or objects? Wait, API returns array of strings 'HH:MM'
-
-            // Check API contract: "available_slots": ["09:00", "10:00"]
-            // The previous code assumed objects with .available property.
-            // Let's adapt based on verified verification_report.md which says: "available_slots": ["09:00", "10:00"]
-
             if (data.available_slots?.length > 0) {
-                // Format is likely just strings based on view_code_item inspection earlier
                 setSelectedTime(data.available_slots[0]);
             }
         } catch (error) {
             console.error('Failed to fetch availability:', error);
             toast.error('Could not load available times');
-            setAvailableSlots([]); // clear on error
+            setAvailableSlots([]);
         } finally {
             setLoadingAvailability(false);
         }
@@ -213,23 +224,23 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#402E11]/40 backdrop-blur-sm">
             <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-[#FEF9ED] rounded-[2.5rem] w-full max-w-lg shadow-2xl border border-[#EBC176]/20 overflow-hidden"
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="bg-[#FEF9ED] rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full max-w-lg shadow-2xl border border-[#EBC176]/20 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh]"
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-8 border-b border-[#EBC176]/20">
-                    <h2 className="text-2xl font-black text-[#402E11] tracking-tight">
+                <div className="flex items-center justify-between p-6 sm:p-8 border-b border-[#EBC176]/20 shrink-0">
+                    <h2 className="text-xl sm:text-2xl font-black text-[#402E11] tracking-tight truncate pr-4">
                         Book {provider?.business_name}
                     </h2>
-                    <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white border border-[#EBC176]/20 rounded-full text-[#C48B28] hover:bg-[#FAF3E0] transition-colors">
+                    <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white border border-[#EBC176]/20 rounded-full text-[#C48B28] hover:bg-[#FAF3E0] transition-colors shrink-0">
                         <X size={20} />
                     </button>
                 </div>
 
-                {/* Content */}
-                <div className="p-8">
+                {/* Scrollable Content Area */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8">
                     {step === 1 && (
                         <div className="space-y-8">
                             <div>
@@ -242,7 +253,7 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
 
                                 <div className="space-y-6">
                                     {/* Date Picker */}
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-[9px] font-black text-themev2-text/40 uppercase tracking-widest mb-2">
                                                 {isAppointment ? 'Date' : 'Start Date'}
@@ -318,7 +329,7 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
                     )}
 
                     {step === 2 && (
-                        <div className="space-y-8">
+                        <div className="space-y-6">
                             <div className="flex items-center gap-4 mb-2">
                                 <div className="w-10 h-10 bg-[#FAF3E0] rounded-xl flex items-center justify-center text-[#C48B28] shrink-0">
                                     <PawPrint size={20} />
@@ -332,32 +343,115 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
                                     <p className="text-[10px] font-black text-themev2-text/40 uppercase tracking-widest animate-pulse">Fetching your pets...</p>
                                 </div>
                             ) : myPets?.results?.length > 0 ? (
-                                <div className="grid grid-cols-1 gap-3">
-                                    {myPets.results.map(pet => (
-                                        <div
-                                            key={pet.id}
-                                            onClick={() => setSelectedPet(pet)}
-                                            className={`p-5 rounded-[1.5rem] border group cursor-pointer transition-all flex items-center gap-4 ${selectedPet?.id === pet.id ? 'bg-[#FAF3E0] border-[#C48B28] shadow-lg shadow-[#C48B28]/5' : 'bg-white border-[#EBC176]/20 hover:border-[#C48B28]/50'}`}
-                                        >
-                                            <div className="w-14 h-14 rounded-2xl bg-[#FAF3E0] overflow-hidden shrink-0 border-2 border-white shadow-sm">
-                                                {pet.media?.[0]?.url ? (
-                                                    <img src={pet.media[0].url} alt={pet.name} className="w-full h-full object-cover" />
+                                <>
+                                    {/* Search Bar */}
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Search pets by name..."
+                                            value={petSearchQuery}
+                                            onChange={(e) => {
+                                                setPetSearchQuery(e.target.value);
+                                                setCurrentPetPage(1); // Reset to first page on search
+                                            }}
+                                            className="w-full px-5 py-4 pl-12 bg-[#FAF3E0] border border-[#EBC176]/10 rounded-2xl text-[11px] font-bold text-themev2-text placeholder-themev2-text/30 outline-none focus:border-[#C48B28]/40 uppercase tracking-widest"
+                                        />
+                                        <PawPrint size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#C48B28]/40" />
+                                    </div>
+
+                                    {/* Pet Grid */}
+                                    {(() => {
+                                        // Filter pets by search query
+                                        const filteredPets = myPets.results.filter(pet =>
+                                            pet.name.toLowerCase().includes(petSearchQuery.toLowerCase())
+                                        );
+
+                                        // Calculate pagination
+                                        const totalPages = Math.ceil(filteredPets.length / PETS_PER_PAGE);
+                                        const startIndex = (currentPetPage - 1) * PETS_PER_PAGE;
+                                        const paginatedPets = filteredPets.slice(startIndex, startIndex + PETS_PER_PAGE);
+
+                                        return (
+                                            <>
+                                                {filteredPets.length > 0 ? (
+                                                    <>
+                                                        {/* Scrollable Grid Container */}
+                                                        <div className="max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
+                                                            <div className="grid grid-cols-2 gap-3">
+                                                                {paginatedPets.map(pet => (
+                                                                    <div
+                                                                        key={pet.id}
+                                                                        onClick={() => setSelectedPet(pet)}
+                                                                        className={`p-4 rounded-[1.5rem] border group cursor-pointer transition-all ${selectedPet?.id === pet.id
+                                                                            ? 'bg-[#FAF3E0] border-[#C48B28] shadow-lg shadow-[#C48B28]/10 scale-[1.02]'
+                                                                            : 'bg-white border-[#EBC176]/20 hover:border-[#C48B28]/50 hover:shadow-md'
+                                                                            }`}
+                                                                    >
+                                                                        <div className="flex flex-col items-center gap-3">
+                                                                            {/* Pet Image */}
+                                                                            <div className="relative w-16 h-16 rounded-2xl bg-[#FAF3E0] overflow-hidden border-2 border-white shadow-sm">
+                                                                                {pet.media?.[0]?.url ? (
+                                                                                    <img src={pet.media[0].url} alt={pet.name} className="w-full h-full object-cover" />
+                                                                                ) : (
+                                                                                    <div className="w-full h-full flex items-center justify-center text-[#C48B28]/30">
+                                                                                        <PawPrint size={24} />
+                                                                                    </div>
+                                                                                )}
+                                                                                {/* Selected Badge */}
+                                                                                {selectedPet?.id === pet.id && (
+                                                                                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-[#C48B28] rounded-full flex items-center justify-center text-white shadow-lg shadow-[#C48B28]/30">
+                                                                                        <CheckCircle size={14} />
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            {/* Pet Info */}
+                                                                            <div className="text-center w-full">
+                                                                                <p className="text-sm font-black text-themev2-text tracking-tight truncate">{pet.name}</p>
+                                                                                <p className="text-[8px] font-black text-[#C48B28] uppercase tracking-widest mt-1">{pet.species}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Pagination Controls */}
+                                                        {totalPages > 1 && (
+                                                            <div className="flex items-center justify-between pt-4 border-t border-[#EBC176]/10">
+                                                                <p className="text-[9px] font-black text-themev2-text/40 uppercase tracking-widest">
+                                                                    Page {currentPetPage} of {totalPages}
+                                                                </p>
+                                                                <div className="flex gap-2">
+                                                                    <button
+                                                                        onClick={() => setCurrentPetPage(prev => Math.max(1, prev - 1))}
+                                                                        disabled={currentPetPage === 1}
+                                                                        className="px-4 py-2 bg-white border border-[#EBC176]/20 rounded-xl text-[9px] font-black text-themev2-text uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#C48B28]/50 transition-all"
+                                                                    >
+                                                                        Prev
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => setCurrentPetPage(prev => Math.min(totalPages, prev + 1))}
+                                                                        disabled={currentPetPage === totalPages}
+                                                                        className="px-4 py-2 bg-white border border-[#EBC176]/20 rounded-xl text-[9px] font-black text-themev2-text uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#C48B28]/50 transition-all"
+                                                                    >
+                                                                        Next
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </>
                                                 ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-[#C48B28]/30"><PawPrint size={20} /></div>
+                                                    <div className="text-center py-8 bg-[#FAF3E0]/30 rounded-[2rem] border border-dashed border-[#EBC176]/30">
+                                                        <PawPrint size={24} className="text-[#C48B28]/20 mx-auto mb-3" />
+                                                        <p className="text-[9px] font-black text-themev2-text/40 uppercase tracking-widest">
+                                                            No pets match "{petSearchQuery}"
+                                                        </p>
+                                                    </div>
                                                 )}
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="text-base font-black text-themev2-text tracking-tight">{pet.name}</p>
-                                                <p className="text-[9px] font-black text-[#C48B28] uppercase tracking-widest mt-1">{pet.species}</p>
-                                            </div>
-                                            {selectedPet?.id === pet.id && (
-                                                <div className="w-8 h-8 bg-[#C48B28] rounded-full flex items-center justify-center text-white scale-110 shadow-lg shadow-[#C48B28]/20 transition-transform">
-                                                    <CheckCircle size={16} />
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
+                                            </>
+                                        );
+                                    })()}
+                                </>
                             ) : (
                                 <div className="text-center py-12 bg-[#FAF3E0]/30 rounded-[2.5rem] border border-dashed border-[#EBC176]/30">
                                     <PawPrint size={32} className="text-[#C48B28]/20 mx-auto mb-4" />
@@ -433,7 +527,7 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-8 border-t border-[#EBC176]/20 bg-[#FAF3E0]/30 flex justify-between items-center">
+                <div className="p-6 sm:p-8 border-t border-[#EBC176]/20 bg-[#FAF3E0]/30 flex justify-between items-center shrink-0">
                     {step > 1 ? (
                         <button
                             onClick={handleBack}
@@ -449,7 +543,7 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
                         <button
                             onClick={handleNext}
                             disabled={step === 2 && !selectedPet}
-                            className={`px-10 py-4 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${step === 2 && !selectedPet ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#C48B28] text-white shadow-xl shadow-[#C48B28]/20 hover:scale-105 active:scale-95 flex items-center gap-2'}`}
+                            className={`px-6 sm:px-10 py-3.5 sm:py-4 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-widest transition-all ${step === 2 && !selectedPet ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#C48B28] text-white shadow-xl shadow-[#C48B28]/20 hover:scale-105 active:scale-95 flex items-center gap-2'}`}
                         >
                             Next Step <ArrowRight size={16} />
                         </button>
@@ -457,7 +551,7 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
                         <button
                             onClick={handleSubmit}
                             disabled={createBooking.isPending}
-                            className="px-10 py-4 bg-[#C48B28] text-white rounded-full text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[#C48B28]/20 hover:scale-105 active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                            className="px-6 sm:px-10 py-3.5 sm:py-4 bg-[#C48B28] text-white rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[#C48B28]/20 hover:scale-105 active:scale-95 disabled:opacity-50 flex items-center gap-2"
                         >
                             {createBooking.isPending ? 'Confirming...' : 'Complete Booking'}
                             {!createBooking.isPending && <CheckCircle size={16} />}

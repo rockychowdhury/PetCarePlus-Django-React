@@ -10,8 +10,8 @@ const ServiceTabs = ({ activeTab, onTabChange }) => {
 
     return (
         <div className="sticky top-[72px] z-30 bg-[#FEF9ED]/80 backdrop-blur-md border-b border-[#EBC176]/10">
-            <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
-                <nav className="flex space-x-10 overflow-x-auto scrollbar-hide" aria-label="Tabs" id="service-tabs">
+            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10">
+                <nav className="flex space-x-6 sm:space-x-10 overflow-x-auto no-scrollbar" aria-label="Tabs" id="service-tabs">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}

@@ -56,7 +56,8 @@ const ServicesTab = ({ provider, onBook }) => {
     );
 
     // --- FOSTER ---
-    if (slug === 'foster') {
+    if (slug === 'foster-care') {
+        // service_specific_details IS the foster_details object
         return (
             <div className="space-y-12 animate-in fade-in duration-500 max-w-[1200px] mx-auto">
                 <div>
@@ -73,7 +74,7 @@ const ServicesTab = ({ provider, onBook }) => {
                                 <div key={i} className="flex items-center gap-3">
                                     <div className="w-2 h-2 bg-[#C48B28] rounded-full" />
                                     <span className="text-[10px] font-black text-themev2-text uppercase tracking-widest">
-                                        {key.replace(/_/g, ' ')}: {val ? 'Yes' : 'No'}
+                                        {key.replace(/_/g, ' ')}: {typeof val === 'boolean' ? (val ? 'Yes' : 'No') : val}
                                     </span>
                                 </div>
                             ))}
@@ -160,7 +161,8 @@ const ServicesTab = ({ provider, onBook }) => {
     }
 
     // --- PET SITTING ---
-    if (slug === 'pet_sitting') {
+    if (slug === 'pet-sitting') {
+        // service_specific_details IS the sitter_details object
         return (
             <div className="space-y-12 animate-in fade-in duration-500 max-w-[1200px] mx-auto">
                 <div>

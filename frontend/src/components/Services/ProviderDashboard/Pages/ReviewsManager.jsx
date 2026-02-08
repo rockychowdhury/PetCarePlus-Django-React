@@ -65,11 +65,11 @@ const ReviewsManager = () => {
         <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header */}
             <div>
-                <span className="text-[10px] font-black text-[#C48B28] uppercase tracking-[0.4em] mb-4 block">Feedback Center</span>
-                <h1 className="text-4xl md:text-5xl font-black text-[#402E11] tracking-tighter mb-4">
+                <span className="text-[10px] font-black text-[#C48B28] uppercase tracking-[0.4em] mb-2 sm:mb-4 block">Feedback Center</span>
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#402E11] tracking-tighter mb-2 sm:mb-4">
                     Guest Reviews
                 </h1>
-                <p className="text-[#402E11]/60 font-bold text-sm">Monitor your performance and build trust with your clients.</p>
+                <p className="text-[#402E11]/60 font-bold text-xs sm:text-sm">Monitor your performance and build trust with your clients.</p>
             </div>
 
             {/* Main Content Grid */}
@@ -84,7 +84,7 @@ const ReviewsManager = () => {
                             </span>
                         </h3>
 
-                        <div className="flex bg-[#FAF3E0]/50 backdrop-blur-md p-1.5 rounded-2xl border border-[#EBC176]/20">
+                        <div className="flex bg-[#FAF3E0]/50 backdrop-blur-md p-1.5 rounded-2xl border border-[#EBC176]/20 overflow-x-auto no-scrollbar flex-nowrap shrink-0">
                             {[
                                 { id: 'all', label: 'All' },
                                 { id: 'today', label: 'Today' },
@@ -94,7 +94,7 @@ const ReviewsManager = () => {
                                 <button
                                     key={btn.id}
                                     onClick={() => setFilter(btn.id)}
-                                    className={`px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${filter === btn.id
+                                    className={`px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filter === btn.id
                                         ? 'bg-[#402E11] text-white shadow-lg'
                                         : 'text-[#402E11]/40 hover:text-[#402E11]'
                                         }`}
@@ -279,14 +279,14 @@ const ReviewsManager = () => {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white rounded-[3rem] max-w-xl w-full p-10 shadow-2xl relative z-10 border border-[#EBC176]/20"
+                            className="bg-white rounded-2xl sm:rounded-[3rem] max-w-xl w-full p-6 sm:p-10 shadow-2xl relative z-10 border border-[#EBC176]/20 overflow-hidden"
                         >
-                            <div className="flex justify-between items-center mb-10">
+                            <div className="flex justify-between items-center mb-6 sm:mb-10">
                                 <div>
-                                    <h2 className="text-2xl font-black text-[#402E11] tracking-tight">Compose Response</h2>
+                                    <h2 className="text-xl sm:text-2xl font-black text-[#402E11] tracking-tight">Compose Response</h2>
                                     <p className="text-[10px] font-black text-[#C48B28] uppercase tracking-[0.3em] mt-1">Replying to {replyModal.review?.reviewer?.first_name || 'Guest'}</p>
                                 </div>
-                                <button onClick={handleCloseReply} className="w-10 h-10 rounded-full bg-[#FAF3E0] flex items-center justify-center text-[#C48B28] hover:bg-[#C48B28] hover:text-white transition-all">
+                                <button onClick={handleCloseReply} className="w-10 h-10 rounded-full bg-[#FAF3E0] flex items-center justify-center text-[#C48B28] hover:bg-[#C48B28] hover:text-white transition-all shrink-0 ml-4">
                                     <X size={20} />
                                 </button>
                             </div>
@@ -301,14 +301,14 @@ const ReviewsManager = () => {
                                     value={replyText}
                                     onChange={(e) => setReplyText(e.target.value)}
                                     placeholder="Type your message of appreciation..."
-                                    className="w-full bg-[#FAF3E0]/30 border border-[#EBC176]/20 rounded-[2rem] p-6 text-base font-bold text-[#402E11] focus:ring-4 focus:ring-[#C48B28]/10 focus:border-[#C48B28]/30 transition-all outline-none min-h-[160px] placeholder:text-[#402E11]/20"
+                                    className="w-full bg-[#FAF3E0]/30 border border-[#EBC176]/20 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 text-sm sm:text-base font-bold text-[#402E11] focus:ring-4 focus:ring-[#C48B28]/10 focus:border-[#C48B28]/30 transition-all outline-none min-h-[140px] sm:min-h-[160px] placeholder:text-[#402E11]/20"
                                 />
 
-                                <div className="flex flex-col gap-4">
+                                <div className="flex flex-col gap-3 sm:gap-4">
                                     <button
                                         onClick={handleSubmitReply}
                                         disabled={submitting}
-                                        className="w-full bg-[#402E11] text-white py-5 rounded-2xl font-black text-[11px] uppercase tracking-[0.3em] shadow-2xl shadow-[#402E11]/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                        className="w-full bg-[#402E11] text-white py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black text-[10px] sm:text-[11px] uppercase tracking-[0.3em] shadow-2xl shadow-[#402E11]/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                                     >
                                         {submitting ? 'Transmitting...' : (
                                             <>
@@ -318,7 +318,7 @@ const ReviewsManager = () => {
                                     </button>
                                     <button
                                         onClick={handleCloseReply}
-                                        className="w-full py-4 text-[10px] font-black text-[#402E11]/30 uppercase tracking-[0.2em] hover:text-[#C48B28] transition-colors"
+                                        className="w-full py-3 sm:py-4 text-[9px] sm:text-[10px] font-black text-[#402E11]/30 uppercase tracking-[0.2em] hover:text-[#C48B28] transition-colors"
                                     >
                                         Discard Draft
                                     </button>

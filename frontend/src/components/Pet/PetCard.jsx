@@ -238,6 +238,8 @@ const PetCard = ({ pet, viewMode = 'grid', variant = 'listing', onDelete, onTogg
         );
     }
 
+
+
     // --- Compact Listing Card (New Design - Matching ServiceCard) ---
     if (variant === 'compact-listing' || variant === 'listing-compact') {
         const SpeciesIcon = data.species?.toLowerCase() === 'cat' ? Cake : // Replace with Cat icon if imported, using Cake as placeholder or fix imports
@@ -453,24 +455,24 @@ const PetCard = ({ pet, viewMode = 'grid', variant = 'listing', onDelete, onTogg
                     )}
                 </div>
 
-                <div className="mt-auto pt-6 border-t border-[#EBC176]/10 flex items-center justify-between">
+                <div className="mt-auto pt-4 border-t border-[#EBC176]/10 flex items-center justify-between">
                     <div
                         className="flex items-center gap-2 group/apps cursor-help"
-                        title={`Total application is ${data.applications}`}
+                        title={`Total applications: ${data.applications}`}
                     >
-                        <div className="w-9 h-9 rounded-xl bg-[#FEF2D5] flex items-center justify-center text-[#C48B28] shadow-sm border border-[#EBC176]/20 transition-all group-hover/apps:bg-[#C48B28] group-hover/apps:text-white">
-                            <Users size={16} strokeWidth={2.5} />
+                        <div className="w-8 h-8 rounded-xl bg-[#FEF2D5] flex items-center justify-center text-[#C48B28] shadow-sm border border-[#EBC176]/20 transition-all group-hover/apps:bg-[#C48B28] group-hover/apps:text-white">
+                            <Users size={14} strokeWidth={2.5} />
                         </div>
-                        <span className="text-sm font-black text-themev2-text/40 group-hover/apps:text-[#C48B28] transition-colors">
+                        <span className="text-xs font-black text-themev2-text/40 group-hover/apps:text-[#C48B28] transition-colors">
                             {data.applications}
                         </span>
                     </div>
 
                     <Link
                         to={`/rehoming/listings/${data.id}`}
-                        className="px-6 py-2.5 bg-[#D4A056] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#C48B28] transition-all shadow-md shadow-[#D4A056]/10 active:scale-95"
+                        className="px-6 py-2 bg-[#D4A056] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#C48B28] hover:shadow-lg hover:shadow-[#D4A056]/20 transition-all active:scale-95"
                     >
-                        Details
+                        View Details
                     </Link>
                 </div>
             </div>

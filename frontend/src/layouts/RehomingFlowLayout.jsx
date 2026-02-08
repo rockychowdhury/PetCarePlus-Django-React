@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Heart, FileText, CheckCircle, MapPin, Search, UserCheck, AlertTriangle, Edit } from 'lucide-react';
+import { Heart, FileText, CheckCircle, MapPin, Search, UserCheck, AlertTriangle, Edit, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import useAuth from '../hooks/useAuth';
 
@@ -205,11 +205,13 @@ const RehomingFlowLayout = () => {
                                 </div>
 
                                 <button
-                                    onClick={() => navigate('/dashboard/profile/edit', { state: { from: '/rehoming/select-pet' } })}
-                                    className="w-full bg-[#C48B28] text-white rounded-full py-4.5 font-black text-[13px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:shadow-xl hover:shadow-[#C48B28]/20 transition-all active:scale-[0.98]"
+                                    onClick={() => navigate('/dashboard/profile/settings', { state: { from: '/rehoming/select-pet' } })}
+                                    className="group relative w-full bg-gradient-to-r from-[#C48B28] to-[#D4A34D] text-white rounded-2xl py-4 font-black text-[13px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl shadow-[#C48B28]/20 hover:shadow-2xl hover:shadow-[#C48B28]/40 hover:-translate-y-0.5 transition-all active:scale-[0.98] overflow-hidden"
                                 >
-                                    <Edit size={16} strokeWidth={3} />
-                                    Complete Profile
+                                    <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out" />
+                                    <Edit size={16} strokeWidth={3} className="group-hover:rotate-12 transition-transform" />
+                                    <span>Complete Profile</span>
+                                    <ArrowRight size={16} strokeWidth={3} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
                                 </button>
 
                                 <button

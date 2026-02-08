@@ -1,5 +1,6 @@
 import React from 'react';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard,
     PawPrint,
@@ -11,7 +12,10 @@ import {
     Star,
     FolderOpen,
     Home,
-    CalendarDays
+    CalendarDays,
+    Menu,
+    X,
+    MoreHorizontal
 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 import Logo from '../components/common/Logo';
@@ -26,6 +30,7 @@ const DashboardLayout = () => {
     const api = useAPI();
     const location = useLocation();
     const navigate = useNavigate();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
     // Fetch Dashboard Stats for Sidebar Counts
     const { data: stats } = useQuery({
@@ -186,47 +191,103 @@ const DashboardLayout = () => {
                 </div>
             </aside>
 
-            <div className="md:hidden fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-[#EBC176]/20 z-30 px-4 py-3 flex justify-between items-center">
-                <Link to="/">
-                    <Logo className="scale-75 origin-left" />
-                </Link>
-                <div className="flex items-center gap-2">
-                    <Link to="/dashboard/profile" className="p-2 text-[#C48B28]">
-                        <User size={20} />
-                    </Link>
-                </div>
-            </div>
+            {/* Mobile Sidebar Overlay */}
+            <AnimatePresence>
+                {isMobileMenuOpen && (
+                    <motion.aside
+                        initial={{ x: '-100%' }}
+                        animate={{ x: 0 }}
+                        exit={{ x: '-100%' }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                        className="md:hidden fixed inset-y-0 left-0 w-[280px] bg-white z-[50] flex flex-col shadow-2xl border-r border-[#EBC176]/10"
+                    >
+                        <div className="px-6 pt-8 pb-6 flex justify-between items-center">
+                            <Logo className="scale-75 origin-left" />
+                            <button onClick={() => setIsMobileMenuOpen(false)} className="text-[#C48B28]">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto pt-4 shadow-inner bg-[#FEF9ED]/10">
+                            {dashboardLinks.map((link) => {
+                                const active = isActive(link.path);
+                                return (
+                                    <Link
+                                        key={link.path}
+                                        to={link.path}
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-[13px] font-black transition-all group ${active
+                                            ? 'bg-[#C48B28] text-white shadow-lg shadow-[#C48B28]/20'
+                                            : 'text-[#5A3C0B]/60 hover:bg-[#FEF9ED] hover:text-[#C48B28]'
+                                            }`}
+                                    >
+                                        <link.icon size={18} strokeWidth={active ? 2.5 : 2} />
+                                        {link.name}
+                                        {link.count && (
+                                            <div className={`ml-auto flex items-center justify-center px-2 py-0.5 rounded-full text-[9px] font-black ${active ? 'bg-white/20 text-white' : 'bg-[#C48B28]/10 text-[#C48B28]'}`}>
+                                                {link.count}
+                                            </div>
+                                        )}
+                                    </Link>
+                                );
+                            })}
+                        </nav>
+                        <div className="p-6 border-t border-[#EBC176]/10 space-y-4">
+                            <button
+                                onClick={() => { setIsMobileMenuOpen(false); handleLogout(); }}
+                                className="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl text-red-500/60 font-black text-[13px] hover:bg-red-50 hover:text-red-500 transition-all border border-transparent hover:border-red-100"
+                            >
+                                <LogOut size={18} strokeWidth={2} />
+                                Logout
+                            </button>
+                            <div className="flex items-center gap-3 px-4 py-3 bg-[#FEF9ED]/50 rounded-2xl border border-[#EBC176]/10">
+                                <div className="w-8 h-8 rounded-full bg-[#C48B28] flex items-center justify-center text-white text-[10px] font-black">
+                                    {user?.first_name?.[0]}
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] font-black text-[#5A3C0B]/30 uppercase tracking-widest">Logged in</span>
+                                    <span className="text-xs font-black text-[#5A3C0B]">{user?.first_name}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.aside>
+                )}
+            </AnimatePresence>
 
-            {/* Main Content */}
-            <main className="flex-1 md:ml-80 bg-[#FEF9ED] min-h-screen relative">
+            {/* Main Content Area */}
+            <main className="flex-1 md:ml-72 lg:ml-80 bg-[#FEF9ED] min-h-screen relative pt-0">
                 {/* Decorative background blur */}
                 <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
-                    <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-[#C48B28]/5 rounded-full blur-[120px]" />
-                    <div className="absolute bottom-[-10%] left-[20%] w-[500px] h-[500px] bg-[#EBC176]/10 rounded-full blur-[100px]" />
+                    <div className="absolute top-[-10%] right-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-[#C48B28]/5 rounded-full blur-[80px] md:blur-[120px]" />
+                    <div className="absolute bottom-[-5%] left-[10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-[#EBC176]/10 rounded-full blur-[60px] md:blur-[100px]" />
                 </div>
-                <div className="relative z-10 w-full">
+                <div className="relative z-10 w-full max-w-[1600px] mx-auto overflow-x-hidden pb-24 md:pb-0">
                     <Outlet />
                 </div>
             </main>
 
-            {/* Mobile Bottom Nav */}
-            <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-[#EBC176]/20 flex justify-around py-3 z-30 safe-area-bottom shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
-                {
-                    dashboardLinks.slice(0, 5).map((link) => {
-                        const active = isActive(link.path);
-                        return (
-                            <Link
-                                key={link.path}
-                                to={link.path}
-                                className={`flex flex-col items-center gap-1.5 text-[10px] font-bold transition-colors ${active ? 'text-[#C48B28]' : 'text-[#5A3C0B]/40'
-                                    }`}
-                            >
-                                <link.icon size={20} strokeWidth={active ? 2.5 : 2} />
-                                {link.name}
-                            </Link>
-                        );
-                    })
-                }
+            {/* Mobile Bottom Navigation - Sticky & Premium Feel */}
+            <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-xl border-t border-[#EBC176]/10 flex justify-around py-3 pb-safe z-30 shadow-[0_-8px_30px_-10px_rgba(0,0,0,0.08)]">
+                {dashboardLinks.slice(0, 4).map((link) => {
+                    const active = isActive(link.path);
+                    return (
+                        <Link
+                            key={link.path}
+                            to={link.path}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${active ? 'text-[#C48B28] scale-110' : 'text-[#5A3C0B]/40'}`}
+                        >
+                            <link.icon size={20} strokeWidth={active ? 2.5 : 2} className={active ? 'drop-shadow-[0_0_8px_rgba(196,139,40,0.3)]' : ''} />
+                            <span className="text-[9px] font-black uppercase tracking-widest">{link.name.split(' ')[0]}</span>
+                        </Link>
+                    );
+                })}
+                <button
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${isMobileMenuOpen ? 'text-[#C48B28] scale-110' : 'text-[#5A3C0B]/40'}`}
+                >
+                    <MoreHorizontal size={20} strokeWidth={isMobileMenuOpen ? 2.5 : 2} />
+                    <span className="text-[9px] font-black uppercase tracking-widest">More</span>
+                </button>
             </nav>
         </div>
     );

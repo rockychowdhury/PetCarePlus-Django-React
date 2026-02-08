@@ -50,7 +50,8 @@ class RoleRequestSerializer(serializers.ModelSerializer):
 class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['email','password','first_name','last_name', 'phone_number', 'location_city', 'location_state']
+        fields = ['email','password','first_name','last_name', 'phone_number', 
+                  'location_city', 'location_state', 'location_country', 'zip_code', 'latitude', 'longitude']
         extra_kwargs = {
             "password":{"write_only":True},
             }

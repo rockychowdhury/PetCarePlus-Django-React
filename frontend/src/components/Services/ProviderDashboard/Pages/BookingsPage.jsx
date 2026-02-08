@@ -385,29 +385,29 @@ const BookingsPage = () => {
     return (
         <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 sm:gap-8">
                 <div>
-                    <span className="text-[10px] font-black text-[#C48B28] uppercase tracking-[0.4em] mb-4 block">Operations Control</span>
-                    <h1 className="text-4xl md:text-5xl font-black text-[#402E11] tracking-tighter mb-4">
+                    <span className="text-[10px] font-black text-[#C48B28] uppercase tracking-[0.4em] mb-2 sm:mb-4 block">Operations Control</span>
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#402E11] tracking-tighter mb-2 sm:mb-4">
                         Booking Center
                     </h1>
-                    <p className="text-[#402E11]/60 font-bold text-sm">Orchestrate your appointments and service delivery with precision.</p>
+                    <p className="text-[#402E11]/60 font-bold text-xs sm:text-sm">Orchestrate your appointments and service delivery with precision.</p>
                 </div>
 
-                <div className="flex gap-4">
+                <div className="flex gap-3 sm:gap-4">
                     <button
                         onClick={handleExport}
-                        className="px-6 py-4 bg-white/80 backdrop-blur-xl border border-[#EBC176]/20 rounded-2xl text-[10px] font-black text-[#402E11] uppercase tracking-widest hover:bg-[#FAF3E0] transition-all shadow-sm flex items-center gap-2"
+                        className="flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-4 bg-white/80 backdrop-blur-xl border border-[#EBC176]/20 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-black text-[#402E11] uppercase tracking-widest hover:bg-[#FAF3E0] transition-all shadow-sm flex items-center justify-center sm:justify-start gap-2"
                     >
                         <Download size={14} className="text-[#C48B28]" />
-                        Export Log
+                        Export
                     </button>
                     <button
                         onClick={() => setIsDirectEntryOpen(true)}
-                        className="px-6 py-4 bg-[#402E11] rounded-2xl text-[10px] font-black text-white uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-[#402E11]/20 flex items-center gap-2"
+                        className="flex-1 sm:flex-none px-4 sm:px-6 py-3 sm:py-4 bg-[#402E11] rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-black text-white uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-[#402E11]/20 flex items-center justify-center sm:justify-start gap-2"
                     >
                         <Plus size={14} className="text-[#C48B28]" />
-                        Direct Entry
+                        Direct entry
                     </button>
                 </div>
             </div>
@@ -614,31 +614,32 @@ const BookingsPage = () => {
                                 stiffness: 450,
                                 mass: 1
                             }}
-                            className="bg-white rounded-[2.5rem] max-w-4xl w-full p-0 relative z-10 overflow-hidden max-h-[94vh] flex flex-col shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border border-white/50"
+                            className="bg-white rounded-2xl sm:rounded-[2.5rem] max-w-4xl w-full p-0 relative z-10 overflow-hidden max-h-[96vh] sm:max-h-[94vh] flex flex-col shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border border-white/50"
                         >
                             {/* Modal Header */}
-                            <div className="bg-[#FAF9F6] p-10 border-b border-[#EAE6E2] relative">
+                            <div className="bg-[#FAF9F6] p-6 sm:p-10 border-b border-[#EAE6E2] relative">
                                 <button
                                     onClick={() => setDetailModal({ isOpen: false, booking: null })}
-                                    className="absolute top-8 right-8 w-12 h-12 rounded-full bg-white flex items-center justify-center text-[#402E11]/40 hover:text-[#402E11] transition-all hover:rotate-90 shadow-sm border border-[#EAE6E2]/50"
+                                    className="absolute top-4 sm:top-8 right-4 sm:right-8 w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-white flex items-center justify-center text-[#402E11]/40 hover:text-[#402E11] transition-all hover:rotate-90 shadow-sm border border-[#EAE6E2]/50"
                                 >
-                                    <X size={24} />
+                                    <X size={20} className="sm:hidden" />
+                                    <X size={24} className="hidden sm:block" />
                                 </button>
-                                <div className="flex items-center gap-8">
-                                    <div className="w-24 h-24 rounded-[2rem] bg-[#EAE6E2] flex items-center justify-center text-[#C48B28] text-2xl font-black shadow-inner overflow-hidden border-4 border-white">
+                                <div className="flex items-center gap-4 sm:gap-8">
+                                    <div className="w-16 sm:w-24 h-16 sm:h-24 rounded-2xl sm:rounded-[2rem] bg-[#EAE6E2] shrink-0 flex items-center justify-center text-[#C48B28] text-xl sm:text-2xl font-black shadow-inner overflow-hidden border-2 sm:border-4 border-white">
                                         {detailModal.booking.client?.photoURL ? (
                                             <img src={detailModal.booking.client.photoURL} alt="" className="w-full h-full object-cover" />
                                         ) : (detailModal.booking.client?.first_name?.[0] || detailModal.booking.guest_client_name?.[0] || 'G')}
                                     </div>
-                                    <div>
-                                        <h2 className="text-3xl font-black text-[#402E11] tracking-tighter mb-1">
+                                    <div className="truncate pr-4 sm:pr-0">
+                                        <h2 className="text-xl sm:text-3xl font-black text-[#402E11] tracking-tighter mb-1 truncate">
                                             {detailModal.booking.clientName}
                                         </h2>
-                                        <div className="flex items-center gap-3">
-                                            <span className="px-3 py-1 rounded-full bg-[#402E11] text-white text-[10px] font-black uppercase tracking-widest">
+                                        <div className="flex items-center gap-2 sm:gap-3">
+                                            <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-[#402E11] text-white text-[8px] sm:text-[10px] font-black uppercase tracking-widest">
                                                 {detailModal.booking.displayPetName}
                                             </span>
-                                            <span className="text-xs font-bold text-[#402E11]/40 uppercase tracking-widest">
+                                            <span className="text-[10px] sm:text-xs font-bold text-[#402E11]/40 uppercase tracking-widest">
                                                 #{detailModal.booking.id}
                                             </span>
                                         </div>
@@ -647,7 +648,7 @@ const BookingsPage = () => {
                             </div>
 
                             {/* Modal Content - Scrollable */}
-                            <div className="p-10 grid grid-cols-1 md:grid-cols-2 gap-10 overflow-y-auto custom-scrollbar bg-white flex-1">
+                            <div className="p-6 sm:p-10 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10 overflow-y-auto custom-scrollbar bg-white flex-1">
                                 {/* Left Section: Service & Schedule */}
                                 <div className="space-y-8">
                                     <section>
@@ -703,16 +704,16 @@ const BookingsPage = () => {
                                         <h3 className="text-[10px] font-black text-[#402E11]/30 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
                                             <Dog size={12} className="text-[#C48B28]" /> Guest Information
                                         </h3>
-                                        <div className="bg-[#FAF9F6] p-8 rounded-[3rem] border border-[#EAE6E2]/40 shadow-sm flex items-center gap-7">
-                                            <div className="w-24 h-24 flex-shrink-0 bg-[#402E11] rounded-[2rem] flex items-center justify-center text-[#C48B28] overflow-hidden shadow-2xl relative">
+                                        <div className="bg-[#FAF9F6] p-5 sm:p-8 rounded-2xl sm:rounded-[3rem] border border-[#EAE6E2]/40 shadow-sm flex flex-col sm:flex-row items-center gap-4 sm:gap-7">
+                                            <div className="w-20 sm:w-24 h-20 sm:h-24 flex-shrink-0 bg-[#402E11] rounded-2xl sm:rounded-[2rem] flex items-center justify-center text-[#C48B28] overflow-hidden shadow-xl sm:shadow-2xl relative">
                                                 {detailModal.booking.petPhoto ? (
                                                     <img src={detailModal.booking.petPhoto} alt="" className="w-full h-full object-cover" />
-                                                ) : <Dog size={32} />}
+                                                ) : <Dog size={24} />}
                                             </div>
-                                            <div className="pl-2">
+                                            <div className="text-center sm:text-left">
                                                 <div className="text-lg font-black text-[#402E11] mb-0.5">{detailModal.booking.displayPetName}</div>
-                                                <div className="text-[11px] font-bold text-[#C48B28] uppercase tracking-[0.2em]">{detailModal.booking.pet?.species || 'Guest'} • {detailModal.booking.pet?.breed || 'Service Recipient'}</div>
-                                                <div className="mt-3 px-3 py-1 bg-white border border-[#EAE6E2] inline-block rounded-full text-[9px] font-black text-[#402E11]/60 uppercase tracking-widest shadow-sm">
+                                                <div className="text-[10px] sm:text-[11px] font-bold text-[#C48B28] uppercase tracking-[0.2em]">{detailModal.booking.pet?.species || 'Guest'} • {detailModal.booking.pet?.breed || 'Service Recipient'}</div>
+                                                <div className="mt-2 sm:mt-3 px-3 py-1 bg-white border border-[#EAE6E2] inline-block rounded-full text-[8px] sm:text-[9px] font-black text-[#402E11]/60 uppercase tracking-widest shadow-sm">
                                                     {detailModal.booking.pet ? `${detailModal.booking.pet.age_years || '0'}y ${detailModal.booking.pet.age_months || '0'}m Old` : 'Age Not Specified'}
                                                 </div>
                                             </div>
@@ -765,7 +766,7 @@ const BookingsPage = () => {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-white rounded-[3rem] max-w-lg w-full p-10 relative z-10"
+                            className="bg-white rounded-2xl sm:rounded-[3rem] max-w-lg w-full p-6 sm:p-10 relative z-10 overflow-hidden"
                         >
                             <div className="flex justify-between items-center mb-8">
                                 <div>
@@ -781,28 +782,28 @@ const BookingsPage = () => {
                                 <div>
                                     <label className="block text-[10px] font-black text-[#402E11] uppercase tracking-widest mb-2 ml-1">Final Price Adjustments</label>
                                     <div className="relative">
-                                        <DollarSign className="absolute left-6 top-1/2 -translate-y-1/2 text-[#C48B28]" size={16} />
+                                        <DollarSign className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-[#C48B28]" size={16} />
                                         <input
                                             type="number"
                                             value={completionData.finalPrice}
                                             onChange={(e) => setCompletionData({ ...completionData, finalPrice: e.target.value })}
-                                            className="w-full bg-[#F0F0F0]/30 border border-[#F0F0F0] rounded-[2rem] pl-14 pr-6 py-5 text-xl font-black text-[#402E11] focus:ring-4 focus:ring-[#C48B28]/10 outline-none"
+                                            className="w-full bg-[#F0F0F0]/30 border border-[#F0F0F0] rounded-2xl sm:rounded-[2rem] pl-12 sm:pl-14 pr-6 py-4 sm:py-5 text-xl font-black text-[#402E11] focus:ring-4 focus:ring-[#C48B28]/10 outline-none"
                                         />
                                     </div>
                                 </div>
 
                                 <button
                                     onClick={() => setCompletionData({ ...completionData, paymentReceived: !completionData.paymentReceived })}
-                                    className={`w-full p-6 rounded-[2rem] border-2 transition-all flex items-center justify-between group ${completionData.paymentReceived
+                                    className={`w-full p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border-2 transition-all flex items-center justify-between group ${completionData.paymentReceived
                                         ? 'bg-green-50 border-green-500/30'
                                         : 'bg-[#F0F0F0]/20 border-transparent hover:border-[#F0F0F0]'
                                         }`}
                                 >
-                                    <div className="text-left">
-                                        <div className={`text-xs font-black uppercase tracking-widest ${completionData.paymentReceived ? 'text-green-700' : 'text-[#402E11]'}`}>Payment Collected</div>
-                                        <div className="text-[10px] font-bold text-[#402E11]/40 mt-0.5">Payment received at host location</div>
+                                    <div className="text-left pr-2">
+                                        <div className={`text-[10px] sm:text-xs font-black uppercase tracking-widest ${completionData.paymentReceived ? 'text-green-700' : 'text-[#402E11]'}`}>Payment Collected</div>
+                                        <div className="text-[9px] sm:text-[10px] font-bold text-[#402E11]/40 mt-0.5">Payment received at host location</div>
                                     </div>
-                                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${completionData.paymentReceived ? 'bg-green-500 border-green-500 text-white' : 'border-[#F0F0F0]'}`}>
+                                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${completionData.paymentReceived ? 'bg-green-500 border-green-500 text-white' : 'border-[#F0F0F0]'}`}>
                                         {completionData.paymentReceived && <CheckCircle2 size={14} />}
                                     </div>
                                 </button>
@@ -844,7 +845,7 @@ const BookingsPage = () => {
                                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                                className="bg-white rounded-[3rem] max-w-lg w-full p-10 relative z-10"
+                                className="bg-white rounded-2xl sm:rounded-[3rem] max-w-lg w-full p-6 sm:p-10 relative z-10"
                             >
                                 <div className="flex justify-between items-center mb-8">
                                     <div>
@@ -863,7 +864,7 @@ const BookingsPage = () => {
                                             value={rejectionReason}
                                             onChange={(e) => setRejectionReason(e.target.value)}
                                             placeholder="Explain the reason for this adjustment..."
-                                            className="w-full bg-[#F0F0F0]/30 border border-[#F0F0F0] rounded-[2rem] p-6 text-base font-bold text-[#402E11] focus:ring-4 focus:ring-red-500/10 outline-none min-h-[140px] placeholder:text-[#402E11]/20"
+                                            className="w-full bg-[#F0F0F0]/30 border border-[#F0F0F0] rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 text-sm sm:text-base font-bold text-[#402E11] focus:ring-4 focus:ring-red-500/10 outline-none min-h-[120px] sm:min-h-[140px] placeholder:text-[#402E11]/20"
                                         />
                                     </div>
 

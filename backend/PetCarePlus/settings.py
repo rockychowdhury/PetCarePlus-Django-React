@@ -184,6 +184,41 @@ else:
         }
     }
 
+# Cache Configuration
+# Uses Redis if available (from REDIS_URL or CELERY_BROKER_URL), falls back to local memory
+REDIS_CACHE_URL = get_env('REDIS_CACHE_URL')  # Use separate env var for cache to avoid conflicts
+
+if REDIS_CACHE_URL:
+    # Use Redis for caching (shared across instances, persistent)
+    try:
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+                'LOCATION': REDIS_CACHE_URL,
+                'KEY_PREFIX': 'petcareplus',
+                'TIMEOUT': 300,  # Default 5 minutes
+            }
+        }
+    except Exception:
+        # Fallback if Redis config fails
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+                'LOCATION': 'petcareplus-cache',
+                'TIMEOUT': 300,
+            }
+        }
+else:
+    # Use local memory cache (for development and environments without Redis)
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'petcareplus-cache',
+            'TIMEOUT': 300,
+        }
+    }
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -249,13 +284,14 @@ CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
+# CELERY_TASK_ALWAYS_EAGER = get_env('CELERY_TASK_ALWAYS_EAGER', default=False, cast=bool)
 
 # SSL configuration for Redis (required for 'rediss://' URLs)
 import ssl
 if CELERY_BROKER_URL.startswith('rediss://'):
     CELERY_BROKER_USE_SSL = {
-        'ssl_cert_reqs': ssl.CERT_NONE
+        'ssl_cert_reqs': ssl.CERT_REQUIRED
     }
     CELERY_REDIS_BACKEND_USE_SSL = {
-        'ssl_cert_reqs': ssl.CERT_NONE
+        'ssl_cert_reqs': ssl.CERT_REQUIRED
     }

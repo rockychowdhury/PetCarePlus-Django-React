@@ -218,6 +218,16 @@
   .text-display-xl {
     @apply text-5xl sm:text-6xl lg:text-[5.875rem] leading-[0.9] tracking-tighter;
   }
+
+  /* Utility for hiding scrollbars while maintaining functionality */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 body {
