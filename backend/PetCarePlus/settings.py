@@ -262,6 +262,13 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 # CELERY_TASK_ALWAYS_EAGER = get_env('CELERY_TASK_ALWAYS_EAGER', default=False, cast=bool)
 
+# Celery Optimizations for reduced Redis traffic
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_WORKER_GOSSIP = False
+CELERY_WORKER_MINGLE = False
+CELERY_WORKER_ENABLE_REMOTE_CONTROL = False
+CELERY_WORKER_SEND_TASK_EVENTS = False
+
 # SSL configuration for Redis (required for 'rediss://' URLs)
 import ssl
 if CELERY_BROKER_URL.startswith('rediss://'):
