@@ -7,10 +7,7 @@ import django_filters
 from django.db.models import Q, Sum, Avg, Count, F, Value, FloatField
 from django.db.models.functions import Coalesce
 from apps.common.logging_utils import log_business_event
-from django.core.cache import cache
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
-from django.views.decorators.vary import vary_on_headers, vary_on_cookie
+
 
 from .models import (
     ServiceProvider, ServiceReview, ServiceCategory,
@@ -31,7 +28,7 @@ class ServiceCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ServiceCategorySerializer
     permission_classes = [permissions.AllowAny]
     
-    @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
+
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
@@ -232,13 +229,12 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
     from .pagination import ServiceProviderPagination
     pagination_class = ServiceProviderPagination
     
-    @method_decorator(cache_page(60 * 10))  # Cache for 10 minutes
-    @method_decorator(vary_on_headers('Authorization'))  # Different cache for authenticated users
+
     def list(self, request, *args, **kwargs):
         """List service providers with caching"""
         return super().list(request, *args, **kwargs)
     
-    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+
     def retrieve(self, request, *args, **kwargs):
         """Retrieve single provider with caching"""
         return super().retrieve(request, *args, **kwargs)

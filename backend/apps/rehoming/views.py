@@ -4,8 +4,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, NotFound
 from django.utils import timezone
 from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
-from django.views.decorators.vary import vary_on_headers, vary_on_cookie
+
 from django.db.models import Q
 from .models import RehomingListing, RehomingRequest, AdoptionInquiry
 from .serializers import (
@@ -145,7 +144,7 @@ class ListingListCreateView(generics.ListCreateAPIView):
             return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
 
-    @method_decorator(cache_page(60 * 5)) # Cache for 5 minutes
+
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 

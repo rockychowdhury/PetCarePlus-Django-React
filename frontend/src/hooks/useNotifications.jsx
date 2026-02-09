@@ -12,7 +12,6 @@ const useNotifications = () => {
                 const response = await api.get('/notifications/');
                 return response.data;
             },
-            refetchInterval: 15000,
         });
     };
 

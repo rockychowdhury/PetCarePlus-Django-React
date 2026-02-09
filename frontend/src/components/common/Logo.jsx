@@ -1,3 +1,6 @@
+
+import { Link } from "react-router-dom";
+
 const Logo = ({ className = "", variant = "default" }) => {
     const textColor = variant === 'white' ? 'text-white' : 'text-[var(--logo-text)]';
 
@@ -23,9 +26,10 @@ const Logo = ({ className = "", variant = "default" }) => {
 
             {/* Refined Typography */}
             <div className="flex flex-col text-left">
+                <Link to='/'>
                 <h2 className={`font-outfit font-black text-2xl tracking-tight leading-none ${textColor} flex items-center gap-0.5`}>
                     PetCare<span className="text-[var(--logo-primary)] text-3xl leading-none -mt-1">+</span>
-                </h2>
+                </h2></Link>
                 <span className={`text-[8px] font-black uppercase tracking-[0.25em] ${textColor === 'text-white' ? 'text-white/40' : 'text-[var(--logo-primary)]/80'} mt-1`}>
                     Premium Pet Services
                 </span>

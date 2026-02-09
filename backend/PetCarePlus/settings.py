@@ -185,38 +185,14 @@ else:
     }
 
 # Cache Configuration
-# Uses Redis if available (from REDIS_URL or CELERY_BROKER_URL), falls back to local memory
-REDIS_CACHE_URL = get_env('REDIS_CACHE_URL')  # Use separate env var for cache to avoid conflicts
-
-if REDIS_CACHE_URL:
-    # Use Redis for caching (shared across instances, persistent)
-    try:
-        CACHES = {
-            'default': {
-                'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-                'LOCATION': REDIS_CACHE_URL,
-                'KEY_PREFIX': 'petcareplus',
-                'TIMEOUT': 300,  # Default 5 minutes
-            }
-        }
-    except Exception:
-        # Fallback if Redis config fails
-        CACHES = {
-            'default': {
-                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-                'LOCATION': 'petcareplus-cache',
-                'TIMEOUT': 300,
-            }
-        }
-else:
-    # Use local memory cache (for development and environments without Redis)
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            'LOCATION': 'petcareplus-cache',
-            'TIMEOUT': 300,
-        }
+# We are disabling Redis caching to save resources/requests. 
+# Redis is ONLY used for Celery (Broker/Backend).
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'petcareplus-cache',
     }
+}
 
 
 
