@@ -270,6 +270,9 @@ CELERY_WORKER_ENABLE_REMOTE_CONTROL = False
 CELERY_WORKER_SEND_TASK_EVENTS = False
 CELERY_BROKER_HEARTBEAT = 0  # Disable heartbeats (beats traffic)
 CELERY_EVENT_QUEUE_TTL = 5   # Expire event queues quickly
+# Increase polling interval to reduce BRPOP idle requests (default is often 1s)
+CELERY_BROKER_TRANSPORT_OPTIONS = {'polling_interval': 5}
+
 
 # SSL configuration for Redis (required for 'rediss://' URLs)
 import ssl
