@@ -268,6 +268,8 @@ CELERY_WORKER_GOSSIP = False
 CELERY_WORKER_MINGLE = False
 CELERY_WORKER_ENABLE_REMOTE_CONTROL = False
 CELERY_WORKER_SEND_TASK_EVENTS = False
+CELERY_BROKER_HEARTBEAT = 0  # Disable heartbeats (beats traffic)
+CELERY_EVENT_QUEUE_TTL = 5   # Expire event queues quickly
 
 # SSL configuration for Redis (required for 'rediss://' URLs)
 import ssl
