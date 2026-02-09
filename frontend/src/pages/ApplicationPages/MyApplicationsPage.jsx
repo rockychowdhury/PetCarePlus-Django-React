@@ -156,7 +156,8 @@ const MyApplicationsPage = () => {
         queryFn: async () => {
             const res = await api.get('/rehoming/inquiries/');
             return res.data.results || res.data;
-        }
+        },
+        refetchInterval: 5000, // Poll every 5s to check for AI match updates
     });
 
     // --- Data Processing ---

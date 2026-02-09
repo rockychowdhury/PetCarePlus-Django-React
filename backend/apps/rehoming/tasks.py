@@ -1,4 +1,3 @@
-from celery import shared_task
 from .models import AdoptionInquiry
 from .services.ai_service import calculate_match_score
 from apps.users.serializers import UserSerializer
@@ -7,7 +6,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-@shared_task
 def analyze_application_match(inquiry_id):
     try:
         inquiry = AdoptionInquiry.objects.get(id=inquiry_id)

@@ -303,7 +303,7 @@ const UserDetailPage = () => {
                             </div>
                             <div className="flex justify-between items-center py-2 border-b border-sky-100/30">
                                 <span className="text-sm font-bold text-sky-900/60">Pets Count</span>
-                                <span className="font-black text-sky-900">{user.pets_count || 0}</span>
+                                <span className="font-black text-sky-900">{user.pets?.length || 0}</span>
                             </div>
                             <div className="flex justify-between items-center py-2 border-b border-sky-100/30">
                                 <span className="text-sm font-bold text-sky-900/60">Reports Against</span>

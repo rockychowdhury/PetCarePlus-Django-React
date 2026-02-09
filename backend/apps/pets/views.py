@@ -11,6 +11,7 @@ from .serializers import (
 )
 from apps.users.permissions import IsOwnerOrReadOnly
 
+
 class PetProfileListCreateView(generics.ListCreateAPIView):
     """
     Manage user's own pet profiles.
@@ -36,7 +37,12 @@ class PetProfileListCreateView(generics.ListCreateAPIView):
                 rehoming_requests__status__in=['draft', 'cooling_period', 'confirmed']
             )
             
-        return queryset
+        return queryset.select_related('owner').prefetch_related(
+            'media', 'traits__trait'
+        )
+
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
@@ -57,7 +63,14 @@ class PetProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         user = self.request.user
         # Fix: use status='active' instead of is_active=True
-        return PetProfile.objects.filter(Q(status='active') | Q(owner=user))
+        return PetProfile.objects.filter(
+            Q(status='active') | Q(owner=user)
+        ).select_related('owner').prefetch_related(
+            'media', 'traits__trait'
+        )
+
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
 
 
 class PetMediaCreateView(generics.CreateAPIView):

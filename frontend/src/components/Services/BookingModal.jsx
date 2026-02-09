@@ -29,7 +29,15 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
     const createBooking = useCreateBooking();
 
     const { useGetMyPets } = usePets();
-    const { data: myPets, isLoading: petsLoading, refetch: refetchPets } = useGetMyPets();
+    const {
+        data: myPets,
+        isLoading: isInitialLoading,
+        isRefetching,
+        isError,
+        refetch: refetchPets
+    } = useGetMyPets();
+
+    const isLoading = isInitialLoading || isRefetching;
 
     // Refetch pets when modal opens to ensure fresh data
     React.useEffect(() => {
@@ -138,7 +146,7 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
             } else if (slug === 'foster') {
                 rate = parseFloat(details.daily_rate) || 0;
                 label = 'Per Night';
-            } else if (slug === 'pet_sitting') {
+            } else if (slug === 'pet_sitting' || slug === 'boarding' || slug === 'pet-sitting') {
                 const isWalking = initialService?.name?.toLowerCase().includes('walk') || provider.category?.slug === 'walking';
                 if (isWalking) {
                     rate = parseFloat(details.walking_rate) || 0;
@@ -337,10 +345,21 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
                                 <h3 className="text-[11px] font-black text-[#C48B28] uppercase tracking-[0.2em]">Select Your Pet</h3>
                             </div>
 
-                            {(petsLoading || !myPets) ? (
+                            {isLoading ? (
                                 <div className="flex justify-center py-12 flex-col items-center gap-4">
                                     <Loader className="animate-spin text-[#C48B28]" size={32} />
                                     <p className="text-[10px] font-black text-themev2-text/40 uppercase tracking-widest animate-pulse">Fetching your pets...</p>
+                                </div>
+                            ) : isError ? (
+                                <div className="text-center py-12 bg-red-50 rounded-[2.5rem] border border-dashed border-red-200">
+                                    <AlertCircle size={32} className="text-red-400 mx-auto mb-4" />
+                                    <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-4">Failed to load pets.</p>
+                                    <button
+                                        onClick={() => refetchPets()}
+                                        className="px-6 py-3 bg-white border border-red-200 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-all"
+                                    >
+                                        Try Again
+                                    </button>
                                 </div>
                             ) : myPets?.results?.length > 0 ? (
                                 <>

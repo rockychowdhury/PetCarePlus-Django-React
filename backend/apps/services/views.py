@@ -9,6 +9,7 @@ from django.db.models.functions import Coalesce
 from apps.common.logging_utils import log_business_event
 
 
+
 from .models import (
     ServiceProvider, ServiceReview, ServiceCategory,
     Species, ServiceOption, ServiceBooking, Specialization,
@@ -192,7 +193,13 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
             reviews_count=Count('reviews')
         ).select_related('user', 'category').prefetch_related(
             'vet_details', 'foster_details', 'trainer_details', 
-            'groomer_details', 'sitter_details', 'hours'
+            'groomer_details', 'sitter_details', 'hours',
+            'media', 'availability_blocks', 'reviews',
+            'vet_details__services_offered', 'vet_details__species_treated',
+            'foster_details__species_accepted',
+            'trainer_details__specializations', 'trainer_details__species_trained',
+            'groomer_details__species_accepted',
+            'sitter_details__species_accepted'
         ).order_by('-created_at')
         
         user = self.request.user
@@ -787,7 +794,9 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
 
 
 class ServiceReviewViewSet(viewsets.ModelViewSet):
-    queryset = ServiceReview.objects.all().order_by('-created_at')
+    queryset = ServiceReview.objects.all().select_related(
+        'provider', 'provider__category', 'reviewer', 'booking'
+    ).order_by('-created_at')
     serializer_class = ServiceReviewSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -870,7 +879,12 @@ class ServiceBookingViewSet(viewsets.ModelViewSet):
             provider_bookings = ServiceBooking.objects.filter(provider=user.service_provider_profile)
             queryset = queryset | provider_bookings
             
-        return queryset.select_related('provider', 'pet', 'service_option', 'review').distinct()
+        return queryset.select_related(
+            'provider', 'provider__user', 'provider__category', 
+            'client', 'pet', 'pet__owner', 'service_option', 'review'
+        ).prefetch_related(
+            'pet__media', 'pet__traits__trait'
+        ).distinct()
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -1166,7 +1180,12 @@ class ProviderDashboardViewSet(viewsets.ViewSet):
         todays_bookings_count = bookings.filter(booking_date=now.date()).exclude(status='cancelled').count()
         
         # 5. Recent Activity (Pending requests)
-        recent_pending = bookings.filter(status='pending').order_by('created_at')[:5]
+        recent_pending = bookings.filter(status='pending').select_related(
+            'provider', 'provider__user', 'provider__category',
+            'client', 'pet', 'pet__owner', 'service_option'
+        ).prefetch_related(
+            'pet__media', 'pet__traits__trait'
+        ).order_by('created_at')[:5]
         
         from .serializers import ServiceBookingSerializer
         return Response({
@@ -1197,7 +1216,12 @@ class ProviderDashboardViewSet(viewsets.ViewSet):
         bookings = ServiceBooking.objects.filter(
             provider=provider,
             booking_date=today
-        ).exclude(status='cancelled').order_by('booking_time', 'start_datetime')
+        ).exclude(status='cancelled').select_related(
+            'provider', 'provider__user', 'provider__category',
+            'client', 'pet', 'pet__owner', 'service_option'
+        ).prefetch_related(
+            'pet__media', 'pet__traits__trait'
+        ).order_by('booking_time', 'start_datetime')
         
         from .serializers import ServiceBookingSerializer
         return Response(ServiceBookingSerializer(bookings, many=True).data)

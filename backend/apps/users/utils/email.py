@@ -2,7 +2,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
-from apps.users.tasks import send_email_task
+from django_q.tasks import async_task
 
 def get_email_template(title, content_html, footer_text=""):
     """
@@ -168,7 +168,8 @@ def send_welcome_email(user):
     plain_message = f"Welcome to PetCarePlus, {user.first_name}! We're glad you're here."
     
     # Send Async
-    send_email_task.delay(
+    async_task(
+        'apps.users.tasks.send_email_task',
         subject,
         plain_message,
         [user.email],

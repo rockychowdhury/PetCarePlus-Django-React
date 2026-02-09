@@ -18,7 +18,7 @@ def send_booking_confirmation_email(booking):
             <p><strong>Provider:</strong> {booking.provider.business_name}</p>
             <p><strong>Date:</strong> {booking.booking_date}</p>
             <p><strong>Time:</strong> {booking.booking_time or 'N/A'}</p>
-            <p><strong>Pet:</strong> {booking.pet.name} ({booking.pet.species.name})</p>
+            <p><strong>Pet:</strong> {booking.pet.name} ({booking.pet.get_species_display()})</p>
         </div>
     """
 

@@ -13,7 +13,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from apps.users.permissions import IsOwnerOrReadOnly
 from .serializers import (
     UserRegistrationSerializer, UserUpdateSerializer, UserSerializer, 
-    PublicUserSerializer, RoleRequestSerializer, AdminUserDetailSerializer
+    PublicUserSerializer, RoleRequestSerializer, AdminUserDetailSerializer,
+    UserProfileSerializer
 )
 from apps.pets.serializers import PetProfileSerializer
 from .utils.email import send_verification_email, send_password_reset_email, send_welcome_email
@@ -128,11 +129,16 @@ class CustomTokenRefreshView(APIView):
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(cache_page(60 * 5)) # Cache for 5 minutes
+    # Removed cache_page to ensure fresh data and because optimization makes it fast enough.
     @method_decorator(vary_on_headers('Authorization', 'Cookie'))
     def get(self, request):
         user = request.user
-        serializer = UserSerializer(user)
+        # Reload user to ensure we have the latest state and can optimizations if needed
+        # usage of select_related for one-to-one 'service_provider_profile' is automatic in some cases but good to be explicit if we were querying.
+        # However, request.user is already fetched by authentication middleware. 
+        # For 'has_service_profile', it checks hasattr which doesn't hit DB if related object is not accessed, but to be safe/optimal:
+        
+        serializer = UserProfileSerializer(user)
         return Response(serializer.data)
 
     def patch(self, request):
@@ -467,7 +473,9 @@ class UserPetViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.is_authenticated:
-            return PetProfile.objects.filter(owner=user).order_by('-created_at')
+            return PetProfile.objects.filter(owner=user).select_related('owner').prefetch_related(
+                'media', 'traits__trait'
+            ).order_by('-created_at')
         return PetProfile.objects.none()
 
     def perform_create(self, serializer):
@@ -620,7 +628,12 @@ class UserManagementViewSet(viewsets.ModelViewSet):
     Admin-only ViewSet for managing all users.
     Allows listing, retrieving, and updating user status.
     """
-    queryset = User.objects.all().order_by('-date_joined')
+    queryset = User.objects.all().select_related(
+        'service_provider_profile'
+    ).prefetch_related(
+        'pets', 'pets__media', 'pets__traits__trait',
+        'received_reviews', 'received_reviews__reviewer'
+    ).order_by('-date_joined')
     permission_classes = [permissions.IsAdminUser]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['role', 'is_active', 'email_verified']

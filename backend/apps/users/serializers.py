@@ -89,6 +89,23 @@ class UserTrustReviewSerializer(serializers.ModelSerializer):
         fields = ['id', 'reviewer', 'reviewee', 'rating', 'comment', 'created_at']
         read_only_fields = ['reviewer', 'reviewee', 'created_at']
 
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    """
+    Lightweight serializer for user profile (GET /api/user/).
+    Excludes heavy nested relations like 'pets' and 'received_reviews'.
+    """
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'first_name', 'last_name', 'full_name', 'role', 'photoURL', 'bio', 'date_of_birth',
+            'phone_number', 'location_city', 'location_state', 'location_country', 'zip_code',
+            'email_verified', 'phone_verified', 'verified_identity', 'pet_owner_verified',
+            'can_create_listing', 'account_status', 'profile_is_complete', 'missing_profile_fields',
+            'has_service_profile',
+            'privacy_settings' 
+        ]
+
 class UserSerializer(serializers.ModelSerializer):
     # Use the shared serializer
     pets = PetProfileSerializer(many=True, read_only=True)

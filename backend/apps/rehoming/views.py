@@ -28,7 +28,11 @@ class RehomingRequestViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return RehomingRequest.objects.filter(owner=self.request.user)
+        return RehomingRequest.objects.filter(owner=self.request.user).select_related(
+            'pet'
+        ).prefetch_related(
+            'pet__media', 'pet__traits__trait'
+        )
 
     # Helper method _create_listing_from_request removed as it was unused
 
@@ -155,7 +159,11 @@ class ListingListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         from django.db.models import Count
-        queryset = RehomingListing.objects.select_related('owner', 'pet').filter(status='active').annotate(
+        queryset = RehomingListing.objects.filter(status='active').select_related(
+            'owner', 'pet'
+        ).prefetch_related(
+            'pet__media', 'pet__traits__trait'
+        ).annotate(
             application_count=Count('inquiries')
         )
         
@@ -370,7 +378,11 @@ class AdoptionInquiryViewSet(viewsets.ModelViewSet):
         user = self.request.user
         return AdoptionInquiry.objects.filter(
             Q(requester=user) | Q(listing__owner=user)
-        ).select_related('listing', 'requester').distinct()
+        ).select_related(
+            'listing', 'requester', 'listing__pet', 'listing__owner'
+        ).prefetch_related(
+            'listing__pet__media', 'requester__received_reviews'
+        ).distinct()
 
     http_method_names = ['get', 'post', 'head', 'options']
 
@@ -385,8 +397,8 @@ class AdoptionInquiryViewSet(viewsets.ModelViewSet):
         instance = serializer.save(requester=self.request.user)
 
         # Trigger Async AI Match Analysis
-        from .tasks import analyze_application_match
-        analyze_application_match.delay(instance.id)
+        from django_q.tasks import async_task
+        async_task('apps.rehoming.tasks.analyze_application_match', instance.id)
 
     @action(detail=True, methods=['post'])
     def update_status(self, request, pk=None):
@@ -451,7 +463,11 @@ class MyListingListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return RehomingListing.objects.filter(owner=self.request.user).order_by('-updated_at')
+        return RehomingListing.objects.filter(owner=self.request.user).select_related(
+            'pet'
+        ).prefetch_related(
+            'pet__media', 'pet__traits__trait'
+        ).order_by('-updated_at')
 
 
 class GenerateAIApplicationView(generics.CreateAPIView):

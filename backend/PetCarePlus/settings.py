@@ -41,7 +41,7 @@ SECRET_KEY = get_env('SECRET_KEY', default='django-insecure-prod-fallback-replac
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = get_env('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = get_env('ALLOWED_HOSTS', default='*', cast=lambda v: [s.strip() for s in v.split(',')])
-CSRF_TRUSTED_ORIGINS = get_env('CSRF_TRUSTED_ORIGINS', default='https://impressed-billi-backenddev-e631e481.koyeb.app,https://petcareplus-five.vercel.app,https://petcarepp.netlify.app,http://localhost:5173', cast=lambda v: [s.strip() for s in v.split(',')])
+CSRF_TRUSTED_ORIGINS = get_env('CSRF_TRUSTED_ORIGINS', default='https://impressed-billi-backenddev-e631e481.koyeb.app,https://petcareplus-five.vercel.app,https://petcarep.vercel.app,https://petcarepp.netlify.app,http://localhost:5173', cast=lambda v: [s.strip() for s in v.split(',')])
 
 # Secure Proxy SSL Header (Required for Koyeb/Heroku/Vercel)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -116,6 +116,7 @@ INSTALLED_APPS = [
     'apps.rehoming',
     'apps.notifications',
     'apps.analytics',
+    'django_q',
 
     'apps.admin_panel',
     'apps.services',
@@ -184,15 +185,7 @@ else:
         }
     }
 
-# Cache Configuration
-# We are disabling Redis caching to save resources/requests. 
-# Redis is ONLY used for Celery (Broker/Backend).
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'petcareplus-cache',
-    }
-}
+
 
 
 
@@ -253,33 +246,16 @@ DEFAULT_FROM_EMAIL = get_env('EMAIL_HOST_USER', default='noreply@petcareplus.com
 WHATSAPP_VERIFY_TOKEN = get_env('WHATSAPP_VERIFY_TOKEN', default='test_verify_token_123')
 META_APP_SECRET = get_env('META_APP_SECRET', default='')
 
-# Celery Configuration
-CELERY_BROKER_URL = get_env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = get_env('CELERY_RESULT_BACKEND', default='redis://localhost:6379/1')
-CELERY_ACCEPT_CONTENT = ['application/json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = TIME_ZONE
-# CELERY_TASK_ALWAYS_EAGER = get_env('CELERY_TASK_ALWAYS_EAGER', default=False, cast=bool)
-
-# Celery Optimizations for reduced Redis traffic
-CELERY_TASK_IGNORE_RESULT = True
-CELERY_WORKER_GOSSIP = False
-CELERY_WORKER_MINGLE = False
-CELERY_WORKER_ENABLE_REMOTE_CONTROL = False
-CELERY_WORKER_SEND_TASK_EVENTS = False
-CELERY_BROKER_HEARTBEAT = 0  # Disable heartbeats (beats traffic)
-CELERY_EVENT_QUEUE_TTL = 5   # Expire event queues quickly
-# Increase polling interval to reduce BRPOP idle requests (default is often 1s)
-CELERY_BROKER_TRANSPORT_OPTIONS = {'polling_interval': 5}
+# Django-Q Configuration
+Q_CLUSTER = {
+    'name': 'PetCarePlus',
+    'workers': 4,
+    'recycle': 500,
+    'timeout': 60,
+    'retry': 120,    # Retry failed tasks
+    'queue_limit': 50,
+    'bulk': 10,
+    'orm': 'default', # Use Django ORM (PostgreSQL)
+}
 
 
-# SSL configuration for Redis (required for 'rediss://' URLs)
-import ssl
-if CELERY_BROKER_URL.startswith('rediss://'):
-    CELERY_BROKER_USE_SSL = {
-        'ssl_cert_reqs': ssl.CERT_REQUIRED
-    }
-    CELERY_REDIS_BACKEND_USE_SSL = {
-        'ssl_cert_reqs': ssl.CERT_REQUIRED
-    }

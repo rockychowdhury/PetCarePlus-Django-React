@@ -1,4 +1,3 @@
-from celery import shared_task
 from django.core.exceptions import ObjectDoesNotExist
 import logging
 from .models import ServiceBooking
@@ -6,7 +5,6 @@ from .utils import send_booking_confirmation_email, send_booking_status_update_e
 
 logger = logging.getLogger(__name__)
 
-@shared_task
 def send_booking_confirmation_email_task(booking_id):
     """
     Async task to send booking confirmation email.
@@ -20,7 +18,6 @@ def send_booking_confirmation_email_task(booking_id):
     except Exception as e:
         logger.error(f"Failed to send confirmation email for booking {booking_id}: {str(e)}")
 
-@shared_task
 def send_booking_status_update_email_task(booking_id):
     """
     Async task to send booking status update email.
