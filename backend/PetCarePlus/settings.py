@@ -268,14 +268,25 @@ if get_env('REDIS_CACHE_URL'):
             "OPTIONS": {
                 # "CLIENT_CLASS" is for django-redis. Standard Django RedisCache doesn't need it.
             }
+        },
+        "django_db": {
+            "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+            "LOCATION": "django_q_cache_table",
         }
     }
+    
+    # Use database cache for Django-Q to reduce Redis traffic
+    Q_CLUSTER['cache'] = 'django_db'
 else:
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        },
+        'django_db': {
+           'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         }
     }
+    Q_CLUSTER['cache'] = 'django_db'
 
 # Session Engine (Optional: Store sessions in Redis for speed)
 if get_env('REDIS_CACHE_URL'):
