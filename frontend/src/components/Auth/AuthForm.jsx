@@ -5,7 +5,7 @@ import { Mail, Lock, User, Eye, EyeOff, Check } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 import Input from '../common/Form/Input';
 import Button from '../common/Buttons/Button';
-import SocialAuthButtons from './SocialAuthButtons';
+
 import AuthToggle from './AuthToggle';
 import { Link } from 'react-router-dom';
 import { extractFieldErrors, validateRegistration } from '../../utils/validationUtils';
@@ -328,16 +328,7 @@ const AuthForm = ({ initialMode = 'login', onSuccess }) => {
                     )}
                 </button>
 
-                <div className="relative py-2">
-                    <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-[#402E11]/10"></div>
-                    </div>
-                    <div className="relative flex justify-center text-[9px] font-black uppercase tracking-[0.2em]">
-                        <span className="px-3 bg-white text-[#402E11]/40">Or continue with</span>
-                    </div>
-                </div>
 
-                <SocialAuthButtons />
             </form>
         </div>
     );
