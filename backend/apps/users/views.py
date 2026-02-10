@@ -129,7 +129,8 @@ class CustomTokenRefreshView(APIView):
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
-    # Removed cache_page to ensure fresh data and because optimization makes it fast enough.
+    # Caching enabled for 30 mins, varied by Authorization to ensure users see their own data
+    @method_decorator(cache_page(60 * 30)) 
     @method_decorator(vary_on_headers('Authorization', 'Cookie'))
     def get(self, request):
         user = request.user

@@ -147,6 +147,7 @@ const MyApplicationsPage = () => {
     const [selectedApp, setSelectedApp] = useState(null);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [showScheduleModal, setShowScheduleModal] = useState(false);
+    const [showWithdrawModal, setShowWithdrawModal] = useState(false);
     const [meetGreetDate, setMeetGreetDate] = useState('');
     const [meetGreetTime, setMeetGreetTime] = useState('');
 
@@ -226,6 +227,7 @@ const MyApplicationsPage = () => {
             queryClient.invalidateQueries(['applications']);
             toast.success("Application withdrawn successfully");
             setIsDrawerOpen(false);
+            setShowWithdrawModal(false);
         },
         onError: (err) => toast.error(err.response?.data?.detail || "Failed to withdraw application")
     });
@@ -523,42 +525,45 @@ const MyApplicationsPage = () => {
                         </div>
 
                         {/* Actions Footer */}
-                        <div className="fixed bottom-0 right-0 w-full md:w-[480px] bg-white/90 backdrop-blur-xl border-t border-[#EBC176]/20 p-6 flex gap-4 z-50">
-                            {viewMode === 'received' && selectedApp.application.status === 'pending_review' && (
-                                <>
+                        <div className="fixed bottom-0 right-0 w-full md:w-[480px] bg-white/0 p-6 flex gap-4 z-50 pointer-events-none">
+                            <div className="flex gap-4 w-full pointer-events-auto">
+                                {viewMode === 'received' && selectedApp.application.status === 'pending_review' && (
+                                    <>
+                                        <Button
+                                            variant="danger"
+                                            onClick={() => updateStatusMutation.mutate({ id: selectedApp.application.id, status: 'rejected' })}
+                                            className="flex-1 py-4 h-auto rounded-xl text-xs font-black uppercase tracking-widest"
+                                        >
+                                            Reject
+                                        </Button>
+                                        <Button
+                                            onClick={() => setShowScheduleModal(true)}
+                                            className="flex-[2] bg-[#C48B28] text-white hover:bg-[#A37320] py-4 h-auto rounded-xl text-xs font-black uppercase tracking-widest shadow-xl shadow-[#C48B28]/20"
+                                        >
+                                            Approve & Schedule
+                                        </Button>
+                                    </>
+                                )}
+                                {viewMode === 'sent' && !['withdrawn', 'rejected', 'adopted'].includes(selectedApp.application.status) && (
                                     <Button
-                                        variant="danger"
-                                        onClick={() => updateStatusMutation.mutate({ id: selectedApp.application.id, status: 'rejected' })}
-                                        className="flex-1 py-4 h-auto rounded-xl text-xs font-black uppercase tracking-widest"
+                                        onClick={() => {
+                                            setIsDrawerOpen(false);
+                                            setShowWithdrawModal(true);
+                                        }}
+                                        className="w-full bg-[#FAF3E0] text-[#C48B28] hover:bg-[#F3E6C8] hover:text-[#A37320] py-4 h-auto rounded-xl text-xs font-black uppercase tracking-widest border border-[#EBC176]/50 shadow-sm"
                                     >
-                                        Reject
+                                        Withdraw Application
                                     </Button>
+                                )}
+                                {viewMode === 'received' && selectedApp.application.status === 'approved_meet_greet' && (
                                     <Button
-                                        onClick={() => setShowScheduleModal(true)}
-                                        className="flex-[2] bg-[#C48B28] text-white hover:bg-[#A37320] py-4 h-auto rounded-xl text-xs font-black uppercase tracking-widest shadow-xl shadow-[#C48B28]/20"
+                                        onClick={() => updateStatusMutation.mutate({ id: selectedApp.application.id, status: 'adopted' })}
+                                        className="w-full bg-green-600 text-white hover:bg-green-700 py-4 h-auto rounded-xl text-xs font-black uppercase tracking-widest shadow-xl shadow-green-600/20"
                                     >
-                                        Approve & Schedule
+                                        Mark as Adopted
                                     </Button>
-                                </>
-                            )}
-                            {viewMode === 'sent' && !['withdrawn', 'rejected', 'adopted'].includes(selectedApp.application.status) && (
-                                <Button
-                                    onClick={() => {
-                                        if (window.confirm("Confirm withdraw?")) withdrawMutation.mutate(selectedApp.application.id)
-                                    }}
-                                    className="w-full bg-gray-50 text-gray-600 hover:bg-gray-100 py-4 h-auto rounded-xl text-xs font-black uppercase tracking-widest border border-gray-200"
-                                >
-                                    Withdraw Application
-                                </Button>
-                            )}
-                            {viewMode === 'received' && selectedApp.application.status === 'approved_meet_greet' && (
-                                <Button
-                                    onClick={() => updateStatusMutation.mutate({ id: selectedApp.application.id, status: 'adopted' })}
-                                    className="w-full bg-green-600 text-white hover:bg-green-700 py-4 h-auto rounded-xl text-xs font-black uppercase tracking-widest shadow-xl shadow-green-600/20"
-                                >
-                                    Mark as Adopted
-                                </Button>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -618,6 +623,46 @@ const MyApplicationsPage = () => {
                     </div>
                 </div>
             )}
+
+            {/* Withdraw Confirmation Modal */}
+            {showWithdrawModal && selectedApp && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#402E11]/40 backdrop-blur-md">
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl p-8 w-full max-w-md space-y-6 border border-[#EBC176]/20">
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-xl font-black text-[#402E11] tracking-tight">Withdraw Application?</h3>
+                            <button onClick={() => setShowWithdrawModal(false)} className="bg-[#FAF3E0] p-2 rounded-full text-[#C48B28] hover:bg-[#C48B28] hover:text-white transition-colors">
+                                <XCircle size={20} />
+                            </button>
+                        </div>
+
+                        <div className="p-4 bg-red-50 rounded-2xl border border-red-100 flex gap-3 text-red-800">
+                            <div className="shrink-0 mt-0.5"><ShieldCheck size={18} /></div>
+                            <p className="text-sm font-medium leading-relaxed">
+                                Are you sure you want to withdraw your application for <span className="font-bold">{selectedApp.pet.name}</span>? This action cannot be undone.
+                            </p>
+                        </div>
+
+                        <div className="pt-2 flex gap-3">
+                            <Button
+                                onClick={() => setShowWithdrawModal(false)}
+                                variant="ghost"
+                                className="flex-1 bg-[#FAF3E0] text-[#C48B28] font-black hover:bg-[#F3E6C8]"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={() => withdrawMutation.mutate(selectedApp.application.id)}
+                                disabled={withdrawMutation.isPending}
+                                className="flex-[2] bg-red-500 text-white font-black uppercase tracking-widest shadow-lg shadow-red-500/20 hover:bg-red-600"
+                            >
+                                {withdrawMutation.isPending ? 'Withdrawing...' : 'Confirm Withdraw'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
         </div>
     );
 };

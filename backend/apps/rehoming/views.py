@@ -138,10 +138,20 @@ class RehomingRequestViewSet(viewsets.ModelViewSet):
         return Response({'status': 'cancelled'})
 
 
+
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_headers
+
 class ListingListCreateView(generics.ListCreateAPIView):
     queryset = RehomingListing.objects.all()
     serializer_class = ListingSerializer
     pagination_class = ListingPagination
+    
+    @method_decorator(cache_page(60 * 60 * 2)) # Cache for 2 hours
+    @method_decorator(vary_on_headers('Authorization'))
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
     
     def get_permissions(self):
         if self.request.method == 'POST':

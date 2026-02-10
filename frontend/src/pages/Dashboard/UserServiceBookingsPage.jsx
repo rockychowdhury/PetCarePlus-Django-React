@@ -170,8 +170,9 @@ const UserServiceBookingsPage = () => {
     const filteredBookings = bookings.filter(b => {
         if (filter === 'all') return true;
         if (filter === 'completed') return b.status === 'completed';
+        if (filter === 'pending') return b.status === 'pending';
         if (filter === 'cancelled') return b.status === 'cancelled';
-        if (filter === 'upcoming') return ['pending', 'confirmed', 'in_progress'].includes(b.status);
+        if (filter === 'upcoming') return ['confirmed', 'in_progress', 'pending'].includes(b.status);
         return true;
     });
 
@@ -439,41 +440,111 @@ const UserServiceBookingsPage = () => {
 
                 {/* 3. Sidebar (4 cols) */}
                 <div className="lg:order-2 lg:col-span-4 space-y-8">
-                    {/* Next Visit Quick View */}
-                    <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-[#EBC176]/20 shadow-xl shadow-[#C48B28]/5 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#FAF3E0] rounded-bl-[4rem] -mr-10 -mt-10 transition-transform group-hover:scale-110" />
+                    {/* Restored Next Visit Card - Compact Version */}
+                    <div className="bg-[#FFF9EE] rounded-[2rem] p-5 relative border border-[#EBC176]/20 shadow-xl shadow-[#C48B28]/5">
+                        {nextVisit ? (
+                            <>
+                                {/* Header */}
+                                <div className="flex justify-between items-start mb-5">
+                                    <span className="relative overflow-hidden bg-[#C48B28] text-white px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg shadow-[#C48B28]/20">
+                                        <span className="absolute inset-0 bg-white/20 animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]" />
+                                        <span className="relative flex h-2 w-2">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                                        </span>
+                                        <span className="relative">Next Visit</span>
+                                    </span>
 
-                        <div className="relative z-10">
-                            <h3 className="text-[10px] font-black text-[#C48B28] uppercase tracking-[0.3em] mb-8">Up Next</h3>
-
-                            {nextVisit ? (
-                                <div className="space-y-6">
-                                    <div className="flex items-center gap-5">
-                                        <div className="w-16 h-16 rounded-[1.5rem] bg-[#C48B28] flex items-center justify-center text-white shadow-lg overflow-hidden relative">
-                                            {nextVisit.provider?.business_name?.[0]}
-                                            <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent" />
+                                    {/* Pet Info */}
+                                    <div className="flex items-center gap-2.5 bg-white pl-1.5 pr-3 py-1 rounded-full border border-[#EBC176]/10 shadow-sm">
+                                        <div className="w-7 h-7 rounded-full overflow-hidden bg-[#FAF3E0] border border-[#EBC176]/20">
+                                            {nextVisit.pet?.media?.[0]?.url ? (
+                                                <img src={nextVisit.pet.media[0].url} alt="" className="w-full h-full object-cover" />
+                                            ) : <PawPrint size={12} className="m-auto mt-1.5 text-[#C48B28]" />}
                                         </div>
-                                        <div>
-                                            <h4 className="text-xl font-black text-[#402E11] tracking-tight">{nextVisit.provider?.business_name}</h4>
-                                            <p className="text-[10px] font-bold text-[#C48B28] uppercase tracking-widest">{nextVisit.booking_time?.slice(0, 5) || 'Morning'}</p>
+                                        <div className="text-right">
+                                            <p className="text-[11px] font-black text-[#402E11] leading-none mb-0.5">{nextVisit.pet?.name}</p>
+                                            <p className="text-[7px] font-bold text-[#C48B28] uppercase tracking-tight">{nextVisit.pet?.species} • {nextVisit.pet?.breed || 'Mixed'}</p>
                                         </div>
                                     </div>
+                                </div>
 
-                                    <div className="flex items-center justify-between p-5 bg-[#FAF3E0] rounded-3xl border border-[#EBC176]/10">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-[#402E11]/60">Countdown</span>
-                                        </div>
-                                        <span className="text-sm font-black text-[#402E11]">Arriving Soon</span>
+                                {/* Title */}
+                                <div className="mb-5">
+                                    <h2 className="text-lg md:text-xl font-black text-[#402E11] tracking-tight leading-tight mb-2">
+                                        Service appointment <span className="text-[#402E11]/40 font-bold">with</span> <span className="text-[#C48B28]">{nextVisit.provider?.business_name}</span>
+                                    </h2>
+                                    <span className="inline-block px-2.5 py-0.5 bg-white border border-[#EBC176]/20 rounded-full text-[8px] font-black text-[#C48B28] uppercase tracking-widest shadow-sm">
+                                        {nextVisit.provider?.category?.name}
+                                    </span>
+                                </div>
+
+                                {/* Time Card */}
+                                <div className="bg-white rounded-2xl p-4 flex items-center gap-4 mb-2 border border-[#EBC176]/10 shadow-sm">
+                                    <div className="w-10 h-10 rounded-xl bg-[#C48B28] flex items-center justify-center text-white shadow-lg shadow-[#C48B28]/20 shrink-0">
+                                        <CalendarDays size={18} strokeWidth={2.5} />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-black text-[#402E11] tracking-tight mb-0.5">
+                                            {format(new Date(nextVisit.booking_date), 'EEE, MMM dd')}
+                                        </p>
+                                        <p className="text-[9px] font-bold text-[#C48B28] uppercase tracking-widest">
+                                            {nextVisit.booking_time?.slice(0, 5)} ({Math.round(nextVisit.duration_hours)} HR SESSION)
+                                        </p>
                                     </div>
                                 </div>
-                            ) : (
-                                <div className="py-10 text-center">
-                                    <Calendar size={32} className="mx-auto text-[#EBC176]/40 mb-4" strokeWidth={1.5} />
-                                    <p className="text-xs font-bold text-[#402E11]/40 uppercase tracking-widest">No upcoming visits</p>
+
+                                {/* Location Card */}
+                                <div className="bg-[#FCFBF9] rounded-2xl p-4 flex items-center gap-4 mb-5 border border-[#EBC176]/10">
+                                    <div className="w-10 h-10 rounded-xl bg-white border border-[#EBC176]/20 flex items-center justify-center text-[#C48B28] shrink-0">
+                                        <MapPin size={18} strokeWidth={2.5} />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-black text-[#402E11] tracking-tight mb-0.5">{nextVisit.provider?.business_name}</p>
+                                        <p className="text-[9px] font-bold text-[#402E11]/40 uppercase tracking-widest truncate max-w-[180px]">
+                                            {nextVisit.provider?.address?.city || 'Location'}, {nextVisit.provider?.address?.state || ''}
+                                        </p>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex gap-2.5 mb-5">
+                                    <a
+                                        href={getGoogleCalendarUrl(nextVisit)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex-1"
+                                    >
+                                        <button className="w-full bg-[#C48B28] text-white py-3 rounded-xl flex items-center justify-center gap-1.5 text-[9px] font-black uppercase tracking-widest shadow-xl shadow-[#C48B28]/20 hover:scale-[1.02] transition-transform">
+                                            <Calendar size={12} strokeWidth={2.5} /> Add to Calendar
+                                        </button>
+                                    </a>
+                                    <button
+                                        onClick={() => handleWhatsApp(nextVisit)}
+                                        className="flex-1 bg-white text-[#25D366] border border-[#EBC176]/10 py-3 rounded-xl flex items-center justify-center gap-1.5 text-[9px] font-black uppercase tracking-widest hover:bg-[#FAF3E0] hover:scale-[1.02] transition-all shadow-sm"
+                                    >
+                                        <MessageCircle size={12} strokeWidth={2.5} /> WhatsApp
+                                    </button>
+                                </div>
+
+                                {/* Footer Price */}
+                                <div className="flex justify-between items-end border-t border-[#EBC176]/10 pt-4">
+                                    <div>
+                                        <p className="text-[8px] font-black text-[#C48B28] uppercase tracking-[0.2em] mb-1">Estimated Total</p>
+                                        <p className="text-3xl font-black text-[#402E11] tracking-tighter leading-none">${nextVisit.agreed_price}</p>
+                                    </div>
+                                    <span className="text-[9px] font-bold text-[#402E11]/30 uppercase tracking-widest mb-1">
+                                        {nextVisit.payment_status === 'paid' ? 'Paid Online' : 'Pay at location'}
+                                    </span>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="py-16 text-center">
+                                <Calendar size={40} className="mx-auto text-[#EBC176]/40 mb-4" strokeWidth={1.5} />
+                                <h3 className="text-lg font-black text-[#402E11] tracking-tight mb-1">No upcoming visits</h3>
+                                <p className="text-[10px] font-bold text-[#402E11]/40 uppercase tracking-widest">Book your next appointment now</p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Simple Visit Stats Overview */}

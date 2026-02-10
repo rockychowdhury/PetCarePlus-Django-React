@@ -7,6 +7,9 @@ import django_filters
 from django.db.models import Q, Sum, Avg, Count, F, Value, FloatField
 from django.db.models.functions import Coalesce
 from apps.common.logging_utils import log_business_event
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_headers
 
 
 
@@ -237,11 +240,15 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
     pagination_class = ServiceProviderPagination
     
 
+
+    @method_decorator(cache_page(60 * 60 * 2))
+    @method_decorator(vary_on_headers('Authorization'))
     def list(self, request, *args, **kwargs):
         """List service providers with caching"""
         return super().list(request, *args, **kwargs)
     
-
+    @method_decorator(cache_page(60 * 60 * 2))
+    @method_decorator(vary_on_headers('Authorization'))
     def retrieve(self, request, *args, **kwargs):
         """Retrieve single provider with caching"""
         return super().retrieve(request, *args, **kwargs)

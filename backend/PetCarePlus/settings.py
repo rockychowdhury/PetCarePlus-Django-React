@@ -259,3 +259,25 @@ Q_CLUSTER = {
 }
 
 
+# Caching Configuration (Redis)
+if get_env('REDIS_CACHE_URL'):
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": get_env('REDIS_CACHE_URL'),
+            "OPTIONS": {
+                # "CLIENT_CLASS" is for django-redis. Standard Django RedisCache doesn't need it.
+            }
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
+
+# Session Engine (Optional: Store sessions in Redis for speed)
+if get_env('REDIS_CACHE_URL'):
+    SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+    SESSION_CACHE_ALIAS = "default"
