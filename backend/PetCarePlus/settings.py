@@ -174,6 +174,7 @@ if get_env('SQL_DATABASE'):
             'PASSWORD': get_env('SQL_PASSWORD'),
             'HOST': get_env('SQL_HOST'),
             'PORT': get_env('SQL_PORT'),
+            'OPTIONS': {'sslmode': 'require'},
         }
     }
     
@@ -275,18 +276,17 @@ if get_env('REDIS_CACHE_URL'):
         }
     }
     
-    # Use database cache for Django-Q to reduce Redis traffic
     Q_CLUSTER['cache'] = 'django_db'
-else:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        },
-        'django_db': {
-           'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        }
+
+# Ensure django_q cache is always available
+if 'django_db' not in CACHES:
+    CACHES['django_db'] = {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "django_q_cache_table",
     }
-    Q_CLUSTER['cache'] = 'django_db'
+    
+# ALWAYS use database cache for Django-Q
+Q_CLUSTER['cache'] = 'django_db'
 
 # Session Engine (Optional: Store sessions in Redis for speed)
 if get_env('REDIS_CACHE_URL'):
