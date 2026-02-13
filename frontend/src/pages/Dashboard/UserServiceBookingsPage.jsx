@@ -195,7 +195,7 @@ const UserServiceBookingsPage = () => {
     }, [filteredBookings.length, totalPages]);
 
     return (
-        <div className="w-full p-4 md:p-12 lg:p-20 space-y-12 bg-[#FEF9ED]/30 min-h-screen pt-20 md:pt-12">
+        <div className="w-full p-4 md:p-8 lg:p-10 xl:p-12 2xl:p-20 space-y-8 md:space-y-12 bg-[#FEF9ED]/30 min-h-screen pt-20 md:pt-12">
             {/* 1. Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 overflow-hidden">
                 <div className="animate-in slide-in-from-left duration-700">
@@ -220,7 +220,7 @@ const UserServiceBookingsPage = () => {
             </div>
 
             {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
                 {/* 2. Main Timeline (8 cols) */}
                 <div className="lg:order-1 lg:col-span-8 space-y-6 md:space-y-8">
                     {/* Simplified Status Filter Bar */}
@@ -259,10 +259,10 @@ const UserServiceBookingsPage = () => {
                     <div className="space-y-4">
                         {paginatedBookings.length > 0 ? (
                             paginatedBookings.map((booking) => (
-                                <div key={booking.id} className="bg-white rounded-[2rem] p-6 border border-[#EBC176]/10 hover:shadow-xl hover:shadow-[#402E11]/5 transition-all group">
-                                    <div className="flex flex-col md:flex-row gap-6">
+                                <div key={booking.id} className="bg-white rounded-[2rem] p-4 2xl:p-6 border border-[#EBC176]/10 hover:shadow-xl hover:shadow-[#402E11]/5 transition-all group">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 2xl:flex 2xl:flex-row gap-4 2xl:gap-6">
                                         {/* Left Section: Provider & Pet */}
-                                        <div className="flex-1 flex gap-4">
+                                        <div className="md:col-span-2 2xl:col-span-auto 2xl:flex-1 flex gap-4">
                                             <div className="w-14 h-14 rounded-2xl bg-[#FAF3E0] overflow-hidden border border-[#EBC176]/20 shrink-0">
                                                 {booking.provider?.user?.photoURL ? (
                                                     <img src={booking.provider.user.photoURL} alt="" className="w-full h-full object-cover" />
@@ -305,7 +305,7 @@ const UserServiceBookingsPage = () => {
                                         </div>
 
                                         {/* Middle Section: Schedule */}
-                                        <div className="flex-1 border-y md:border-y-0 md:border-x border-[#EBC176]/5 px-0 md:px-6 py-4 md:py-0">
+                                        <div className="md:col-span-1 2xl:col-span-auto 2xl:flex-1 border-t md:border-t-0 md:pt-0 pt-3 2xl:border-y-0 2xl:border-x border-[#EBC176]/5 px-0 2xl:px-6 2xl:py-0">
                                             <div className="flex items-start gap-3">
                                                 <div className="w-8 h-8 rounded-lg bg-[#FAF3E0] flex items-center justify-center text-[#C48B28] shrink-0">
                                                     <CalendarDays size={16} strokeWidth={2.5} />
@@ -327,7 +327,7 @@ const UserServiceBookingsPage = () => {
                                         </div>
 
                                         {/* Right Section: Status & Actions */}
-                                        <div className="w-full md:w-64 flex flex-col items-end shrink-0">
+                                        <div className="md:col-span-1 2xl:col-span-auto w-full 2xl:w-64 flex flex-col items-end shrink-0">
                                             <div className="text-right mb-4">
                                                 <span className={`inline-block px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest mb-2 ${booking.status === 'completed' ? 'bg-green-50 text-green-600 border border-green-100' :
                                                     booking.status === 'cancelled' ? 'bg-red-50 text-red-600 border border-red-100' :
@@ -344,7 +344,7 @@ const UserServiceBookingsPage = () => {
                                             <div className="mt-auto flex flex-row gap-2 w-full justify-end">
                                                 <button
                                                     onClick={() => { setSelectedBooking(booking); setActiveModal('details'); }}
-                                                    className="flex-1 md:flex-none px-4 py-2 bg-white text-[#402E11] border border-[#EBC176]/20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#FAF3E0] transition-colors flex items-center justify-center gap-2"
+                                                    className="flex-1 2xl:flex-none px-4 py-2 bg-white text-[#402E11] border border-[#EBC176]/20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#FAF3E0] transition-colors flex items-center justify-center gap-2"
                                                 >
                                                     <ExternalLink size={12} /> Details
                                                 </button>
@@ -353,13 +353,13 @@ const UserServiceBookingsPage = () => {
                                                     <button
                                                         disabled={booking.has_review}
                                                         onClick={() => { setSelectedBooking(booking); setActiveModal('review'); }}
-                                                        className={`flex-1 md:flex-none px-4 py-2 bg-white text-[#402E11] border border-[#EBC176]/20 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 ${booking.has_review ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:bg-[#FAF3E0]'}`}
+                                                        className={`flex-1 2xl:flex-none px-4 py-2 bg-white text-[#402E11] border border-[#EBC176]/20 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 ${booking.has_review ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:bg-[#FAF3E0]'}`}
                                                     >
                                                         <Star size={12} className={booking.has_review ? 'text-gray-400' : 'text-[#C48B28]'} />
                                                         {booking.has_review ? 'Reviewed' : 'Review'}
                                                     </button>
                                                 ) : booking.status === 'cancelled' || booking.status === 'rejected' ? (
-                                                    <Link to={`/services/${booking.provider?.id || ''}`} className="flex-1 md:flex-none">
+                                                    <Link to={`/services/${booking.provider?.id || ''}`} className="flex-1 2xl:flex-none">
                                                         <button className="w-full px-4 py-2 bg-[#C48B28] text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-[1.02] transition-transform shadow-lg shadow-[#C48B28]/10 flex items-center justify-center gap-2">
                                                             <RotateCcw size={12} /> Re-book
                                                         </button>
@@ -368,14 +368,14 @@ const UserServiceBookingsPage = () => {
                                                     <>
                                                         <button
                                                             onClick={() => handleWhatsApp(booking)}
-                                                            className="flex-1 md:flex-none px-4 py-2 bg-[#25D366] text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-[1.02] transition-transform shadow-lg shadow-[#25D366]/10 flex items-center justify-center gap-2"
+                                                            className="flex-1 2xl:flex-none px-4 py-2 bg-[#25D366] text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-[1.02] transition-transform shadow-lg shadow-[#25D366]/10 flex items-center justify-center gap-2"
                                                         >
                                                             <MessageCircle size={12} /> WhatsApp
                                                         </button>
                                                         {booking.status === 'pending' && (
                                                             <button
                                                                 onClick={() => { setSelectedBooking(booking); setActiveModal('reschedule'); }}
-                                                                className="flex-1 md:flex-none px-4 py-2 bg-white text-[#402E11] border border-[#EBC176]/20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#FAF3E0] transition-colors flex items-center justify-center gap-2"
+                                                                className="flex-1 2xl:flex-none px-4 py-2 bg-white text-[#402E11] border border-[#EBC176]/20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#FAF3E0] transition-colors flex items-center justify-center gap-2"
                                                             >
                                                                 <CalendarDays size={12} /> Reschedule
                                                             </button>

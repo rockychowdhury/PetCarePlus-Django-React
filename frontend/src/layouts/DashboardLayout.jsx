@@ -127,24 +127,23 @@ const DashboardLayout = () => {
     return (
         <div className="min-h-screen bg-[#FEF9ED] flex font-sans text-[#5A3C0B]">
             {/* Sidebar */}
-            <aside className="w-72 bg-white border-r border-[#EBC176]/20 hidden md:flex flex-col fixed h-full z-20 shadow-[4px_0_24px_-12px_rgba(196,139,40,0.1)]">
+            <aside className="w-20 2xl:w-72 bg-white border-r border-[#EBC176]/20 hidden md:flex flex-col fixed h-full z-20 shadow-[4px_0_24px_-12px_rgba(196,139,40,0.1)] transition-all duration-300">
                 {/* Project Header */}
-                <div className="px-6 pt-8 pb-6">
+                <div className="px-0 2xl:px-6 pt-8 pb-6 flex justify-center 2xl:justify-start">
                     <Link to="/" className="block">
-                        <Logo className="scale-90 origin-left" />
+                        <Logo className="scale-75 2xl:scale-90 origin-center 2xl:origin-left" textClassName="hidden 2xl:flex" />
                     </Link>
                 </div>
 
-                {/* Nav items */}
-                <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto custom-scrollbar py-4">
+                <nav className="flex-1 px-2 2xl:px-4 space-y-1.5 overflow-y-auto custom-scrollbar py-4">
                     {dashboardLinks.map((link) => {
                         const active = isActive(link.path);
                         return (
                             <Link
                                 key={link.path}
                                 to={link.path}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-[1.1rem] text-[13px] font-bold transition-all duration-300 relative group ${active
-                                    ? 'bg-[#C48B28] text-white shadow-sm shadow-[#C48B28]/20 translate-x-1'
+                                className={`flex items-center justify-center 2xl:justify-start gap-0 2xl:gap-3 px-2 2xl:px-4 py-3 rounded-[1.1rem] text-[13px] font-bold transition-all duration-300 relative group ${active
+                                    ? 'bg-[#C48B28] text-white shadow-sm shadow-[#C48B28]/20 translate-x-0 2xl:translate-x-1'
                                     : 'text-[#5A3C0B]/70 hover:bg-[#FEF9ED] hover:text-[#C48B28]'
                                     }`}
                             >
@@ -153,11 +152,11 @@ const DashboardLayout = () => {
                                     strokeWidth={active ? 2.5 : 2}
                                     className={`transition-colors duration-300 ${active ? 'text-white' : 'text-[#C48B28]/70 group-hover:text-[#C48B28]'}`}
                                 />
-                                {link.name}
+                                <span className="hidden 2xl:block">{link.name}</span>
 
                                 {/* Badge/Count */}
                                 {link.count && (
-                                    <div className={`ml-auto flex items-center justify-center px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider ${active
+                                    <div className={`absolute top-2 right-2 2xl:static ml-auto flex items-center justify-center px-1.5 2xl:px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider ${active
                                         ? 'bg-white/20 text-white'
                                         : 'bg-[#C48B28]/10 text-[#C48B28]'
                                         }`}>
@@ -170,22 +169,23 @@ const DashboardLayout = () => {
                 </nav>
 
                 {/* Logout */}
-                <div className="p-4 mt-auto">
+                <div className="p-2 2xl:p-4 mt-auto space-y-4">
                     <button
                         onClick={handleLogout}
-                        className="flex items-center gap-3 w-full px-4 py-3 rounded-[1.1rem] text-[#5A3C0B]/50 font-bold text-[13px] hover:bg-red-50 hover:text-red-500 transition-all duration-300 group border border-transparent hover:border-red-100"
+                        className="flex items-center justify-center 2xl:justify-start gap-3 w-full px-2 2xl:px-4 py-3 rounded-[1.1rem] text-[#5A3C0B]/50 font-bold text-[13px] hover:bg-red-50 hover:text-red-500 transition-all duration-300 group border border-transparent hover:border-red-100"
+                        title="Log Out"
                     >
                         <LogOut size={18} strokeWidth={2} className="group-hover:stroke-red-500 transition-colors" />
-                        <span className="tracking-wide">Log Out</span>
+                        <span className="tracking-wide hidden 2xl:block">Log Out</span>
                     </button>
 
-                    <div className="mt-4 flex items-center gap-3 px-4 py-3 bg-[#FAF3E0]/60 rounded-xl border border-[#EBC176]/20">
-                        <div className="w-8 h-8 rounded-full bg-[#C48B28] flex items-center justify-center text-white text-[10px] font-black shadow-sm">
+                    <div className="flex items-center justify-center 2xl:justify-start gap-0 2xl:gap-3 px-2 2xl:px-4 py-3 bg-transparent 2xl:bg-[#FAF3E0]/60 rounded-xl border border-transparent 2xl:border-[#EBC176]/20">
+                        <div className="w-8 h-8 rounded-full bg-[#C48B28] flex items-center justify-center text-white text-[10px] font-black shadow-sm shrink-0">
                             {user?.first_name?.[0] || 'U'}
                         </div>
-                        <div className="flex flex-col">
-                            <span className="text-[9px] font-bold text-[#5A3C0B]/40 uppercase tracking-wider">Logged in as</span>
-                            <span className="text-xs font-black text-[#5A3C0B]">{user?.first_name}</span>
+                        <div className="flex flex-col hidden 2xl:flex overflow-hidden">
+                            <span className="text-[9px] font-bold text-[#5A3C0B]/40 uppercase tracking-wider truncate">Logged in as</span>
+                            <span className="text-xs font-black text-[#5A3C0B] truncate">{user?.first_name}</span>
                         </div>
                     </div>
                 </div>
@@ -254,7 +254,7 @@ const DashboardLayout = () => {
             </AnimatePresence>
 
             {/* Main Content Area */}
-            <main className="flex-1 md:ml-72 lg:ml-80 bg-[#FEF9ED] min-h-screen relative pt-0">
+            <main className="flex-1 md:ml-20 2xl:ml-72 bg-[#FEF9ED] min-h-screen relative pt-0 transition-all duration-300">
                 {/* Decorative background blur */}
                 <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
                     <div className="absolute top-[-10%] right-[-10%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-[#C48B28]/5 rounded-full blur-[80px] md:blur-[120px]" />

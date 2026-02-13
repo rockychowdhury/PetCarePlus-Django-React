@@ -13,7 +13,7 @@ const Footer = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-16 mb-20">
 
                     {/* Brand Column */}
-                    <div className="lg:col-span-4 space-y-8">
+                    <div className="lg:col-span-5 space-y-8">
                         <Link to="/" className="inline-block">
                             <Logo />
                         </Link>
@@ -28,7 +28,7 @@ const Footer = () => {
                     </div>
 
                     {/* Navigate */}
-                    <div className="lg:col-span-2 lg:ml-auto">
+                    <div className="lg:col-span-2">
                         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-themev2-text mb-8">Navigate</h4>
                         <ul className="space-y-4 text-[13px] font-bold text-[#C48B28]">
                             {/* Show 'Find a pet' & 'Rehome' only for Guests or Pet Owners */}
@@ -44,7 +44,7 @@ const Footer = () => {
                     </div>
 
                     {/* Resources */}
-                    <div className="lg:col-span-2 lg:ml-auto">
+                    <div className="lg:col-span-2">
                         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-themev2-text mb-8">Resources</h4>
                         <ul className="space-y-4 text-[13px] font-bold text-[#C48B28]">
                             <li><FooterLink to="/how-it-works">How it works</FooterLink></li>
@@ -54,7 +54,7 @@ const Footer = () => {
                     </div>
 
                     {/* Legal */}
-                    <div className="lg:col-span-2 lg:ml-auto">
+                    <div className="lg:col-span-3">
                         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-themev2-text mb-8">Legal</h4>
                         <ul className="space-y-4 text-[13px] font-bold text-[#C48B28]">
                             <li><FooterLink to="/terms">Terms of Service</FooterLink></li>

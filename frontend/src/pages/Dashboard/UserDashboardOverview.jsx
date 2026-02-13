@@ -94,7 +94,7 @@ const UserDashboardOverview = () => {
     }
 
     return (
-        <div className="w-full pt-32 p-6 md:p-12 lg:p-20 space-y-12 bg-[#FEF9ED]/30 min-h-screen">
+        <div className="w-full pt-32 p-6 md:p-8 lg:p-10 xl:p-12 2xl:p-20 space-y-8 md:space-y-12 bg-[#FEF9ED]/30 min-h-screen">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div>
@@ -140,7 +140,7 @@ const UserDashboardOverview = () => {
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10">
                 {/* Left Column: Primary Services - 8 cols */}
                 <div className="lg:col-span-8 space-y-10">
 
@@ -149,7 +149,7 @@ const UserDashboardOverview = () => {
                         {/* Shimmer Effect */}
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-[45deg] -translate-x-full group-hover:translate-x-[250%] transition-transform duration-[2000ms] ease-in-out pointer-events-none opacity-60 z-20" />
 
-                        <div className="p-12 relative z-10">
+                        <div className="p-6 md:p-8 lg:p-10 relative z-10">
                             <div className="flex flex-col md:flex-row justify-between gap-10">
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-4 mb-8">
@@ -291,7 +291,7 @@ const UserDashboardOverview = () => {
                 <div className="lg:col-span-4 space-y-10">
 
                     {/* Rehoming Overview Card (Shiny Metallic Background) */}
-                    <div className="bg-gradient-to-br from-[#FDFBF7] via-white to-[#FAF3E0]/40 rounded-[3rem] p-10 border border-[#EBC176]/30 shadow-2xl shadow-[#402E11]/5 relative overflow-hidden group">
+                    <div className="bg-gradient-to-br from-[#FDFBF7] via-white to-[#FAF3E0]/40 rounded-[3rem] p-6 md:p-8 lg:p-10 border border-[#EBC176]/30 shadow-2xl shadow-[#402E11]/5 relative overflow-hidden group">
                         {/* Dynamic Shine Sweep */}
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/80 to-transparent -skew-x-[35deg] -translate-x-full group-hover:translate-x-[250%] transition-transform duration-[2000ms] ease-in-out pointer-events-none opacity-60 z-20" />
 
@@ -386,7 +386,7 @@ const UserDashboardOverview = () => {
                     </div>
 
                     {/* Become a Provider / Professional Tier */}
-                    <div className="p-10 bg-[#402E11] rounded-[3rem] text-white relative overflow-hidden group shadow-2xl shadow-[#402E11]/20">
+                    <div className="p-6 md:p-8 lg:p-10 bg-[#402E11] rounded-[3rem] text-white relative overflow-hidden group shadow-2xl shadow-[#402E11]/20">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-[4rem] group-hover:scale-110 transition-transform" />
                         <h4 className="text-xl font-black tracking-tight mb-3">
                             {isProvider ? 'Provider Standards' : 'Professional Tier'}

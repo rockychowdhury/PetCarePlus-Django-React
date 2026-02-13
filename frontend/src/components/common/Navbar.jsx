@@ -127,7 +127,7 @@ const Navbar = () => {
                                     </button>
 
                                     {isProfileOpen && (
-                                        <div className="absolute left-0 mt-3 w-64 bg-white rounded-3xl shadow-2xl border border-[#C48B28]/20 py-2 origin-top-left z-50 overflow-hidden animate-scale-up">
+                                        <div className="absolute right-0 mt-3 w-64 bg-white rounded-3xl shadow-2xl border border-[#C48B28]/20 py-2 origin-top-right z-50 overflow-hidden animate-scale-up">
                                             {/* User Info Header */}
                                             <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 bg-[#FEF9ED]/30">
                                                 <Avatar

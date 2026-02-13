@@ -54,7 +54,7 @@ const ApplicationCard = ({ app, viewMode, onClick }) => {
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ y: -4, transition: { duration: 0.2 } }}
             onClick={onClick}
-            className="bg-white rounded-[2.5rem] p-6 border border-[#EBC176]/10 hover:shadow-xl hover:shadow-[#402E11]/5 transition-all group cursor-pointer relative overflow-hidden"
+            className="bg-white rounded-[2.5rem] p-5 md:p-6 border border-[#EBC176]/10 hover:shadow-xl hover:shadow-[#402E11]/5 transition-all group cursor-pointer relative overflow-hidden"
         >
             <div className="flex flex-col md:flex-row items-center gap-6">
 
@@ -233,7 +233,7 @@ const MyApplicationsPage = () => {
     });
 
     return (
-        <div className="w-full p-4 md:p-12 lg:p-20 space-y-12 bg-[#FEF9ED]/30 min-h-screen pt-20 md:pt-12">
+        <div className="w-full p-4 md:p-8 lg:p-10 xl:p-12 2xl:p-20 space-y-8 md:space-y-12 bg-[#FEF9ED]/30 min-h-screen pt-20 md:pt-12">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 overflow-hidden">
                 <div className="animate-in slide-in-from-left duration-700">
@@ -274,7 +274,7 @@ const MyApplicationsPage = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
                 {/* Left Column: List (8 cols) */}
                 <div className="lg:col-span-8 space-y-8">
                     {/* Filter Bar */}
@@ -399,7 +399,7 @@ const MyApplicationsPage = () => {
                 {/* Right Column: Stats & Actions (4 cols) */}
                 <div className="lg:col-span-4 space-y-8">
                     {/* Stats Card */}
-                    <div className="bg-[#402E11] rounded-[2.5rem] p-8 md:p-10 text-white relative overflow-hidden shadow-2xl shadow-black/5">
+                    <div className="bg-[#402E11] rounded-[2.5rem] p-6 md:p-8 lg:p-6 xl:p-8 text-white relative overflow-hidden shadow-2xl shadow-black/5">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl" />
                         <h3 className="text-[10px] font-black text-[#EBC176] uppercase tracking-[0.3em] mb-10 flex items-center gap-2 relative z-10">
                             <BarChart3 size={14} strokeWidth={3} /> Success Matrix
@@ -422,7 +422,7 @@ const MyApplicationsPage = () => {
                     </div>
 
                     {/* AI Insights Card */}
-                    <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-[#EBC176]/20 shadow-xl shadow-[#C48B28]/5 relative overflow-hidden group">
+                    <div className="bg-white rounded-[2.5rem] p-6 md:p-8 lg:p-6 xl:p-8 border border-[#EBC176]/20 shadow-xl shadow-[#C48B28]/5 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-[#F3E8FF]/50 rounded-bl-[4rem] -mr-10 -mt-10 transition-transform group-hover:scale-110" />
                         <div className="w-16 h-16 bg-[#F3E8FF] rounded-2xl flex items-center justify-center text-[#8B5CF6] mb-8 relative z-10 shadow-sm border border-[#8B5CF6]/10">
                             <Sparkles size={28} strokeWidth={2.5} />
