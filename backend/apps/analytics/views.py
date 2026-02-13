@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from apps.services.models import ServiceBooking
-from apps.services.serializers import ServiceBookingSerializer
+from apps.analytics.serializers import DashboardServiceBookingSerializer
 from apps.rehoming.models import RehomingListing, AdoptionInquiry
 from apps.rehoming.serializers import ListingSerializer, AdoptionInquirySerializer
 from apps.pets.models import PetProfile
@@ -35,8 +35,21 @@ class UserDashboardOverviewView(APIView):
             review__isnull=True
         ).count()
         
+        # Optimize ServiceBooking queries
         recent_bookings = ServiceBooking.objects.filter(
             client=user
+        ).select_related(
+            'provider', 
+            'provider__user', 
+            'provider__category',
+            'client', 
+            'pet', 
+            'service_option'
+        ).prefetch_related(
+            'provider__media',
+            # Note: We are not prefetching provider__reviews to avoid loading thousands of reviews.
+            # This might cause N+1 if the serializer accesses it, but it's better than OOM.
+            # Ideally use a lighter serializer.
         ).order_by('-created_at')[:3]
 
         # 2. REHOMING DATA (Secondary focus)
@@ -45,12 +58,33 @@ class UserDashboardOverviewView(APIView):
         apps_received_count = AdoptionInquiry.objects.filter(listing__owner=user).count()
         apps_submitted_count = AdoptionInquiry.objects.filter(requester=user).count()
         
+        # Optimize AdoptionInquiry queries
         recent_inquiries_received = AdoptionInquiry.objects.filter(
             listing__owner=user
+        ).select_related(
+            'listing', 
+            'listing__pet', 
+            'listing__owner', 
+            'requester'
+        ).prefetch_related(
+            'listing__pet__media',
+            'listing__pet__traits',
+            'listing__pet__traits__trait',
+            'requester__received_reviews'
         ).order_by('-created_at')[:3]
         
         recent_inquiries_sent = AdoptionInquiry.objects.filter(
             requester=user
+        ).select_related(
+            'listing', 
+            'listing__pet', 
+            'listing__owner', 
+            'requester'
+        ).prefetch_related(
+            'listing__pet__media',
+            'listing__pet__traits',
+            'listing__pet__traits__trait',
+            'requester__received_reviews'
         ).order_by('-created_at')[:3]
         return Response({
             'user': {
@@ -60,7 +94,7 @@ class UserDashboardOverviewView(APIView):
                 'provider_status': getattr(user, 'service_provider_profile', None).application_status if hasattr(user, 'service_provider_profile') else None,
             },
             'services': {
-                'next_visit': ServiceBookingSerializer(next_visit).data if next_visit else None,
+                'next_visit': DashboardServiceBookingSerializer(next_visit).data if next_visit else None,
                 'stats': {
                     'total_bookings': total_bookings,
                     'pending_reviews': pending_reviews,
@@ -70,7 +104,7 @@ class UserDashboardOverviewView(APIView):
                         start_datetime__gte=now
                     ).count(),
                 },
-                'recent_bookings': ServiceBookingSerializer(recent_bookings, many=True).data
+                'recent_bookings': DashboardServiceBookingSerializer(recent_bookings, many=True).data
             },
             'rehoming': {
                 'stats': {

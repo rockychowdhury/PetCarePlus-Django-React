@@ -229,7 +229,7 @@ class AdoptionInquirySerializer(serializers.ModelSerializer):
         
         # Calculate rating
         reviews = user.received_reviews.all()
-        count = reviews.count()
+        count = len(reviews)
         avg_rating = 0
         if count > 0:
             total = sum(r.rating for r in reviews)
