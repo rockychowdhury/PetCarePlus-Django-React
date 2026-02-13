@@ -6,7 +6,7 @@ const getBaseURL = () => {
 
     // 2. Fallback for Production Build (if Env Var is missing)
     if (import.meta.env.MODE === 'production') {
-        return 'https://impressed-billi-backenddev-e631e481.koyeb.app/api';
+        return 'https://moral-emili-petcarep-9dff8310.koyeb.app/api';
     }
 
     // 3. Default to Localhost for Development
