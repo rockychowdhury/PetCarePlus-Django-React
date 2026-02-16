@@ -1,0 +1,25 @@
+# Git
+.git
+.gitignore
+
+# Python/Django
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+.env.local
+.venv
+venv/
+ENV/
+env/
+dist/
+build/
+*.egg-info/
+
+# DB
+*.sqlite3
+
+# IDE
+.idea/
+.vscode/
