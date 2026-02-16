@@ -166,15 +166,23 @@ AUTH_USER_MODEL ='users.User'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 if get_env('SQL_DATABASE'):
+    db_host = get_env('SQL_HOST')
+    db_options = {'sslmode': 'require'}
+
+    # Fix for Koyeb/Neon SNI issue: "Endpoint ID is not specified"
+    if db_host and 'koyeb.app' in db_host:
+        endpoint_id = db_host.split('.')[0]
+        db_options['options'] = f'endpoint={endpoint_id}'
+
     DATABASES = {
         'default': {
             'ENGINE': get_env('SQL_ENGINE', default='django.db.backends.postgresql'),
             'NAME': get_env('SQL_DATABASE'),
             'USER': get_env('SQL_USER'),
             'PASSWORD': get_env('SQL_PASSWORD'),
-            'HOST': get_env('SQL_HOST'),
+            'HOST': db_host,
             'PORT': get_env('SQL_PORT'),
-            'OPTIONS': {'sslmode': 'require'},
+            'OPTIONS': db_options,
         }
     }
     
