@@ -169,11 +169,6 @@ if get_env('SQL_DATABASE'):
     db_host = get_env('SQL_HOST')
     db_options = {'sslmode': 'require'}
 
-    # Fix for Koyeb/Neon SNI issue: "Endpoint ID is not specified"
-    if db_host and 'koyeb.app' in db_host:
-        endpoint_id = db_host.split('.')[0]
-        db_options['options'] = f'endpoint={endpoint_id}'
-
     DATABASES = {
         'default': {
             'ENGINE': get_env('SQL_ENGINE', default='django.db.backends.postgresql'),
@@ -193,9 +188,6 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-
-
-
 
 
 # Password validation
