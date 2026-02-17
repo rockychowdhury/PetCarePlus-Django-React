@@ -41,7 +41,12 @@ SECRET_KEY = get_env('SECRET_KEY', default='django-insecure-prod-fallback-replac
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = get_env('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = get_env('ALLOWED_HOSTS', default='*', cast=lambda v: [s.strip() for s in v.split(',')])
-CSRF_TRUSTED_ORIGINS = get_env('CSRF_TRUSTED_ORIGINS', default='https://moral-emili-petcarep-9dff8310.koyeb.app,https://petcarepp.vercel.app,https://petcarepp.netlify.app', cast=lambda v: [s.strip() for s in v.split(',')])
+if get_env('RENDER_EXTERNAL_HOSTNAME'):
+    ALLOWED_HOSTS.append(get_env('RENDER_EXTERNAL_HOSTNAME'))
+
+CSRF_TRUSTED_ORIGINS = get_env('CSRF_TRUSTED_ORIGINS', default='https://petcarepp.vercel.app,https://petcarepp.netlify.app', cast=lambda v: [s.strip() for s in v.split(',')])
+if get_env('RENDER_EXTERNAL_HOSTNAME'):
+    CSRF_TRUSTED_ORIGINS.append(f"https://{get_env('RENDER_EXTERNAL_HOSTNAME')}")
 
 # Secure Proxy SSL Header (Required for Koyeb/Heroku/Vercel)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -179,6 +184,15 @@ if get_env('SQL_DATABASE'):
             'PORT': get_env('SQL_PORT'),
             'OPTIONS': db_options,
         }
+    }
+elif get_env('DATABASE_URL'):
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.config(
+            default='sqlite:///db.sqlite3',
+            conn_max_age=600,
+            ssl_require=True
+        )
     }
     
 else:
