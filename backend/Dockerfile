@@ -22,9 +22,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . /app/
 
 # Copy and set entrypoint permissions
-# Copy and set entrypoint permissions
 COPY entrypoint.sh /app/entrypoint.sh
-COPY scripts /app/scripts/
 RUN chmod +x /app/entrypoint.sh
 
 # Expose port
