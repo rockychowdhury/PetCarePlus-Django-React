@@ -2,6 +2,7 @@ services:
   - type: web
     name: petcareplus-backend
     runtime: python
+    rootDir: backend
     buildCommand: "./build.sh"
     startCommand: "./start.sh"
     envVars:
