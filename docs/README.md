@@ -3,8 +3,7 @@
 PetCarePlus is a comprehensive platform connecting pet owners with service providers (vets, sitters, dog walkers) and facilitating sustainable pet rehoming/fostering. It features a modern SPA frontend built with React (Vite) and a robust Django REST Framework backend.
 
 **Live Demo:**
-- **[Vercel (Primary)](https://petcareplus-five.vercel.app/)**
-- [Netlify (Alternative)](https://petcarepp.netlify.app/)
+- [Netlify](https://petcarepp.netlify.app/)
 
 ---
 
