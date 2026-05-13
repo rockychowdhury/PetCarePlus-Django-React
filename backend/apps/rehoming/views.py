@@ -15,10 +15,9 @@ from .serializers import (
     AdoptionInquirySerializer
 )
 from .pagination import ListingPagination
-from apps.users.permissions import IsAdmin, IsOwnerOrReadOnly
+from apps.users.permissions import IsOwnerOrReadOnly
 from apps.common.logging_utils import log_business_event
 import datetime
-import math
 
 class RehomingRequestViewSet(viewsets.ModelViewSet):
     """
@@ -58,9 +57,7 @@ class RehomingRequestViewSet(viewsets.ModelViewSet):
         if not serializer.validated_data.get('terms_accepted'):
             raise PermissionDenied("You must accept the terms to proceed.")
 
-        # STREAMLINING: Auto-confirm immediately, removing cooling period.
         rehoming_status = 'confirmed'
-        cooling_until = None
         
         # 3. Auto-populate location from user profile if not provided
         location_city = serializer.validated_data.get('location_city')
@@ -139,8 +136,7 @@ class RehomingRequestViewSet(viewsets.ModelViewSet):
 
 
 
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
+from apps.common.cache_utils import conditional_cache_page as cache_page
 from django.views.decorators.vary import vary_on_headers
 
 class ListingListCreateView(generics.ListCreateAPIView):
@@ -458,7 +454,6 @@ class AdoptionInquiryViewSet(viewsets.ModelViewSet):
             
             # Automatically reject other pending/approved applications
             other_inquiries = listing.inquiries.exclude(id=inquiry.id).exclude(status__in=['rejected', 'withdrawn'])
-            count = other_inquiries.count()
             other_inquiries.update(
                 status='rejected',
                 rejection_reason="Pet has been rehomed to another applicant."

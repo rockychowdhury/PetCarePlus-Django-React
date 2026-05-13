@@ -77,3 +77,37 @@ def cache_response(key_prefix, timeout=300):
         
         return wrapper
     return decorator
+
+from django.utils.decorators import decorator_from_middleware_with_args
+from django.middleware.cache import CacheMiddleware
+
+class ConditionalCacheMiddleware(CacheMiddleware):
+    def process_response(self, request, response):
+        should_cache = True
+        
+        # Check if it's a DRF response with data
+        if hasattr(response, 'data'):
+            data = response.data
+            if data is None:
+                should_cache = False
+            elif isinstance(data, list) and len(data) == 0:
+                should_cache = False
+            elif isinstance(data, dict):
+                if 'results' in data and not data['results']:
+                    should_cache = False
+                elif not data: # empty dict
+                    should_cache = False
+        # Fallback for standard HTTP response content
+        elif hasattr(response, 'content') and not response.content:
+            should_cache = False
+            
+        if not should_cache:
+            # Bypass caching completely
+            return response
+            
+        return super().process_response(request, response)
+
+def conditional_cache_page(timeout, *, cache=None, key_prefix=None):
+    return decorator_from_middleware_with_args(ConditionalCacheMiddleware)(
+        cache_timeout=timeout, cache_alias=cache, key_prefix=key_prefix
+    )

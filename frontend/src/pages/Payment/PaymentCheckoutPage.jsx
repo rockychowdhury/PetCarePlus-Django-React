@@ -44,23 +44,21 @@ const PaymentCheckoutPage = () => {
         setProcessing(true);
 
         try {
-            // Mock payment processing
-            const result = await mockProcessPayment(
-                pricing.total,
-                selectedPaymentMethod,
-                bookingId
-            );
+            // Call backend API to initiate SSLCommerz payment
+            const response = await api.post('/payments/init/', {
+                booking_id: bookingId
+            });
 
-            // Update booking payment status
-            await api.post(`/services/bookings/${bookingId}/mark_paid/`);
-
-            toast.success('Payment successful!');
-            navigate(`/checkout/success/${bookingId}`, { state: { transaction: result } });
+            if (response.data && response.data.GatewayPageURL) {
+                // Redirect user to SSLCommerz Gateway
+                window.location.href = response.data.GatewayPageURL;
+            } else {
+                toast.error('Failed to get payment gateway URL');
+                setProcessing(false);
+            }
         } catch (error) {
-            console.error('Payment failed:', error);
-            toast.error(error.message || 'Payment failed');
-            navigate('/checkout/failure', { state: { bookingId, error: error.message } });
-        } finally {
+            console.error('Payment initiation failed:', error);
+            toast.error(error?.response?.data?.error || 'Payment initiation failed');
             setProcessing(false);
         }
     };

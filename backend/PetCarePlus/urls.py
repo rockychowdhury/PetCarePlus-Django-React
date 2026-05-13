@@ -18,6 +18,7 @@ urlpatterns = [
     path('api/pets/', include('apps.pets.urls')),
     path('api/notifications/', include('apps.notifications.urls')),
     path('api/analytics/', include('apps.analytics.urls')),
+    path('api/payments/', include('apps.payments.urls')),
     # path('api/common/', include('apps.common.urls')),
     
     # Root Health Check

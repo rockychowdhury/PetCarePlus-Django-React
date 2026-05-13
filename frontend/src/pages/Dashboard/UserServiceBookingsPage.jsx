@@ -349,6 +349,14 @@ const UserServiceBookingsPage = () => {
                                                     <ExternalLink size={12} /> Details
                                                 </button>
 
+                                                {booking.payment_status !== 'paid' && booking.status !== 'cancelled' && booking.status !== 'rejected' && (
+                                                    <Link to={`/checkout/${booking.id}`} className="flex-1 2xl:flex-none">
+                                                        <button className="w-full px-4 py-2 bg-[#C48B28] text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-[1.02] transition-transform shadow-lg shadow-[#C48B28]/10 flex items-center justify-center gap-2">
+                                                            <DollarSign size={12} /> Pay Now
+                                                        </button>
+                                                    </Link>
+                                                )}
+
                                                 {booking.status === 'completed' ? (
                                                     <button
                                                         disabled={booking.has_review}

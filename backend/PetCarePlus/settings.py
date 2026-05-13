@@ -126,6 +126,7 @@ INSTALLED_APPS = [
     'apps.admin_panel',
     'apps.services',
     'apps.common',
+    'apps.payments',
 ]
 
 # Media Files (Uploads)
@@ -306,3 +307,8 @@ Q_CLUSTER['cache'] = 'django_db'
 if get_env('REDIS_CACHE_URL'):
     SESSION_ENGINE = "django.contrib.sessions.backends.cache"
     SESSION_CACHE_ALIAS = "default"
+
+# SSLCommerz Configuration
+SSLCOMMERZ_STORE_ID = get_env('SSLCOMMERZ_STORE_ID')
+SSLCOMMERZ_STORE_PASSWORD = get_env('SSLCOMMERZ_STORE_PASSWORD')
+SSLCOMMERZ_IS_SANDBOX = get_env('SSLCOMMERZ_IS_SANDBOX', default=True, cast=bool)

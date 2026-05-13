@@ -30,7 +30,7 @@ from django.core.mail import send_mail
 from datetime import timedelta
 from django.conf import settings
 from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
+from apps.common.cache_utils import conditional_cache_page as cache_page
 from django.views.decorators.vary import vary_on_headers, vary_on_cookie
 
 User = get_user_model()

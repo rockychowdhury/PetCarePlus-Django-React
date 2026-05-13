@@ -8,7 +8,7 @@ from django.db.models import Q, Sum, Avg, Count, F, Value, FloatField
 from django.db.models.functions import Coalesce
 from apps.common.logging_utils import log_business_event
 from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
+from apps.common.cache_utils import conditional_cache_page as cache_page
 from django.views.decorators.vary import vary_on_headers
 
 

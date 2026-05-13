@@ -103,6 +103,9 @@ import AdminSettingsPage from "../pages/AdminPages/AdminSettingsPage";
 import PaymentCheckoutPage from "../pages/Payment/PaymentCheckoutPage";
 import PaymentSuccessPage from "../pages/Payment/PaymentSuccessPage";
 import PaymentFailurePage from "../pages/Payment/PaymentFailurePage";
+import PaymentSuccess from "../pages/Payment/PaymentSuccess";
+import PaymentFail from "../pages/Payment/PaymentFail";
+import PaymentCancel from "../pages/Payment/PaymentCancel";
 
 // --- Guards imported from PrivateRoute.jsx ---
 
@@ -165,6 +168,11 @@ const router = createBrowserRouter([
 
                     /* Public Profiles */
                     { path: "/profile/:username", element: <PublicProfilePage /> },
+
+                    /* SSLCommerz Callbacks */
+                    { path: "/payment/success", element: <PaymentSuccess /> },
+                    { path: "/payment/fail", element: <PaymentFail /> },
+                    { path: "/payment/cancel", element: <PaymentCancel /> },
                 ],
             },
 
