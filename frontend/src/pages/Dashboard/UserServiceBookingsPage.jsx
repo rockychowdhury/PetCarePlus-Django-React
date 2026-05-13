@@ -220,9 +220,9 @@ const UserServiceBookingsPage = () => {
             </div>
 
             {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8 xl:gap-10">
                 {/* 2. Main Timeline (8 cols) */}
-                <div className="lg:order-1 lg:col-span-8 space-y-6 md:space-y-8">
+                <div className="xl:order-1 xl:col-span-8 space-y-6 md:space-y-8">
                     {/* Simplified Status Filter Bar */}
                     <div className="flex flex-col md:flex-row justify-between items-center gap-6 border-b border-[#EBC176]/10 pb-8 overflow-hidden">
                         <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-4 md:pb-0 no-scrollbar">
@@ -259,10 +259,10 @@ const UserServiceBookingsPage = () => {
                     <div className="space-y-4">
                         {paginatedBookings.length > 0 ? (
                             paginatedBookings.map((booking) => (
-                                <div key={booking.id} className="bg-white rounded-[2rem] p-4 2xl:p-6 border border-[#EBC176]/10 hover:shadow-xl hover:shadow-[#402E11]/5 transition-all group">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 2xl:flex 2xl:flex-row gap-4 2xl:gap-6">
+                                <div key={booking.id} className="bg-white rounded-[2rem] p-5 md:p-6 border border-[#EBC176]/10 hover:shadow-xl hover:shadow-[#402E11]/5 transition-all group relative overflow-hidden">
+                                    <div className="flex flex-col lg:flex-row 2xl:flex-row gap-6">
                                         {/* Left Section: Provider & Pet */}
-                                        <div className="md:col-span-2 2xl:col-span-auto 2xl:flex-1 flex gap-4">
+                                        <div className="flex-1 flex gap-4">
                                             <div className="w-14 h-14 rounded-2xl bg-[#FAF3E0] overflow-hidden border border-[#EBC176]/20 shrink-0">
                                                 {booking.provider?.user?.photoURL ? (
                                                     <img src={booking.provider.user.photoURL} alt="" className="w-full h-full object-cover" />
@@ -305,7 +305,7 @@ const UserServiceBookingsPage = () => {
                                         </div>
 
                                         {/* Middle Section: Schedule */}
-                                        <div className="md:col-span-1 2xl:col-span-auto 2xl:flex-1 border-t md:border-t-0 md:pt-0 pt-3 2xl:border-y-0 2xl:border-x border-[#EBC176]/5 px-0 2xl:px-6 2xl:py-0">
+                                        <div className="flex-1 lg:max-w-[200px] 2xl:max-w-none border-t lg:border-t-0 lg:border-l pt-6 lg:pt-0 lg:pl-6 border-[#EBC176]/10">
                                             <div className="flex items-start gap-3">
                                                 <div className="w-8 h-8 rounded-lg bg-[#FAF3E0] flex items-center justify-center text-[#C48B28] shrink-0">
                                                     <CalendarDays size={16} strokeWidth={2.5} />
@@ -327,7 +327,7 @@ const UserServiceBookingsPage = () => {
                                         </div>
 
                                         {/* Right Section: Status & Actions */}
-                                        <div className="md:col-span-1 2xl:col-span-auto w-full 2xl:w-64 flex flex-col items-end shrink-0">
+                                        <div className="w-full lg:w-fit 2xl:w-64 flex flex-col items-end lg:items-end border-t lg:border-t-0 pt-6 lg:pt-0 lg:pl-6 border-[#EBC176]/10">
                                             <div className="text-right mb-4">
                                                 <span className={`inline-block px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest mb-2 ${booking.status === 'completed' ? 'bg-green-50 text-green-600 border border-green-100' :
                                                     booking.status === 'cancelled' ? 'bg-red-50 text-red-600 border border-red-100' :
@@ -447,7 +447,7 @@ const UserServiceBookingsPage = () => {
                 </div>
 
                 {/* 3. Sidebar (4 cols) */}
-                <div className="lg:order-2 lg:col-span-4 space-y-8">
+                <div className="xl:order-2 xl:col-span-4 space-y-6 lg:space-y-8">
                     {/* Restored Next Visit Card - Compact Version */}
                     <div className="bg-[#FFF9EE] rounded-[2rem] p-5 relative border border-[#EBC176]/20 shadow-xl shadow-[#C48B28]/5">
                         {nextVisit ? (

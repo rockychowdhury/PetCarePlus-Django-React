@@ -48,12 +48,12 @@ const HeroSection = () => {
     };
 
     return (
-        <section className="relative w-full min-h-screen md:pt-24 pt-24 flex flex-col lg:flex-row overflow-hidden bg-[#FEF9ED] transition-colors duration-300">
+        <section className="relative w-full min-h-screen lg:h-screen md:pt-24 pt-24 flex flex-col lg:flex-row overflow-hidden bg-[#FEF9ED] transition-colors duration-300">
             <SectionCursor label="PET NETWORK" icon={<Sparkles size={14} />} className="w-full h-full">
 
 
                 {/* Content Container */}
-                <div className="max-w-[1700px] mx-auto px-8 sm:px-12 lg:px-32 relative z-10 flex flex-col lg:flex-row h-full items-center flex-1 py-12 lg:pt-0 lg:pb-32">
+                <div className="max-w-[1700px] mx-auto px-8 sm:px-12 lg:px-32 relative z-10 flex flex-col lg:flex-row h-full items-center flex-1 pt-12 pb-48 lg:pt-0 lg:pb-32">
 
                     {/* Left Side */}
                     <motion.div
@@ -78,12 +78,12 @@ const HeroSection = () => {
                         >
                             <motion.h1
                                 variants={itemVariants}
-                                className="text-4xl sm:text-5xl lg:text-6xl leading-tight font-black text-themev2-text relative"
+                                className="text-3xl sm:text-5xl lg:text-6xl leading-tight font-black text-themev2-text relative"
                             >
-                                Expert Services & <br />
+                                Expert Services & <br className="hidden sm:block" />
                                 <span className="text-[#C48B28] relative inline-block">
                                     Trusted
-                                </span> Rehoming<br /> Care
+                                </span> Rehoming<br className="hidden sm:block" /> Care
                             </motion.h1>
                         </motion.div>
 
@@ -157,7 +157,7 @@ const HeroSection = () => {
                                 {/* Main Image */}
                                 <motion.div
                                     variants={itemVariants}
-                                    className="absolute top-20 right-4 md:right-20 w-[80%] h-[80%] rounded-[2.5rem] overflow-hidden  z-0"
+                                    className="absolute top-10 lg:top-20 right-4 md:right-20 w-[80%] h-[70%] lg:h-[80%] rounded-[2.5rem] overflow-hidden  z-0"
                                 >
                                     {/* Overlay for Dark Mode contrast */}
                                     <div className="absolute inset-0 bg-black/5 dark:bg-black/40 mix-blend-multiply z-20 pointer-events-none opacity-0 dark:opacity-100 transition-opacity duration-500"></div>

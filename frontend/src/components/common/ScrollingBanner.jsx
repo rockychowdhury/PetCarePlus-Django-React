@@ -25,10 +25,10 @@ const ScrollingBanner = () => {
                     transition={{ duration: 0.8, delay: 0.2 }} // Reduced delay for re-appearance suitability
                     className="fixed bottom-10 left-0 w-full z-50 pointer-events-none"
                 >
-                    <div className="bg-[#C48B28] text-white py-4 overflow-hidden shadow-2xl pointer-events-auto">
-                        <div className="flex items-center gap-12 animate-marquee whitespace-nowrap">
+                    <div className="bg-[#C48B28] text-white py-2 md:py-4 overflow-hidden shadow-2xl pointer-events-auto">
+                        <div className="flex items-center gap-6 md:gap-12 animate-marquee whitespace-nowrap">
                             {[...Array(12)].map((_, i) => (
-                                <div key={i} className="flex items-center gap-12 text-[10px] font-black tracking-[0.4em] uppercase">
+                                <div key={i} className="flex items-center gap-6 md:gap-12 text-[8px] md:text-[10px] font-black tracking-[0.2em] md:tracking-[0.4em] uppercase">
                                     <span>EXPERT SERVICES</span>
                                     <span className="opacity-30">•</span>
                                     <span>VERIFIED PROVIDERS</span>
