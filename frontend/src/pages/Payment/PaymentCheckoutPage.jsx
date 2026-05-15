@@ -52,8 +52,12 @@ const PaymentCheckoutPage = () => {
             if (response.data && response.data.GatewayPageURL) {
                 // Redirect user to SSLCommerz Gateway
                 window.location.href = response.data.GatewayPageURL;
+            } else if (response.data && response.data.direct_success) {
+                // Handle zero-amount/free booking success
+                toast.success(response.data.message || 'Booking confirmed successfully!');
+                navigate(`/payment/success?booking_id=${bookingId}&free=true`);
             } else {
-                toast.error('Failed to get payment gateway URL');
+                toast.error('Failed to initiate payment. Please try again.');
                 setProcessing(false);
             }
         } catch (error) {

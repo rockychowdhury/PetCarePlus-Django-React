@@ -134,8 +134,8 @@ const BookingModal = ({ isOpen, onClose, provider, initialService }) => {
             const details = provider.service_specific_details || {};
             const slug = provider.category?.slug;
 
-            if (slug === 'veterinary') {
-                rate = 0; // Consult fee handling complex
+            if (slug === 'veterinary' || slug === 'vet') {
+                rate = parseFloat(details.base_price) || 0;
                 label = 'Consultation';
             } else if (slug === 'grooming') {
                 rate = parseFloat(details.base_price) || 0;

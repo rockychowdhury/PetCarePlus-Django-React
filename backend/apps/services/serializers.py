@@ -515,4 +515,28 @@ class ServiceBookingCreateSerializer(serializers.ModelSerializer):
                   if not attrs.get('guest_client_name') or not attrs.get('guest_pet_name'):
                        raise serializers.ValidationError("For walk-in guests, Client Name and Pet Name are required.")
         
+        # Scenario 3: Auto-calculate agreed_price if missing
+        if not attrs.get('agreed_price'):
+            service_option = attrs.get('service_option')
+            provider = attrs.get('provider')
+            
+            if service_option:
+                attrs['agreed_price'] = service_option.base_price
+            elif provider:
+                # Try to get base price from provider details
+                if hasattr(provider, 'vet_details') and provider.vet_details.pricing_info:
+                    # Try to extract from pricing_info
+                    import re
+                    match = re.search(r'\$(\d+)', provider.vet_details.pricing_info)
+                    if match:
+                        attrs['agreed_price'] = float(match.group(1))
+                elif hasattr(provider, 'foster_details'):
+                    attrs['agreed_price'] = provider.foster_details.daily_rate
+                elif hasattr(provider, 'trainer_details'):
+                    attrs['agreed_price'] = provider.trainer_details.private_session_rate
+                elif hasattr(provider, 'groomer_details'):
+                    attrs['agreed_price'] = provider.groomer_details.base_price
+                elif hasattr(provider, 'sitter_details'):
+                    attrs['agreed_price'] = provider.sitter_details.house_sitting_rate or provider.sitter_details.walking_rate
+        
         return attrs

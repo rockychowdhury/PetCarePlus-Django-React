@@ -259,100 +259,100 @@ const UserServiceBookingsPage = () => {
                     <div className="space-y-4">
                         {paginatedBookings.length > 0 ? (
                             paginatedBookings.map((booking) => (
-                                <div key={booking.id} className="bg-white rounded-[2rem] p-5 md:p-6 border border-[#EBC176]/10 hover:shadow-xl hover:shadow-[#402E11]/5 transition-all group relative overflow-hidden">
-                                    <div className="flex flex-col lg:flex-row 2xl:flex-row gap-6">
-                                        {/* Left Section: Provider & Pet */}
-                                        <div className="flex-1 flex gap-4">
-                                            <div className="w-14 h-14 rounded-2xl bg-[#FAF3E0] overflow-hidden border border-[#EBC176]/20 shrink-0">
+                                <div key={booking.id} className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-[#EBC176]/10 hover:shadow-2xl hover:shadow-[#402E11]/5 transition-all group relative overflow-hidden">
+                                    <div className="flex flex-col lg:flex-row gap-8 items-start lg:items-stretch">
+                                        {/* Left Section: Provider & Pet Info */}
+                                        <div className="flex-1 w-full flex flex-col sm:flex-row gap-6">
+                                            {/* Provider Image */}
+                                            <div className="w-20 h-20 rounded-3xl bg-[#FAF3E0] overflow-hidden border-2 border-[#EBC176]/20 shrink-0 shadow-inner">
                                                 {booking.provider?.user?.photoURL ? (
                                                     <img src={booking.provider.user.photoURL} alt="" className="w-full h-full object-cover" />
-                                                ) : <div className="w-full h-full flex items-center justify-center text-[#C48B28]"><Users size={20} /></div>}
+                                                ) : <div className="w-full h-full flex items-center justify-center text-[#C48B28]"><Users size={32} /></div>}
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <h4 className="text-base font-black text-[#402E11] truncate">{booking.provider?.business_name}</h4>
-                                                    <span className="px-2 py-0.5 bg-[#FAF3E0] text-[#C48B28] rounded-full text-[8px] font-black uppercase tracking-widest border border-[#EBC176]/10">
-                                                        {booking.provider?.category?.name}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-[#402E11]/40 mb-3">
-                                                    <MapPin size={10} />
-                                                    <p className="text-[10px] font-bold truncate">{booking.provider?.address?.city || 'Dhaka'}, {booking.provider?.address?.state || 'Bangladesh'}</p>
+
+                                            <div className="flex-1 min-w-0 space-y-4">
+                                                <div>
+                                                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                        <h4 className="text-xl font-black text-[#402E11] truncate">{booking.provider?.business_name}</h4>
+                                                        <span className="px-3 py-1 bg-[#FAF3E0] text-[#C48B28] rounded-full text-[9px] font-black uppercase tracking-widest border border-[#EBC176]/10">
+                                                            {booking.provider?.category?.name}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-[#402E11]/50">
+                                                        <MapPin size={14} className="shrink-0" />
+                                                        <p className="text-xs font-bold truncate">{booking.provider?.address?.city}, {booking.provider?.address?.state}</p>
+                                                    </div>
                                                 </div>
 
                                                 {/* Pet Info Badge */}
-                                                <div className="flex items-center gap-2 px-2.5 py-1.5 bg-[#FAF3E0]/30 rounded-full w-fit border border-[#EBC176]/10">
+                                                <div className="inline-flex items-center gap-3 px-4 py-2 bg-[#FAF3E0]/40 rounded-2xl border border-[#EBC176]/10">
                                                     {booking.pet?.media?.[0]?.url ? (
-                                                        <div className="w-4 h-4 rounded-full overflow-hidden border border-white">
+                                                        <div className="w-6 h-6 rounded-full overflow-hidden border-2 border-white shadow-sm">
                                                             <img src={booking.pet.media[0].url} alt="" className="w-full h-full object-cover" />
                                                         </div>
-                                                    ) : <PawPrint size={10} className="text-[#C48B28]" />}
-                                                    <p className="text-[9px] font-black text-[#402E11] tracking-tight">
-                                                        {booking.pet?.name} • <span className="text-[#C48B28] uppercase">{booking.pet?.species}</span> {booking.pet?.breed && `• ${booking.pet.breed}`}
+                                                    ) : <PawPrint size={14} className="text-[#C48B28]" />}
+                                                    <p className="text-[11px] font-black text-[#402E11] tracking-tight">
+                                                        {booking.pet?.name} <span className="mx-1 opacity-20">|</span> <span className="text-[#C48B28] uppercase">{booking.pet?.species}</span> {booking.pet?.breed && <span className="hidden sm:inline opacity-50 font-bold ml-1">• {booking.pet.breed}</span>}
                                                     </p>
-                                                </div>
-
-                                                <div className="mt-4 flex items-center gap-2">
-                                                    <span className="text-[8px] font-black text-[#402E11]/30 uppercase tracking-[0.2em] border border-[#EBC176]/10 px-2 py-0.5 rounded-md">Standard Booking</span>
                                                 </div>
 
                                                 {booking.special_requirements && (
-                                                    <p className="text-[9px] text-[#402E11]/50 mt-3 font-medium line-clamp-2">
-                                                        <span className="font-bold">Special request:</span> {booking.special_requirements}
-                                                    </p>
+                                                    <div className="hidden sm:block">
+                                                        <p className="text-[10px] text-[#402E11]/40 font-bold uppercase tracking-widest mb-1">Special Request</p>
+                                                        <p className="text-xs text-[#402E11]/60 font-medium line-clamp-1 italic">
+                                                            "{booking.special_requirements}"
+                                                        </p>
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
 
-                                        {/* Middle Section: Schedule */}
-                                        <div className="flex-1 lg:max-w-[200px] 2xl:max-w-none border-t lg:border-t-0 lg:border-l pt-6 lg:pt-0 lg:pl-6 border-[#EBC176]/10">
-                                            <div className="flex items-start gap-3">
-                                                <div className="w-8 h-8 rounded-lg bg-[#FAF3E0] flex items-center justify-center text-[#C48B28] shrink-0">
-                                                    <CalendarDays size={16} strokeWidth={2.5} />
+                                        {/* Middle Section: Schedule & Status */}
+                                        <div className="flex-1 w-full lg:max-w-[240px] flex flex-row lg:flex-col justify-between lg:justify-center gap-4 lg:border-l lg:pl-8 border-[#EBC176]/10">
+                                            <div className="flex items-start gap-4">
+                                                <div className="w-12 h-12 rounded-2xl bg-[#FAF3E0] flex items-center justify-center text-[#C48B28] shrink-0 shadow-sm">
+                                                    <CalendarDays size={24} strokeWidth={2.5} />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-black text-[#402E11] tracking-tight mb-1">
-                                                        {format(new Date(booking.booking_date), 'EEE, MMM dd')} • {booking.booking_time?.slice(0, 5) || format(new Date(booking.start_datetime), 'HH:mm')}
+                                                    <p className="text-lg font-black text-[#402E11] tracking-tight leading-none mb-1">
+                                                        {format(new Date(booking.booking_date), 'MMM dd')}
                                                     </p>
-                                                    <div className="space-y-1">
-                                                        <p className="text-[10px] font-bold text-[#402E11]/40 uppercase tracking-tighter">
-                                                            Duration: {Math.round(booking.duration_hours)} hour • {booking.status}
-                                                        </p>
-                                                        <p className="text-[10px] font-bold text-[#402E11]/40 uppercase tracking-tighter">
-                                                            Booking created on {format(new Date(booking.created_at || new Date()), 'MMM dd, yyyy')}
-                                                        </p>
-                                                    </div>
+                                                    <p className="text-sm font-bold text-[#C48B28]">
+                                                        {booking.booking_time?.slice(0, 5) || format(new Date(booking.start_datetime), 'HH:mm')}
+                                                    </p>
+                                                    <p className="text-[10px] font-bold text-[#402E11]/30 uppercase tracking-tighter mt-1">
+                                                        {Math.round(booking.duration_hours)}H SESSION
+                                                    </p>
                                                 </div>
+                                            </div>
+
+                                            <div className="text-right lg:text-left space-y-1">
+                                                <BookingStatusBadge status={booking.status} />
+                                                <p className={`text-[10px] font-black uppercase tracking-widest block pt-1 ${booking.payment_status === 'paid' ? 'text-green-500' : 'text-amber-500'}`}>
+                                                    {booking.payment_status === 'paid' ? '• Payment Received' : '• Payment Pending'}
+                                                </p>
                                             </div>
                                         </div>
 
-                                        {/* Right Section: Status & Actions */}
-                                        <div className="w-full lg:w-fit 2xl:w-64 flex flex-col items-end lg:items-end border-t lg:border-t-0 pt-6 lg:pt-0 lg:pl-6 border-[#EBC176]/10">
-                                            <div className="text-right mb-4">
-                                                <span className={`inline-block px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest mb-2 ${booking.status === 'completed' ? 'bg-green-50 text-green-600 border border-green-100' :
-                                                    booking.status === 'cancelled' ? 'bg-red-50 text-red-600 border border-red-100' :
-                                                        'bg-[#EBC176]/10 text-[#C48B28] border border-[#EBC176]/20'
-                                                    }`}>
-                                                    {booking.status}
-                                                </span>
-                                                <p className="text-[10px] font-bold text-[#C48B28] mb-1">
-                                                    {booking.payment_status === 'paid' ? 'Payment received' : 'Payment pending'}
-                                                </p>
-                                                <p className="text-2xl font-black text-[#402E11] tracking-tight">${booking.agreed_price}</p>
+                                        {/* Right Section: Price & Actions */}
+                                        <div className="w-full lg:w-fit lg:min-w-[200px] flex flex-col items-center lg:items-end justify-between gap-6 lg:border-l lg:pl-8 border-[#EBC176]/10">
+                                            <div className="text-center lg:text-right">
+                                                <p className="text-[10px] font-black text-[#C48B28] uppercase tracking-[0.2em] mb-1">Total Price</p>
+                                                <p className="text-4xl font-black text-[#402E11] tracking-tighter leading-none">${booking.agreed_price}</p>
                                             </div>
 
-                                            <div className="mt-auto flex flex-row gap-2 w-full justify-end">
+                                            <div className="grid grid-cols-2 sm:flex sm:flex-row lg:flex-col gap-3 w-full">
                                                 <button
                                                     onClick={() => { setSelectedBooking(booking); setActiveModal('details'); }}
-                                                    className="flex-1 2xl:flex-none px-4 py-2 bg-white text-[#402E11] border border-[#EBC176]/20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#FAF3E0] transition-colors flex items-center justify-center gap-2"
+                                                    className="px-4 py-3 bg-white text-[#402E11] border-2 border-[#EBC176]/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#FAF3E0] hover:border-[#EBC176]/40 transition-all flex items-center justify-center gap-2 shadow-sm"
                                                 >
-                                                    <ExternalLink size={12} /> Details
+                                                    <ExternalLink size={14} /> Details
                                                 </button>
 
-                                                {booking.payment_status !== 'paid' && booking.status !== 'cancelled' && booking.status !== 'rejected' && (
-                                                    <Link to={`/checkout/${booking.id}`} className="flex-1 2xl:flex-none">
-                                                        <button className="w-full px-4 py-2 bg-[#C48B28] text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-[1.02] transition-transform shadow-lg shadow-[#C48B28]/10 flex items-center justify-center gap-2">
-                                                            <DollarSign size={12} /> Pay Now
+                                                {booking.payment_status !== 'paid' && !['cancelled', 'rejected', 'completed'].includes(booking.status) && (
+                                                    <Link to={`/checkout/${booking.id}`} className="contents">
+                                                        <button className="px-4 py-3 bg-[#C48B28] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-[#C48B28]/20 flex items-center justify-center gap-2">
+                                                            <DollarSign size={14} /> {parseFloat(booking.agreed_price) > 0 ? 'Pay Now' : 'Confirm'}
                                                         </button>
                                                     </Link>
                                                 )}
@@ -361,31 +361,31 @@ const UserServiceBookingsPage = () => {
                                                     <button
                                                         disabled={booking.has_review}
                                                         onClick={() => { setSelectedBooking(booking); setActiveModal('review'); }}
-                                                        className={`flex-1 2xl:flex-none px-4 py-2 bg-white text-[#402E11] border border-[#EBC176]/20 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 ${booking.has_review ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:bg-[#FAF3E0]'}`}
+                                                        className={`px-4 py-3 bg-white text-[#402E11] border-2 border-[#EBC176]/20 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm ${booking.has_review ? 'opacity-40 grayscale cursor-not-allowed' : 'hover:bg-[#FAF3E0] hover:border-[#EBC176]/40'}`}
                                                     >
-                                                        <Star size={12} className={booking.has_review ? 'text-gray-400' : 'text-[#C48B28]'} />
+                                                        <Star size={14} className={booking.has_review ? 'text-gray-400' : 'text-[#C48B28]'} />
                                                         {booking.has_review ? 'Reviewed' : 'Review'}
                                                     </button>
-                                                ) : booking.status === 'cancelled' || booking.status === 'rejected' ? (
-                                                    <Link to={`/services/${booking.provider?.id || ''}`} className="flex-1 2xl:flex-none">
-                                                        <button className="w-full px-4 py-2 bg-[#C48B28] text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-[1.02] transition-transform shadow-lg shadow-[#C48B28]/10 flex items-center justify-center gap-2">
-                                                            <RotateCcw size={12} /> Re-book
+                                                ) : ['cancelled', 'rejected'].includes(booking.status) ? (
+                                                    <Link to={`/services/${booking.provider?.id || ''}`} className="contents">
+                                                        <button className="px-4 py-3 bg-[#C48B28] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-[#C48B28]/20 flex items-center justify-center gap-2">
+                                                            <RotateCcw size={14} /> Re-book
                                                         </button>
                                                     </Link>
                                                 ) : (
                                                     <>
                                                         <button
                                                             onClick={() => handleWhatsApp(booking)}
-                                                            className="flex-1 2xl:flex-none px-4 py-2 bg-[#25D366] text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-[1.02] transition-transform shadow-lg shadow-[#25D366]/10 flex items-center justify-center gap-2"
+                                                            className="px-4 py-3 bg-[#25D366] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-[#25D366]/20 flex items-center justify-center gap-2"
                                                         >
-                                                            <MessageCircle size={12} /> WhatsApp
+                                                            <MessageCircle size={14} /> WhatsApp
                                                         </button>
                                                         {booking.status === 'pending' && (
                                                             <button
                                                                 onClick={() => { setSelectedBooking(booking); setActiveModal('reschedule'); }}
-                                                                className="flex-1 2xl:flex-none px-4 py-2 bg-white text-[#402E11] border border-[#EBC176]/20 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#FAF3E0] transition-colors flex items-center justify-center gap-2"
+                                                                className="px-4 py-3 bg-white text-[#402E11] border-2 border-[#EBC176]/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#FAF3E0] hover:border-[#EBC176]/40 transition-all flex items-center justify-center gap-2 shadow-sm"
                                                             >
-                                                                <CalendarDays size={12} /> Reschedule
+                                                                <CalendarDays size={14} /> Reschedule
                                                             </button>
                                                         )}
                                                     </>

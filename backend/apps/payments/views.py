@@ -24,8 +24,25 @@ class PaymentInitiateView(APIView):
         
         # In a real scenario, you'd calculate this based on booking parameters or use agreed_price
         amount = booking.agreed_price
+        
         if amount <= 0:
-             return Response({'error': 'Amount must be greater than zero'}, status=status.HTTP_400_BAD_REQUEST)
+            # Handle free services or zero-amount bookings gracefully
+            booking.payment_status = 'paid'
+            booking.save()
+            
+            # Create a success transaction record for history
+            PaymentTransaction.objects.create(
+                transaction_id=f"FREE-{uuid.uuid4().hex[:8].upper()}",
+                booking=booking,
+                amount=0,
+                status='SUCCESS'
+            )
+            
+            return Response({
+                'status': 'SUCCESS',
+                'message': 'Free service booking confirmed.',
+                'direct_success': True
+            }, status=status.HTTP_200_OK)
 
         tran_id = str(uuid.uuid4())
         
