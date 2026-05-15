@@ -277,6 +277,39 @@ Search and filter service providers.
 
 ---
 
+## 💳 Payments
+
+### Initiate Payment
+Start the SSLCommerz payment flow for a confirmed booking.
+- **URL**: `/api/payments/init/`
+- **Method**: `POST`
+- **Auth Required**: Yes
+
+**Request Body**
+```json
+{
+  "booking_id": 123
+}
+```
+
+**Response (200 OK - Redirect to Gateway)**
+```json
+{
+  "GatewayPageURL": "https://sandbox.sslcommerz.com/gwprocess/v4/api.php?..."
+}
+```
+
+**Response (200 OK - Direct Success for $0)**
+```json
+{
+  "status": "SUCCESS",
+  "message": "Free service booking confirmed.",
+  "direct_success": true
+}
+```
+
+---
+
 ## 🛡️ Admin Panel
 
 All admin endpoints require `is_staff=true` or Admin role.

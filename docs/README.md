@@ -1,130 +1,102 @@
 # PetCarePlus (Django + React Application)
 
-PetCarePlus is a comprehensive platform connecting pet owners with service providers (vets, sitters, dog walkers) and facilitating sustainable pet rehoming/fostering. It features a modern SPA frontend built with React (Vite) and a robust Django REST Framework backend.
-
-**Live Demo:**
-- [Netlify](https://petcarepp.netlify.app/)
+PetCarePlus is a premium, full-stack ecosystem designed to connect pet owners with verified service providers and facilitate ethical pet rehoming. Built with a focus on trust, performance, and modern UX, it simplifies the complex journey of pet care management.
 
 ---
 
 ## 🎯 Problem & Solution
-**The Problem**: Pet owners often struggle to find trusted local care providers or navigate the complex, often heartbreaking process of rehoming a pet. Existing platforms are often fragmented, lacking verified providers or secure adoption processes.
+**The Problem**: Finding trusted local pet care (vets, sitters, groomers) is often a fragmented experience, and rehoming pets can be a stressful, unverified process. Existing solutions lack integrated security, real-time tracking, and verified provider networks.
 
-**The Solution**: PetCarePlus unifies these needs into a single, secure ecosystem. It offers a verified marketplace for pet services and a dedicated, empathy-driven interface for rehoming pets, ensuring safety and trust through rigorous identity verification and AI-assisted matching.
+**The Solution**: PetCarePlus provides a unified, secure platform. It combines a verified service marketplace with a dedicated, AI-assisted rehoming interface, ensuring every pet finds the care and home they deserve through identity verification and proximity-based matching.
+
+---
+
+## 🛠 Tech Stack
+
+| Category | Tools |
+| :--- | :--- |
+| **Backend** | ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) ![Django](https://img.shields.io/badge/django-%23092E20.svg?style=for-the-badge&logo=django&logoColor=white) ![DRF](https://img.shields.io/badge/django%20rest-ff1709?style=for-the-badge&logo=django&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white) |
+| **Frontend** | ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB) ![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white) ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white) ![React Query](https://img.shields.io/badge/-React%20Query-FF4154?style=for-the-badge&logo=react-query&logoColor=white) |
+| **Async Tasks** | ![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white) ![Celery](https://img.shields.io/badge/celery-%2337814A.svg?style=for-the-badge&logo=celery&logoColor=white) |
+| **AI/ML** | ![Google Gemini](https://img.shields.io/badge/google%20gemini-8E75B2?style=for-the-badge&logo=google-gemini&logoColor=white) |
+| **DevOps** | ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white) ![Nginx](https://img.shields.io/badge/nginx-%23009639.svg?style=for-the-badge&logo=nginx&logoColor=white) ![GitHub Actions](https://img.shields.io/badge/github%20actions-%232088FF.svg?style=for-the-badge&logo=github-actions&logoColor=white) |
 
 ---
 
 ## 🚀 Key Features
 
 ### 🔐 Secure Authentication & Trust
-- **Cookie-Based JWT**: HttpOnly cookies for secure, XSS-resistant authentication with automatic token rotation.
-- **Identity Verification**: Multi-step verification for Service Providers (Documents, Email, Phone) to ensure platform safety.
+- **HttpOnly Cookie JWT**: Secure, XSS-resistant authentication with automatic token rotation.
+- **Provider Verification**: Multi-step identity verification (Documents, Email, Phone) to ensure platform safety.
 
-### 📍 Geo-Location Search
-- **Proximity Matching**: Find Vets, Groomers, and Sitters near you using Haversine distance calculations.
-- **PostGIS-like Logic**: Efficient spatial filtering to show only relevant, local results.
+### 📍 Proximity-Based Discovery
+- **Geo-Search**: Find Vets, Groomers, and Sitters near you using optimized Haversine distance calculations.
+- **Interactive Maps**: Visual discovery of local providers using React-Leaflet.
 
-### 🤖 AI-Powered Assistance (Google Gemini)
-- **Smart Rehoming Matches**: Integrated **Google Gemini Pro** to analyze adoption applications and compatibility with listed pets.
-- **Content Generation**: AI assistance for writing compelling pet profiles and bio descriptions.
+### 🤖 AI-Powered Assistance
+- **Smart Rehoming**: Integrated **Google Gemini Pro** to analyze adoption applications and compatibility.
+- **Pet Profiles**: AI assistance for writing compelling pet descriptions and bios.
 
-### ⚡ High-Performance Background Tasks
-- **Celery & Redis**: Asynchronous processing for heavy tasks to keep the UI snappy.
-- **Real-time Notifications**: Background handling of Email delivery (Welcome emails, Booking confirmations) and in-app alerts.
+### 💳 Transactional Excellence
+- **Payment Gateway**: Integrated **SSLCommerz** (Sandbox) for secure, seamless booking payments.
+- **Responsive Dashboard**: Mobile-first portal for managing bookings, earnings, and availability.
 
-### 🏥 Comprehensive Service Management
-- **Provider Dashboard**: Dedicated portal for providers to manage availability, bookings, and earnings.
-- **Booking System**: Full booking lifecycle management (Request -> Confirm -> Complete -> Review).
-
----
-
-## 🛠 Tech Stack
-
-### Backend
-- **Framework**: Django 5.x & Django REST Framework (DRF)
-- **Authentication**: `SimpleJWT` with HttpOnly Cookies
-- **Database**: PostgreSQL
-- **Async Queue**: Celery 5.x + Redis 5.x
-- **AI/ML**: Google Generative AI (Gemini)
-- **Utilities**: `Pillow` (Image Processing), `django-filter`
-
-### Frontend
-- **Framework**: React 18 + Vite
-- **Styling**: TailwindCSS (Custom "Sage & Stone" Theme)
-- **State Management**: TanStack Query (React Query)
-- **Routing**: React Router DOM 6
-- **Maps**: Leaflet / React-Leaflet
-- **Data Viz**: Recharts (Analytics & Stats)
-- **Forms**: React Hook Form + Zod Validation
-
-### DevOps & Infrastructure
-- **Containerization**: Docker & Docker Compose
-- **Server**: Gunicorn + Whitenoise (Static Files)
-- **CI/CD**: GitHub Actions (planned)
-- **Hosting**:
-  - **Frontend**: Vercel / Netlify
-  - **Backend**: Koyeb (Docker) / Render
-  - **DB/Redis**: Supabase / Upstash
+### ⚡ Performance & Scale
+- **Background Tasks**: Celery/Redis for asynchronous email delivery and real-time alerts.
+- **Data Analytics**: Interactive charts for provider earnings and visitor trends.
 
 ---
 
 ## 📦 Installation & Setup
 
-### Prerequisites
+### 1. Prerequisites
 - Python 3.10+
 - Node.js 18+
-- PostgreSQL
-- Redis
+- PostgreSQL & Redis (Local or Cloud)
 
-### Backend Setup
-1. Navigate to `/backend`:
-   ```bash
-   cd backend
-   ```
-2. Create virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Configure `.env` (Copy from `.env.example`).
-5. Run migrations:
-   ```bash
-   python manage.py migrate
-   ```
-6. Start server:
-   ```bash
-   # Make sure Redis is running for Celery
-   python manage.py runserver
-   ```
+### 2. Backend Setup
+```bash
+# Navigate and Setup Environment
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-### Frontend Setup
-1. Navigate to `/frontend`:
-   ```bash
-   cd frontend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start dev server:
-   ```bash
-   npm run dev
-   ```
+# Install Dependencies
+pip install -r requirements.txt
+
+# Configure Environment Variables
+cp .env.example .env
+```
+> [!IMPORTANT]
+> You **MUST** update the following keys in `.env`:
+> - `SECRET_KEY`: Django secret key.
+> - `GOOGLE_API_KEY`: For Gemini AI features.
+> - `SSLCOMMERZ_STORE_ID` & `SSLCOMMERZ_STORE_PASSWORD`: For payment features.
+> - `DATABASE_URL` / `SQL_PORT`: Database connection details.
+
+```bash
+# Initialize Database
+python manage.py migrate
+python manage.py runserver
+```
+
+### 3. Frontend Setup
+```bash
+# Navigate and Install
+cd frontend
+npm install
+
+# Start Development Server
+npm run dev
+```
+
+---
 
 ## 📖 Documentation
-- [Features Overview](features.md) - Detailed breakdown of platform capabilities.
-- [API Documentation](api_docs.md) - Endpoints and Usage.
-- [Database Schema](database_schema.md) - Models and Relationships.
-- [Project Architecture](project_details.md) - Deep dive into code structure.
-
-## 🤝 Contributing
-1. Fork the repo
-2. Create feature branch
-3. Submit PR
+- [Features Overview](https://github.com/rockychowdhury/PetCarePlus-Django-React/blob/main/docs/features.md) - Platform capabilities.
+- [API Documentation](https://github.com/rockychowdhury/PetCarePlus-Django-React/blob/main/docs/api_docs.md) - REST API Endpoints.
+- [Database Schema](https://github.com/rockychowdhury/PetCarePlus-Django-React/blob/main/docs/database_schema.md) - Models & Relationships.
+- [Project Architecture](https://github.com/rockychowdhury/PetCarePlus-Django-React/blob/main/docs/project_details.md) - Code structure.
 
 ---
 *Built by Rocky Chowdhury*
