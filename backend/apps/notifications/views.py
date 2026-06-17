@@ -1,44 +1,39 @@
+"""
+PetCarePlus v2 — Notifications Views
+
+API Views for Notification retrieval and modification.
+Includes custom detail and list actions to mark notifications as read.
+"""
+
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.utils import timezone
-from .models import Notification
-from .serializers import NotificationSerializer
 
-class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+from apps.notifications.models import Notification
+from apps.notifications.serializers import NotificationSerializer
+
+
+class NotificationViewSet(viewsets.ModelViewSet):
     """
-    List and retrieve notifications.
-    Mark as read via custom action.
+    ViewSet for Notification models.
+    Scopes access to the active authenticated user.
     """
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Notification.objects.filter(
-            recipient=self.request.user, 
-            is_dismissed=False
-        ).order_by('-created_at')
+        return Notification.objects.filter(user=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='mark-read')
     def mark_read(self, request, pk=None):
+        """Mark a specific notification as read."""
         notification = self.get_object()
-        if not notification.is_read:
-            notification.is_read = True
-            notification.read_at = timezone.now()
-            notification.save()
-        return Response({'status': 'marked as read'})
-
-    @action(detail=False, methods=['post'])
-    def mark_all_read(self, request):
-        self.get_queryset().filter(is_read=False).update(
-            is_read=True, 
-            read_at=timezone.now()
-        )
-        return Response({'status': 'all marked as read'})
-
-    @action(detail=True, methods=['post'])
-    def dismiss(self, request, pk=None):
-        notification = self.get_object()
-        notification.is_dismissed = True
+        notification.is_read = True
         notification.save()
-        return Response({'status': 'dismissed'})
+        return Response({'status': 'Notification marked as read.'}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='mark-all-read')
+    def mark_all_read(self, request):
+        """Mark all active notifications as read."""
+        self.get_queryset().filter(is_read=False).update(is_read=True)
+        return Response({'status': 'All notifications marked as read.'}, status=status.HTTP_200_OK)

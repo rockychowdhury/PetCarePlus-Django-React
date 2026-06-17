@@ -1,1 +1,0 @@
-# Initialize payments app

@@ -1,115 +1,39 @@
+"""
+PetCarePlus v2 — Pets Serializers
+
+Serializer for companion pet profiles.
+Validates companion capability check at the database/API level.
+"""
+
 from rest_framework import serializers
-from .models import PetProfile, PetMedia, PersonalityTrait, PetPersonality
-from django.contrib.auth import get_user_model
+from apps.animals.models import AnimalType
+from apps.animals.serializers import AnimalTypeSerializer
+from apps.pets.models import Pet
 
-User = get_user_model()
 
-class PetOwnerSimpleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'first_name', 'last_name', 'photoURL', 'role', 'verified_identity', 'pet_owner_verified', 'location_city', 'location_state']
-
-class PetMediaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PetMedia
-        fields = ['id', 'url', 'delete_url', 'is_primary', 'uploaded_at']
-
-class PersonalityTraitSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PersonalityTrait
-        fields = ['id', 'name']
-
-class PetProfileSerializer(serializers.ModelSerializer):
-    owner = PetOwnerSimpleSerializer(read_only=True)
-    media = PetMediaSerializer(many=True, read_only=True)
-    traits = serializers.SerializerMethodField()
+class PetSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Pet model.
+    Enforces companion-only animal type constraints on writes.
+    """
+    owner_email = serializers.EmailField(source='owner.email', read_only=True)
+    animal_type_details = AnimalTypeSerializer(source='animal_type', read_only=True)
 
     class Meta:
-        model = PetProfile
+        model = Pet
         fields = [
-            'id', 'owner', 'name', 'species', 'breed', 
-            'birth_date', 'gender', 'weight_kg', 'size_category',
-            'spayed_neutered', 'microchipped',
-            'description', 'media', 'traits', 'status',
-            'created_at', 'updated_at', 'profile_is_complete'
+            'id', 'owner', 'owner_email', 'animal_type', 'animal_type_details',
+            'name', 'breed', 'gender', 'birth_date', 'description',
+            'weight_kg', 'spayed_neutered', 'vaccinated', 'photo_url',
+            'is_active', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['created_at', 'updated_at', 'owner']
+        read_only_fields = ['id', 'owner', 'is_active', 'created_at', 'updated_at']
 
-    def get_traits(self, obj):
-        # obj.traits returns PetPersonality instances
-        pet_personalities = obj.traits.all()
-        return [
-            {
-                'id': pp.trait.id,
-                'name': pp.trait.name,
-            }
-            for pp in pet_personalities
-        ]
-
-class PetProfileCreateUpdateSerializer(serializers.ModelSerializer):
-    traits = serializers.ListField(
-        child=serializers.CharField(), 
-        write_only=True, 
-        required=False
-    )
-    media_data = serializers.ListField(
-        child=serializers.DictField(),
-        write_only=True,
-        required=False
-    )
-
-    class Meta:
-        model = PetProfile
-        fields = [
-            'id', 'name', 'species', 'breed', 
-            'birth_date', 'gender', 'weight_kg', 'size_category',
-            'spayed_neutered', 'microchipped',
-            'description', 'traits', 'media_data', 'status'
-        ]
-
-    def create(self, validated_data):
-        traits_data = validated_data.pop('traits', [])
-        media_data = validated_data.pop('media_data', [])
-        
-        pet = PetProfile.objects.create(**validated_data)
-        
-        self._assign_traits(pet, traits_data)
-        self._assign_media(pet, media_data)
-        
-        return pet
-
-    def update(self, instance, validated_data):
-        traits_data = validated_data.pop('traits', None)
-        media_data = validated_data.pop('media_data', None)
-        
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        
-        if traits_data is not None:
-            self._assign_traits(instance, traits_data)
-            
-        if media_data is not None:
-            self._assign_media(instance, media_data)
-            
-        return instance
-
-    def _assign_traits(self, pet, traits_list):
-        pet.traits.all().delete() 
-        for trait_name in traits_list:
-            trait_obj, _ = PersonalityTrait.objects.get_or_create(name=trait_name)
-            PetPersonality.objects.create(pet=pet, trait=trait_obj)
-
-    def _assign_media(self, pet, media_list):
-        # Expecting [{"url": "...", "delete_url": "..."?}, ...]
-        if not media_list:
-            return
-
-        pet.media.all().delete()
-        for idx, item in enumerate(media_list):
-            PetMedia.objects.create(
-                pet=pet, 
-                url=item.get('url'),
-                delete_url=item.get('delete_url'),
-                is_primary=(idx == 0)
+    def validate_animal_type(self, value):
+        # Only allow companion pets
+        if value.category != AnimalType.Category.COMPANION:
+            raise serializers.ValidationError(
+                f"'{value.name_en}' is livestock. Only companion animals (Cat, Dog, Rabbit, Bird) "
+                f"can be registered as pets."
             )
+        return value

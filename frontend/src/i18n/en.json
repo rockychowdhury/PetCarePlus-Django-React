@@ -1,0 +1,223 @@
+{
+  "nav": {
+    "home": "Home",
+    "guidelines": "Guidelines",
+    "vaccination": "Vaccination Guide",
+    "providers": "Service Providers",
+    "ai_assistant": "AI Assistant",
+    "rehoming": "Rehoming (Adoption)",
+    "govt_resources": "Government Resources",
+    "profile": "Profile",
+    "bookings": "My Bookings",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout"
+  },
+  "hero": {
+    "title": "Ensure Proper Care for Your Pets & Livestock",
+    "subtitle": "The first bilingual care and services platform built for the Bangladeshi context. Get expert advice and services for cats, dogs, cows, goats, and more.",
+    "cta_ai": "Talk to AI Assistant",
+    "cta_providers": "Find Nearest Doctors",
+    "location_title": "Select Your Area",
+    "select_division": "Select Division",
+    "select_district": "Select District",
+    "select_upazila": "Select Upazila"
+  },
+  "ai": {
+    "welcome": "Hello! I am your AI Care Assistant. Let me know what symptoms or issues your pet or livestock is facing.",
+    "step_animal": "1. Which animal are you asking about?",
+    "step_problem": "2. Describe what you notice in detail (Bangla or English):",
+    "placeholder_problem": "e.g., My cat hasn't eaten anything since morning and seems lethargic...",
+    "step_chat": "3. Please answer a few questions to help me understand better:",
+    "placeholder_chat": "Type your answer...",
+    "send": "Send",
+    "turns_remaining": "You have {count} free questions remaining. Please register or login for full discussions.",
+    "urgency": "Urgency Assessment",
+    "care_advice": "Home Care & Advice",
+    "suggested_providers": "Specialized Providers in Your Area",
+    "suggested_reason": "Reason for suggestion",
+    "btn_contact": "Contact Now",
+    "session_ended": "Session concluded!",
+    "no_providers": "Sorry, no providers in this category were found in your area.",
+    "urgency_levels": {
+      "monitor_at_home": "Monitor at home",
+      "see_vet_this_week": "See a vet this week",
+      "call_vet_now": "Call a vet now",
+      "emergency": "Emergency — act immediately"
+    }
+  },
+  "guidelines": {
+    "title": "Care & Rearing Guidelines",
+    "subtitle": "Learn proper guidelines for rearing, feeding, and disease management of your animals.",
+    "search_placeholder": "Search topic or guideline...",
+    "filter_animal": "Filter by Animal",
+    "read_more": "Read More",
+    "no_guidelines": "No guidelines found.",
+    "topics": {
+      "general": "General Care",
+      "nutrition": "Food & Nutrition",
+      "housing": "Shelter & Environment",
+      "health": "Health & Diseases",
+      "breeding": "Breeding & Rearing"
+    },
+    "seasons": {
+      "summer": "Summer",
+      "monsoon": "Monsoon",
+      "winter": "Winter",
+      "all": "All Seasons"
+    }
+  },
+  "vaccination": {
+    "title": "Vaccine & Medicine Reference",
+    "subtitle": "Check the correct dosage, timing, and schedule of vaccines to prevent diseases.",
+    "search_placeholder": "Search by vaccine or disease name...",
+    "vaccine_name": "Vaccine Name",
+    "disease": "Target Disease",
+    "schedule": "Schedule/Timing",
+    "dosage": "Dosage/Method",
+    "age_range": "Target Age",
+    "no_records": "No vaccine records found."
+  },
+  "providers": {
+    "title": "Service Providers Directory",
+    "subtitle": "Find verified veterinary surgeons, groomers, sitters, and pharmacies near you.",
+    "filter_type": "Service Type",
+    "types": {
+      "all": "All Services",
+      "vet": "Veterinarian (Vet)",
+      "groomer": "Groomer",
+      "sitter": "Sitter / Sitter Care",
+      "trainer": "Trainer",
+      "pharmacy": "Animal Pharmacy"
+    },
+    "verified": "Verified",
+    "rating": "Rating",
+    "reviews": "reviews",
+    "no_reviews": "No reviews yet",
+    "location": "Location",
+    "distance_local": "In your district",
+    "distance_regional": "In your division (neighboring districts)",
+    "distance_national": "Other regions",
+    "btn_book": "Book Appointment",
+    "btn_details": "View Profile",
+    "services_offered": "Services Offered & Pricing",
+    "reviews_title": "Customer Reviews",
+    "no_providers": "No service providers found in this area."
+  },
+  "bookings": {
+    "title": "Book an Appointment",
+    "select_service": "Select Service",
+    "select_pet": "Select Pet (Optional)",
+    "select_date": "Select Date",
+    "select_time": "Select Time",
+    "notes": "Additional Notes / Symptoms",
+    "notes_placeholder": "Mention any specific symptoms or special requests...",
+    "btn_submit": "Confirm Booking",
+    "success": "Your booking request has been submitted! You will be notified once the provider confirms.",
+    "my_bookings": "My Bookings",
+    "provider_bookings": "Received Bookings",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "actions": {
+      "confirm": "Confirm",
+      "complete": "Complete",
+      "cancel": "Cancel"
+    },
+    "no_bookings": "No bookings found."
+  },
+  "rehoming": {
+    "title": "Pet Rehoming & Adoption",
+    "subtitle": "Find safe and loving new homes for cats and dogs. 100% free and local.",
+    "notice": "Only cat and dog rehoming is supported. Buying/selling animals is strictly prohibited.",
+    "btn_post": "Create Rehoming Post",
+    "listing_owner": "Current Owner",
+    "reason": "Reason for Rehoming",
+    "apply_title": "Apply to Adopt",
+    "apply_message": "Explain why you wish to adopt this pet and describe your pet care experience:",
+    "apply_placeholder": "I will provide a safe home and a warm bed, with plenty of playing space...",
+    "btn_apply": "Submit Adoption Application",
+    "success_apply": "Your application was submitted successfully! Waiting for owner's response.",
+    "applications_received": "Applications Received",
+    "applicant": "Applicant",
+    "btn_approve": "Approve (Transfer Ownership)",
+    "btn_reject": "Reject",
+    "status": {
+      "active": "Active",
+      "adopted": "Adopted",
+      "withdrawn": "Withdrawn"
+    },
+    "status_app": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "no_listings": "No active rehoming listings found in your area."
+  },
+  "govt": {
+    "title": "Govt & NGO Help Resources",
+    "subtitle": "Upazila and district level government veterinary hospitals, NGOs, and emergency support hotlines.",
+    "types": {
+      "govt": "Govt Vet Hospital",
+      "ngo": "NGO Service",
+      "emergency": "Emergency Hotline"
+    },
+    "address": "Address",
+    "phone": "Phone",
+    "website": "Website",
+    "no_resources": "No resources found in this district."
+  },
+  "profile": {
+    "title": "My Profile",
+    "role": "Role",
+    "roles": {
+      "admin": "Administrator",
+      "pet_owner": "Pet Owner",
+      "farmer": "Farmer",
+      "provider": "Service Provider"
+    },
+    "preferred_language": "Preferred Language",
+    "location": "Your Location",
+    "pets_title": "My Pets",
+    "btn_add_pet": "Add Pet Profile",
+    "pet_name": "Pet Name",
+    "pet_type": "Animal Type",
+    "pet_breed": "Breed",
+    "pet_age": "Age (years)",
+    "pet_photo": "Photo",
+    "btn_save": "Save Changes",
+    "no_pets": "No pets added to your profile yet."
+  },
+  "auth": {
+    "login_title": "Log in to Your Account",
+    "register_title": "Create a New Account",
+    "email": "Email Address",
+    "password": "Password",
+    "confirm_password": "Confirm Password",
+    "name": "Full Name",
+    "phone": "Mobile Number",
+    "select_role": "Select Your Role",
+    "select_role_desc": "Choose 'Service Provider' if you offer veterinary, grooming, or caretaking services. Choose 'Farmer' for livestock, or 'Pet Owner' for companion animals.",
+    "btn_login": "Log In",
+    "btn_register": "Register",
+    "no_account": "Don't have an account? Register here",
+    "have_account": "Already have an account? Log in"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong. Please try again.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "back": "Go Back",
+    "submit": "Submit",
+    "empty": "No data available",
+    "bangla": "বাংলা",
+    "english": "English",
+    "verified_badge": "Verified"
+  }
+}

@@ -1,10 +1,10 @@
 from django.contrib import admin
+from .models import Pet
 
-# Register your models here.
-from .models import PetProfile, PetMedia, PersonalityTrait, PetPersonality
 
-admin.site.register(PetProfile)
-admin.site.register(PetMedia)
-admin.site.register(PersonalityTrait)
-admin.site.register(PetPersonality)
-
+@admin.register(Pet)
+class PetAdmin(admin.ModelAdmin):
+    list_display = ('name', 'animal_type', 'owner', 'gender', 'is_active')
+    list_filter = ('animal_type', 'gender', 'spayed_neutered', 'vaccinated', 'is_active')
+    search_fields = ('name', 'owner__email', 'breed')
+    autocomplete_fields = ['owner', 'animal_type']

@@ -1,21 +1,26 @@
 from django.contrib import admin
-from django.contrib.admin import ModelAdmin
-from .models import RehomingListing, RehomingRequest, AdoptionInquiry
+from .models import RehomingListing, RehomingApplication
 
-@admin.register(RehomingRequest)
-class RehomingRequestAdmin(ModelAdmin):
-    list_display = ('id', 'owner', 'pet', 'urgency', 'status', 'created_at')
-    list_filter = ('urgency', 'status')
-    search_fields = ('owner__email', 'pet__name')
+
+class RehomingApplicationInline(admin.TabularInline):
+    model = RehomingApplication
+    extra = 0
+    readonly_fields = ('created_at',)
+    autocomplete_fields = ['applicant']
+
 
 @admin.register(RehomingListing)
-class RehomingListingAdmin(ModelAdmin):
-    list_display = ('pet', 'owner', 'status', 'published_at')
-    list_filter = ('status', 'urgency')
-    search_fields = ('pet__name', 'owner__email', 'location_city')
-
-@admin.register(AdoptionInquiry)
-class AdoptionInquiryAdmin(ModelAdmin):
-    list_display = ('listing', 'requester', 'status', 'created_at')
+class RehomingListingAdmin(admin.ModelAdmin):
+    list_display = ('pet', 'owner', 'status', 'created_at')
     list_filter = ('status',)
-    search_fields = ('listing__pet__name', 'requester__email')
+    search_fields = ('pet__name', 'owner__email', 'reason')
+    autocomplete_fields = ['pet', 'owner']
+    inlines = [RehomingApplicationInline]
+
+
+@admin.register(RehomingApplication)
+class RehomingApplicationAdmin(admin.ModelAdmin):
+    list_display = ('applicant', 'listing', 'status', 'created_at')
+    list_filter = ('status',)
+    search_fields = ('applicant__email', 'listing__pet__name', 'message')
+    autocomplete_fields = ['listing', 'applicant']

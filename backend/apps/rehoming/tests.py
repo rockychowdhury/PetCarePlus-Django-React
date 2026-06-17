@@ -1,76 +1,143 @@
-from django.test import TestCase
+"""
+PetCarePlus v2 — Rehoming App Unit Tests
+
+Tests covering RehomingListings (validations, regional scoping) and
+RehomingApplications (self-adoption locks, approval lifecycle transactions).
+"""
+
 from django.contrib.auth import get_user_model
-from apps.rehoming.models import RehomingRequest
-from apps.pets.models import PetProfile
-from rest_framework.test import APIClient
+from django.urls import reverse
 from rest_framework import status
-import datetime
+from rest_framework.test import APITestCase
+
+from apps.animals.models import AnimalType
+from apps.pets.models import Pet
+from apps.rehoming.models import RehomingListing, RehomingApplication
 
 User = get_user_model()
 
-class RehomingRequestTests(TestCase):
+
+class RehomingAPITests(APITestCase):
+    """
+    Tests for Rehoming listings and adoption application endpoints.
+    """
+
     def setUp(self):
-        self.user = User.objects.create_user(
-            email='test@example.com', 
-            password='password123',
-            first_name='Test',
-            last_name='User',
-            location_city='Test City',
-            location_state='Test State',
-            phone_number='1234567890'
+        # Create animal types
+        self.dog_type = AnimalType.objects.create(
+            name_en='Dog', name_bn='কুকুর', slug='dog',
+            category='companion', icon='dog', supports_rehoming=True
         )
-        self.pet = PetProfile.objects.create(
-            owner=self.user,
-            name='Buddy',
-            species='dog',
-            breed='Golden Retriever',
-            birth_date=datetime.date.today(),
-            gender='male'
+        self.rabbit_type = AnimalType.objects.create(
+            name_en='Rabbit', name_bn='খরগোশ', slug='rabbit',
+            category='companion', icon='rabbit', supports_rehoming=False
         )
-        self.client = APIClient()
-        self.client.force_authenticate(user=self.user)
 
-    def test_create_rehoming_request_immediate_confirmation(self):
-        """
-        Test that creating a rehoming request immediately validates it as 'confirmed'
-        skipping the cooling period.
-        """
-        url = '/api/rehoming/requests/'
-        data = {
-            'pet': self.pet.id,
-            'reason': 'Moving away',
-            'urgency': 'flexible', # Even flexible should be confirmed now
-            'location_city': 'New City',
-            'location_state': 'New State',
-            'privacy_level': 'public',
-            'terms_accepted': True
+        # Create users
+        self.owner = User.objects.create_user(
+            email='owner@test.com', password='password123',
+            first_name='Rocky', last_name='Owner', role='pet_owner',
+            division='dhaka', district='Dhaka'
+        )
+        self.applicant = User.objects.create_user(
+            email='applicant@test.com', password='password123',
+            first_name='Adopter', last_name='Rocky', role='pet_owner',
+            division='dhaka', district='Dhaka'
+        )
+        self.other_applicant = User.objects.create_user(
+            email='other@test.com', password='password123',
+            first_name='Adopter2', last_name='Rocky', role='pet_owner',
+            division='chattogram', district='Chittagong'
+        )
+
+        # Create pets
+        self.my_dog = Pet.objects.create(
+            owner=self.owner, animal_type=self.dog_type, name='Buddy'
+        )
+        self.my_rabbit = Pet.objects.create(
+            owner=self.owner, animal_type=self.rabbit_type, name='Bugs'
+        )
+
+        # URLs
+        self.listing_list_url = reverse('rehominglisting-list')
+        self.app_list_url = reverse('rehomingapplication-list')
+
+    def test_create_rehoming_listing_dog_success(self):
+        """Test successful rehoming listing for an eligible animal type (Dog)."""
+        self.client.force_authenticate(user=self.owner)
+
+        payload = {
+            'pet': self.my_dog.id,
+            'reason': 'Moving abroad'
         }
-        
-        response = self.client.post(url, data, format='json')
-        
+
+        response = self.client.post(self.listing_list_url, payload)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['status'], 'confirmed')
-        self.assertIsNone(response.data['cooling_period_end'])
-        
-        # Verify DB
-        req = RehomingRequest.objects.get(id=response.data['id'])
-        self.assertEqual(req.status, 'confirmed')
+        self.assertEqual(response.data['status'], 'active')
 
-    def test_duplicate_request_prevention(self):
-        """Test that duplicate active requests are blocked."""
-        RehomingRequest.objects.create(
-            owner=self.user,
-            pet=self.pet,
-            status='confirmed',
-            reason='First request'
-        )
-        
-        url = '/api/rehoming/requests/'
-        data = {
-            'pet': self.pet.id,
-            'reason': 'Second request',
-            'urgency': 'immediate',
-            'terms_accepted': True
+    def test_create_rehoming_listing_rabbit_fails(self):
+        """Test that rehoming listings for non-eligible species (Rabbit) are rejected."""
+        self.client.force_authenticate(user=self.owner)
+
+        payload = {
+            'pet': self.my_rabbit.id,
+            'reason': 'Moving abroad'
         }
-        response = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        response = self.client.post(self.listing_list_url, payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('pet', response.data)
+
+    def test_self_adoption_application_blocked(self):
+        """Test that the owner of a listing cannot apply to adopt their own pet."""
+        # Create active listing
+        listing = RehomingListing.objects.create(
+            pet=self.my_dog, owner=self.owner, reason='Moving'
+        )
+
+        self.client.force_authenticate(user=self.owner)
+        payload = {
+            'listing': listing.id,
+            'message': 'I want to adopt my own pet!'
+        }
+
+        response = self.client.post(self.app_list_url, payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_adoption_approval_lifecycle_transaction(self):
+        """Test adoption application approval flow, ownership transfers, and auto-rejections."""
+        # Create listing
+        listing = RehomingListing.objects.create(
+            pet=self.my_dog, owner=self.owner, reason='Moving'
+        )
+
+        # Create two applications
+        app1 = RehomingApplication.objects.create(
+            listing=listing, applicant=self.applicant, message='First apply'
+        )
+        app2 = RehomingApplication.objects.create(
+            listing=listing, applicant=self.other_applicant, message='Second apply'
+        )
+
+        # Owner authenticates to approve app1
+        self.client.force_authenticate(user=self.owner)
+        detail_url = reverse('rehomingapplication-detail', args=[app1.id])
+
+        payload = {
+            'status': 'approved'
+        }
+        response = self.client.patch(detail_url, payload)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], 'approved')
+
+        # 1. Listing should now be marked ADOPTED
+        listing.refresh_from_db()
+        self.assertEqual(listing.status, RehomingListing.Status.ADOPTED)
+
+        # 2. Other application (app2) must be auto-REJECTED
+        app2.refresh_from_db()
+        self.assertEqual(app2.status, RehomingApplication.Status.REJECTED)
+
+        # 3. Pet owner must be successfully transferred to the applicant
+        self.my_dog.refresh_from_db()
+        self.assertEqual(self.my_dog.owner, self.applicant)
