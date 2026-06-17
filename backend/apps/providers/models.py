@@ -41,6 +41,11 @@ class ServiceProvider(models.Model):
         default=ProviderType.VET
     )
 
+    is_government_vet = models.BooleanField(
+        default=False,
+        help_text='Indicates if this is a Government Vet'
+    )
+
     # Location (Bangladesh hierarchy)
     division = models.CharField(max_length=20, choices=DIVISION_CHOICES)
     district = models.CharField(max_length=50)

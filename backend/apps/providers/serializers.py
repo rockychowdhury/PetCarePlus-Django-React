@@ -60,7 +60,7 @@ class ServiceProviderSerializer(BilingualMixin, serializers.ModelSerializer):
         model = ServiceProvider
         fields = [
             'id', 'user', 'user_email', 'user_name', 'business_name', 'description',
-            'provider_type', 'division', 'district', 'upazila', 'latitude', 'longitude', 'phone', 'email',
+            'provider_type', 'is_government_vet', 'division', 'district', 'upazila', 'latitude', 'longitude', 'phone', 'email',
             'is_verified', 'is_active', 'avg_rating', 'total_reviews', 'services',
             'supported_animal_types', 'animal_type_ids', 'created_at', 'updated_at',
             'description_en', 'description_bn', 'distance'

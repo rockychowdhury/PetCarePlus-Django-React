@@ -17,6 +17,7 @@ export const ProviderCard = ({ provider }) => {
     id,
     business_name,
     provider_type,
+    is_government_vet,
     division,
     district,
     upazila,
@@ -63,13 +64,18 @@ export const ProviderCard = ({ provider }) => {
       <div className="space-y-3">
         {/* Type & Verification Header */}
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <div className="p-1.5 rounded-lg bg-muted flex items-center justify-center">
               {getProviderIcon()}
             </div>
             <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
               {t(`providers.types.${provider_type}`)}
             </span>
+            {provider_type === 'vet' && (
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ml-1 ${is_government_vet ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-orange-100 text-orange-700 border border-orange-200'}`}>
+                {is_government_vet ? (language === 'bn' ? 'সরকারি চিকিৎসক' : 'Gov Vet') : (language === 'bn' ? 'স্থানীয় চিকিৎসক' : 'Local Vet')}
+              </span>
+            )}
           </div>
 
           {is_verified && (
