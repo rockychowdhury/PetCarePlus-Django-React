@@ -7,20 +7,28 @@ export const useLocalProviders = (filters = {}) => {
   const user = useAuthStore((state) => state.user)
   const isAuthenticated = !!useAuthStore((state) => state.token)
 
-  // Retrieve temporary selected location for anonymous users
-  const anonDivision = useLocationStore((state) => state.division)
-  const anonDistrict = useLocationStore((state) => state.district)
-  const anonUpazila = useLocationStore((state) => state.upazila)
+  const {
+    division: storeDiv,
+    district: storeDist,
+    upazila: storeUpz,
+    union: storeUnion,
+    latitude: storeLat,
+    longitude: storeLng
+  } = useLocationStore()
 
   const queryParams = {
     ...filters,
   }
 
-  // Inject location filters if not authenticated and location is selected
-  if (!isAuthenticated) {
-    if (anonDivision) queryParams.division = anonDivision
-    if (anonDistrict) queryParams.district = anonDistrict
-    if (anonUpazila) queryParams.upazila = anonUpazila
+  // Inject location filters if explicit search location is set in the store
+  if (storeLat && storeLng) {
+    queryParams.lat = storeLat
+    queryParams.lng = storeLng
+  } else {
+    if (storeDiv) queryParams.division = storeDiv
+    if (storeDist) queryParams.district = storeDist
+    if (storeUpz) queryParams.upazila = storeUpz
+    if (storeUnion) queryParams.union = storeUnion
   }
 
   return useQuery({
@@ -28,7 +36,12 @@ export const useLocalProviders = (filters = {}) => {
       'providers',
       isAuthenticated,
       user?.district,
-      anonDistrict,
+      storeDiv,
+      storeDist,
+      storeUpz,
+      storeUnion,
+      storeLat,
+      storeLng,
       queryParams,
     ],
     queryFn: () => providersApi.getProviders(queryParams),

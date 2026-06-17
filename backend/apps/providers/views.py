@@ -39,20 +39,28 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         provider_type = self.request.query_params.get('provider_type')
         animal_type_id = self.request.query_params.get('animal_type')
 
-        # Location context source
+        # Check query parameters for explicit location scoping override
+        division = self.request.query_params.get('division')
+        district = self.request.query_params.get('district')
+        upazila = self.request.query_params.get('upazila')
+        union = self.request.query_params.get('union')
+        lat = self.request.query_params.get('lat')
+        lng = self.request.query_params.get('lng')
+        
         location_source = None
-        if user and user.is_authenticated and user.district:
+        if division or district or upazila or union or (lat and lng):
+            class MockUser:
+                def __init__(self, div, dist, upz, uni, la, ln):
+                    self.division = div
+                    self.district = dist
+                    self.upazila = upz
+                    self.union = uni
+                    self.latitude = la
+                    self.longitude = ln
+            location_source = MockUser(division, district, upazila, union, lat, lng)
+        elif user and user.is_authenticated and (user.district or user.latitude):
+            # Fallback to user profile if no explicit search location is provided
             location_source = user
-        else:
-            # Check query parameters for anonymous regional cascade scoping
-            division = self.request.query_params.get('division')
-            district = self.request.query_params.get('district')
-            if division or district:
-                class MockUser:
-                    def __init__(self, div, dist):
-                        self.division = div
-                        self.district = dist
-                location_source = MockUser(division, district)
 
         # Apply cascade logic if location context is available
         if location_source:

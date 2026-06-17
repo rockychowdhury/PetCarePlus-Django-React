@@ -97,6 +97,25 @@ class User(AbstractBaseUser, PermissionsMixin):
         blank=True,
         help_text='উপজেলা (Upazila)'
     )
+    union = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text='ইউনিয়ন (Union)'
+    )
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text='অক্ষাংশ (Latitude)'
+    )
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text='দ্রাঘিমাংশ (Longitude)'
+    )
 
     # ── Language preference ───────────────────
     preferred_language = models.CharField(

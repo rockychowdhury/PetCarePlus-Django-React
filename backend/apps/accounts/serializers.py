@@ -43,6 +43,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             'division': user.division,
             'district': user.district,
             'upazila': user.upazila,
+            'union': user.union,
+            'latitude': user.latitude,
+            'longitude': user.longitude,
             'preferred_language': user.preferred_language,
         }
         return data
@@ -64,8 +67,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'email', 'password', 'first_name', 'last_name',
-            'phone_number', 'division', 'district', 'upazila',
-            'preferred_language', 'role'
+            'phone_number', 'division', 'district', 'upazila', 'union',
+            'latitude', 'longitude', 'preferred_language', 'role'
         ]
 
     def validate_email(self, value):
@@ -83,6 +86,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             division=validated_data.get('division', ''),
             district=validated_data.get('district', ''),
             upazila=validated_data.get('upazila', ''),
+            union=validated_data.get('union', ''),
+            latitude=validated_data.get('latitude'),
+            longitude=validated_data.get('longitude'),
             preferred_language=validated_data.get('preferred_language', 'bn'),
             role=validated_data.get('role', 'pet_owner')
         )
@@ -101,7 +107,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'email', 'first_name', 'last_name', 'full_name',
             'phone_number', 'photo_url', 'bio',
-            'division', 'district', 'upazila',
+            'division', 'district', 'upazila', 'union', 'latitude', 'longitude',
             'preferred_language', 'role', 'date_joined'
         ]
         read_only_fields = ['id', 'email', 'role', 'date_joined']

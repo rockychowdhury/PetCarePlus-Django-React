@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'apps.pets',
     'apps.rehoming',
     'apps.notifications',
+    'apps.locations',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

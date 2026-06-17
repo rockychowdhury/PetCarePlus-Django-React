@@ -25,6 +25,7 @@ urlpatterns = [
     path('api/v1/pets/', include('apps.pets.urls')),
     path('api/v1/rehoming/', include('apps.rehoming.urls')),
     path('api/v1/notifications/', include('apps.notifications.urls')),
+    path('api/v1/locations/', include('apps.locations.urls')),
 
     # Health check
     path('', lambda request: JsonResponse({

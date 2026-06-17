@@ -13,17 +13,21 @@ from apps.providers.models import ServiceProvider
 LOCAL_THRESHOLD = 3  # Minimum results before expanding scope
 
 
+from django.db import models
+from django.db.models.functions import ACos, Cos, Radians, Sin
+from django.db.models import F, ExpressionWrapper
+
 def get_local_providers(user, provider_type=None, animal_type_id=None):
     """
     Get locally-scoped providers using cascade logic.
 
     Args:
-        user: The requesting user (must have district/division fields)
+        user: The requesting user (or MockUser with lat/lng/union/upazila)
         provider_type: Optional filter by provider type (vet, groomer, etc.)
         animal_type_id: Optional filter by animal type
 
     Returns:
-        QuerySet of ServiceProvider objects, ordered by avg_rating descending.
+        QuerySet of ServiceProvider objects.
     """
     qs = ServiceProvider.objects.filter(is_verified=True, is_active=True)
 
@@ -32,19 +36,59 @@ def get_local_providers(user, provider_type=None, animal_type_id=None):
     if animal_type_id:
         qs = qs.filter(animal_types__animal_type_id=animal_type_id)
 
-    # Step 1: Same district
-    if user.district:
-        local = qs.filter(district=user.district)
+    # 1. Radial Haversine search if coordinates are available
+    lat = getattr(user, 'latitude', None)
+    lng = getattr(user, 'longitude', None)
+
+    if lat and lng and qs.exclude(latitude__isnull=True).exists():
+        lat_rad = Radians(float(lat))
+        lng_rad = Radians(float(lng))
+        
+        distance_expr = ExpressionWrapper(
+            6371 * ACos(
+                Cos(lat_rad) * Cos(Radians(F('latitude'))) *
+                Cos(Radians(F('longitude')) - lng_rad) +
+                Sin(lat_rad) * Sin(Radians(F('latitude')))
+            ),
+            output_field=models.FloatField()
+        )
+        
+        qs = qs.exclude(latitude__isnull=True).annotate(
+            distance=distance_expr
+        ).filter(distance__lte=50).order_by('distance') # 50km radius
+        
+        if qs.count() >= LOCAL_THRESHOLD:
+            return qs
+
+    # 2. Same Union
+    union = getattr(user, 'union', None)
+    if union:
+        local = qs.filter(user__union__iexact=union)
         if local.count() >= LOCAL_THRESHOLD:
             return local.order_by('-avg_rating')
 
-    # Step 2: Same division
-    if user.division:
-        regional = qs.filter(division=user.division)
+    # 3. Same Upazila
+    upazila = getattr(user, 'upazila', None)
+    if upazila:
+        local = qs.filter(user__upazila__iexact=upazila)
+        if local.count() >= LOCAL_THRESHOLD:
+            return local.order_by('-avg_rating')
+
+    # 4. Same District
+    district = getattr(user, 'district', None)
+    if district:
+        local = qs.filter(district__iexact=district)
+        if local.count() >= LOCAL_THRESHOLD:
+            return local.order_by('-avg_rating')
+
+    # 5. Same Division
+    division = getattr(user, 'division', None)
+    if division:
+        regional = qs.filter(division__iexact=division)
         if regional.count() >= LOCAL_THRESHOLD:
             return regional.order_by('-avg_rating')
 
-    # Step 3: All verified providers
+    # 6. All verified providers
     return qs.order_by('-avg_rating')
 
 

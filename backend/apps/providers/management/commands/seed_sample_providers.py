@@ -79,7 +79,7 @@ class Command(BaseCommand):
 
         # Ensure we have all necessary AnimalType objects created or fetch existing
         for slug in animal_slugs:
-            AnimalType.objects.get_or_create(slug=slug, defaults={'name_en': slug.capitalize(), 'is_active': True, 'supports_services': True})
+            animal_type, _ = AnimalType.objects.get_or_create(slug=slug, defaults={'name_en': slug.capitalize(), 'supports_services': True})
 
         for i in range(1, 21):
             ptype, business_suffix, title = random.choice(PROVIDER_TYPES)

@@ -54,6 +54,7 @@ class ServiceProviderSerializer(BilingualMixin, serializers.ModelSerializer):
 
     user_email = serializers.EmailField(source='user.email', read_only=True)
     user_name = serializers.CharField(source='user.full_name', read_only=True)
+    distance = serializers.FloatField(read_only=True, required=False)
 
     class Meta:
         model = ServiceProvider
@@ -62,7 +63,7 @@ class ServiceProviderSerializer(BilingualMixin, serializers.ModelSerializer):
             'provider_type', 'division', 'district', 'upazila', 'latitude', 'longitude', 'phone', 'email',
             'is_verified', 'is_active', 'avg_rating', 'total_reviews', 'services',
             'supported_animal_types', 'animal_type_ids', 'created_at', 'updated_at',
-            'description_en', 'description_bn'
+            'description_en', 'description_bn', 'distance'
         ]
         read_only_fields = [
             'id', 'user', 'is_verified', 'avg_rating', 'total_reviews',
