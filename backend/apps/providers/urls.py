@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import SimpleRouter
 from apps.providers.views import ServiceProviderViewSet, ProviderServiceViewSet
+from apps.reviews.views import ReviewViewSet
 
 router = SimpleRouter()
 router.register(r'', ServiceProviderViewSet, basename='serviceprovider')
@@ -17,11 +18,16 @@ provider_services_detail = ProviderServiceViewSet.as_view({
     'delete': 'destroy'
 })
 
+provider_reviews_list = ReviewViewSet.as_view({
+    'get': 'list'
+})
+
 
 urlpatterns = [
     # Nested endpoints
     path('<int:provider_pk>/services/', provider_services_list, name='provider-services-list'),
     path('<int:provider_pk>/services/<int:pk>/', provider_services_detail, name='provider-services-detail'),
+    path('<int:provider_pk>/reviews/', provider_reviews_list, name='provider-reviews-list'),
     
     # Standard router urls
     path('', include(router.urls)),

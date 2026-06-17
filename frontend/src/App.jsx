@@ -1,7 +1,9 @@
-import React, { lazy, Suspense } from 'react'
+import React, { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
+import { useLocationStore } from './store/locationStore'
 import Spinner from './components/ui/Spinner'
+import toast from 'react-hot-toast'
 
 // Lazy loaded page assemblies for peak performance
 const Home = lazy(() => import('./pages/Home'))
@@ -31,6 +33,63 @@ const AnonymousRoute = ({ children }) => {
 }
 
 export const App = () => {
+  const { division, setLocation } = useLocationStore()
+  const language = useAuthStore((state) => state.language)
+
+  useEffect(() => {
+    // Only ask for geolocation if location is not set in store yet
+    if (!division && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords
+          try {
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+            )
+            const data = await res.json()
+            if (data && data.address) {
+              const addr = data.address
+              const divName = addr.state?.replace(' Division', '') || ''
+              const distName = (addr.state_district || addr.county || addr.city)?.replace(' District', '') || ''
+              const upzName = addr.city || addr.town || addr.county || ''
+              const unionName = addr.suburb || addr.village || addr.neighbourhood || ''
+
+              setLocation({
+                division: divName,
+                district: distName,
+                upazila: upzName,
+                union: unionName,
+                latitude,
+                longitude,
+              })
+            }
+          } catch (e) {
+            console.error('Auto location detection failed:', e)
+          }
+        },
+        (error) => {
+          console.warn('Geolocation permission denied or failed:', error)
+          if (error.code === error.PERMISSION_DENIED) {
+            const msg = language === 'bn'
+              ? 'লোকেশন পারমিশন ব্লক করা! লোকাল ডাক্তারদের দেখতে উপরের "ম্যাপ পিন" আইকনে ক্লিক করে ম্যানুয়ালি সেট করুন।'
+              : 'Location permission blocked! Click the "Map Pin" icon at the top to set your location manually.'
+            
+            toast(msg, {
+              duration: 8000,
+              icon: '📍',
+              style: {
+                background: '#fff3cd',
+                color: '#856404',
+                border: '1px solid #ffeeba',
+                fontSize: '12px',
+                fontWeight: 'bold',
+              }
+            })
+          }
+        }
+      )
+    }
+  }, [division, setLocation, language])
   return (
     <BrowserRouter>
       <Suspense

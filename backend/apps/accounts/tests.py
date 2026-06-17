@@ -25,7 +25,15 @@ class AuthAPITests(APITestCase):
         self.logout_url = reverse('auth_logout')
         self.profile_url = reverse('auth_me')
 
-        # Test registration payload
+        # Test registration payload (simplified flow)
+        self.register_data = {
+            'email': 'testnewuser@petcareplus.com',
+            'name': 'Rocky Chowdhury',
+            'phone': '01712345678',
+            'role': 'pet_owner',
+        }
+
+        # Test user data for setup/login/profile tests
         self.user_data = {
             'email': 'testowner@petcareplus.com',
             'password': 'strongpassword123',
@@ -41,27 +49,30 @@ class AuthAPITests(APITestCase):
 
     def test_user_registration(self):
         """Test registering a new user successfully."""
-        response = self.client.post(self.register_url, self.user_data)
+        response = self.client.post(self.register_url, self.register_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['email'], self.user_data['email'])
-        self.assertEqual(response.data['role'], self.user_data['role'])
-        self.assertEqual(response.data['preferred_language'], self.user_data['preferred_language'])
+        self.assertEqual(response.data['email'], self.register_data['email'])
+        self.assertEqual(response.data['role'], self.register_data['role'])
         self.assertNotIn('password', response.data)
 
         # Check in database
-        self.assertTrue(User.objects.filter(email=self.user_data['email']).exists())
+        self.assertTrue(User.objects.filter(email=self.register_data['email']).exists())
+        user = User.objects.get(email=self.register_data['email'])
+        self.assertEqual(user.first_name, 'Rocky')
+        self.assertEqual(user.last_name, 'Chowdhury')
+        self.assertEqual(user.phone_number, '01712345678')
 
     def test_user_registration_duplicate_email(self):
         """Test registration fails with duplicate email address."""
         # Create a user first
         User.objects.create_user(
-            email=self.user_data['email'],
-            password=self.user_data['password'],
-            first_name=self.user_data['first_name'],
-            last_name=self.user_data['last_name']
+            email=self.register_data['email'],
+            password='testpassword123',
+            first_name='Rocky',
+            last_name='Chowdhury'
         )
         # Attempt duplicate
-        response = self.client.post(self.register_url, self.user_data)
+        response = self.client.post(self.register_url, self.register_data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('email', response.data)
 

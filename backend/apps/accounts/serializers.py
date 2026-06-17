@@ -37,7 +37,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             'first_name': user.first_name,
             'last_name': user.last_name,
             'full_name': user.full_name,
+            'name': user.full_name,  # Compatibility key
             'phone_number': user.phone_number,
+            'phone': user.phone_number,  # Compatibility key
             'photo_url': user.photo_url,
             'role': user.role,
             'division': user.division,
@@ -54,21 +56,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class UserRegistrationSerializer(serializers.ModelSerializer):
     """
     Serializer for handling new user registration.
-    Supports Bangladesh hierarchy location and bilingual preference.
+    Only collects email, name, phone, and role.
+    Generates a secure password and emails it to the user.
     """
-    password = serializers.CharField(
-        write_only=True,
-        required=True,
-        style={'input_type': 'password'},
-        min_length=6
-    )
+    name = serializers.CharField(write_only=True, required=True)
+    phone = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = User
         fields = [
-            'id', 'email', 'password', 'first_name', 'last_name',
-            'phone_number', 'division', 'district', 'upazila', 'union',
-            'latitude', 'longitude', 'preferred_language', 'role'
+            'id', 'email', 'name', 'phone', 'role'
         ]
 
     def validate_email(self, value):
@@ -77,21 +74,60 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        # Split name into first and last name
+        name_parts = validated_data['name'].strip().split(' ', 1)
+        first_name = name_parts[0]
+        last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+        # Generate random password
+        import secrets
+        import string
+        alphabet = string.ascii_letters + string.digits
+        password = ''.join(secrets.choice(alphabet) for _ in range(8))
+
+        # Create user
         user = User.objects.create_user(
             email=validated_data['email'],
-            password=validated_data['password'],
-            first_name=validated_data.get('first_name', ''),
-            last_name=validated_data.get('last_name', ''),
-            phone_number=validated_data.get('phone_number', ''),
-            division=validated_data.get('division', ''),
-            district=validated_data.get('district', ''),
-            upazila=validated_data.get('upazila', ''),
-            union=validated_data.get('union', ''),
-            latitude=validated_data.get('latitude'),
-            longitude=validated_data.get('longitude'),
-            preferred_language=validated_data.get('preferred_language', 'bn'),
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            phone_number=validated_data['phone'],
             role=validated_data.get('role', 'pet_owner')
         )
+
+        # Send welcome email containing credentials
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        subject = 'Welcome to PetCarePlus / পেটকেয়ারপ্লাসে আপনাকে স্বাগতম!'
+        message = f"""Hi {validated_data['name']},
+
+Welcome to PetCarePlus! Your account has been successfully created.
+পেটকেয়ারপ্লাসে আপনাকে স্বাগতম! আপনার অ্যাকাউন্টটি সফলভাবে তৈরি করা হয়েছে।
+
+Here are your login credentials to access the platform:
+প্ল্যাটফর্মে প্রবেশ করার জন্য আপনার লগইন বিবরণ নিচে দেওয়া হলো:
+
+Email (ইমেইল): {user.email}
+Password (পাসওয়ার্ড): {password}
+
+Please log in using the link below and set up your location details:
+অনুগ্রহ করে নিচের লিঙ্কের মাধ্যমে লগইন করুন এবং আপনার অবস্থান নির্ধারণ করুন:
+
+{settings.FRONTEND_URL}/login
+
+Best regards,
+PetCarePlus Team
+পেটকেয়ারপ্লাস টিম
+"""
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL or 'noreply@petcareplus.app',
+            [user.email],
+            fail_silently=True
+        )
+
         return user
 
 
@@ -99,7 +135,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
     """
     Serializer for retrieving and updating user profile information.
     email and role cannot be changed via profile endpoints.
+    Maps name and phone for frontend compatibility.
     """
+    name = serializers.CharField(required=False, write_only=True)
+    phone = serializers.CharField(required=False, write_only=True)
     full_name = serializers.ReadOnlyField()
 
     class Meta:
@@ -108,6 +147,28 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'id', 'email', 'first_name', 'last_name', 'full_name',
             'phone_number', 'photo_url', 'bio',
             'division', 'district', 'upazila', 'union', 'latitude', 'longitude',
-            'preferred_language', 'role', 'date_joined'
+            'preferred_language', 'role', 'date_joined',
+            'name', 'phone'
         ]
         read_only_fields = ['id', 'email', 'role', 'date_joined']
+
+    def update(self, instance, validated_data):
+        name = validated_data.pop('name', None)
+        phone = validated_data.pop('phone', None)
+
+        if name is not None:
+            name_parts = name.strip().split(' ', 1)
+            instance.first_name = name_parts[0]
+            instance.last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+        if phone is not None:
+            instance.phone_number = phone
+
+        return super().update(instance, validated_data)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Expose name and phone for frontend state syncing
+        data['name'] = instance.full_name
+        data['phone'] = instance.phone_number
+        return data

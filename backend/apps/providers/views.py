@@ -84,6 +84,116 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
             qs = qs.filter(animal_types__animal_type_id=animal_type_id)
         return qs
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        user = self.request.user
+        provider_type = request.query_params.get('provider_type')
+        animal_type_id = request.query_params.get('animal_type')
+
+        division = request.query_params.get('division')
+        district = request.query_params.get('district')
+        upazila = request.query_params.get('upazila')
+        union = request.query_params.get('union')
+        lat = request.query_params.get('lat')
+        lng = request.query_params.get('lng')
+        
+        location_source = None
+        if division or district or upazila or union or (lat and lng):
+            class MockUser:
+                def __init__(self, div, dist, upz, uni, la, ln):
+                    self.division = div
+                    self.district = dist
+                    self.upazila = upz
+                    self.union = uni
+                    self.latitude = la
+                    self.longitude = ln
+            location_source = MockUser(division, district, upazila, union, lat, lng)
+        elif user and user.is_authenticated and (user.district or user.latitude):
+            location_source = user
+
+        exact_match_found = True
+        resolved_level = 'exact'
+
+        if location_source:
+            base_qs = ServiceProvider.objects.filter(is_verified=True, is_active=True)
+            if provider_type:
+                base_qs = base_qs.filter(provider_type=provider_type)
+            if animal_type_id:
+                base_qs = base_qs.filter(animal_types__animal_type_id=animal_type_id)
+
+            lat_val = getattr(location_source, 'latitude', None)
+            lng_val = getattr(location_source, 'longitude', None)
+            union_val = getattr(location_source, 'union', None)
+            upazila_val = getattr(location_source, 'upazila', None)
+            district_val = getattr(location_source, 'district', None)
+            division_val = getattr(location_source, 'division', None)
+
+            if lat_val and lng_val:
+                try:
+                    import math
+                    lat_v = float(lat_val)
+                    lng_v = float(lng_val)
+                    lat_delta = 15.0 / 111.0
+                    lng_delta = 15.0 / (111.0 * math.cos(math.radians(lat_v)))
+                    radial_qs = base_qs.exclude(latitude__isnull=True).filter(
+                        latitude__gte=lat_v - lat_delta,
+                        latitude__lte=lat_v + lat_delta,
+                        longitude__gte=lng_v - lng_delta,
+                        longitude__lte=lng_v + lng_delta
+                    )
+                    from django.db import models
+                    from django.db.models import F, ExpressionWrapper
+                    from django.db.models.functions import ACos, Cos, Radians, Sin
+                    lat_rad = Radians(lat_v)
+                    lng_rad = Radians(lng_v)
+                    distance_expr = ExpressionWrapper(
+                        6371 * ACos(
+                            Cos(lat_rad) * Cos(Radians(F('latitude'))) *
+                            Cos(Radians(F('longitude')) - lng_rad) +
+                            Sin(lat_rad) * Sin(Radians(F('latitude')))
+                        ),
+                        output_field=models.FloatField()
+                    )
+                    radial_qs = radial_qs.annotate(distance=distance_expr).filter(distance__lte=15.0)
+                    if radial_qs.count() < 3:
+                        exact_match_found = False
+                        resolved_level = 'fallback'
+                except (ValueError, TypeError):
+                    exact_match_found = False
+                    resolved_level = 'fallback'
+            elif union_val:
+                if base_qs.filter(user__union__iexact=union_val).count() < 3:
+                    exact_match_found = False
+                    resolved_level = 'fallback'
+            elif upazila_val:
+                if base_qs.filter(upazila__iexact=upazila_val).count() < 3:
+                    exact_match_found = False
+                    resolved_level = 'fallback'
+            elif district_val:
+                if base_qs.filter(district__iexact=district_val).count() < 3:
+                    exact_match_found = False
+                    resolved_level = 'fallback'
+            elif division_val:
+                if base_qs.filter(division__iexact=division_val).count() < 3:
+                    exact_match_found = False
+                    resolved_level = 'fallback'
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            response = self.get_paginated_response(serializer.data)
+            response.data['exact_match_found'] = exact_match_found
+            response.data['resolved_level'] = resolved_level
+            return response
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'results': serializer.data,
+            'exact_match_found': exact_match_found,
+            'resolved_level': resolved_level
+        })
+
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
@@ -106,6 +216,7 @@ class ProviderServiceViewSet(viewsets.ModelViewSet):
     Ensures that only the owner of the provider profile can add or modify services.
     """
     serializer_class = ProviderServiceSerializer
+    pagination_class = None
 
     def get_queryset(self):
         provider_pk = self.kwargs.get('provider_pk')

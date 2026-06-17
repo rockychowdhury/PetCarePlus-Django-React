@@ -152,10 +152,12 @@ export const Bookings = () => {
                             <Calendar className="w-3.5 h-3.5 text-primary" />
                             <span>{booking.booking_date}</span>
                           </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-primary" />
-                            <span>{booking.booking_time}</span>
-                          </span>
+                          {booking.booking_time && (
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5 text-primary" />
+                              <span>{booking.booking_time}</span>
+                            </span>
+                          )}
                         </div>
                         {booking.notes && (
                           <p className="pt-1.5 border-t border-border/40 text-foreground/80 italic font-normal">

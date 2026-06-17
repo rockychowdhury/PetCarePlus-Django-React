@@ -19,12 +19,18 @@ class ReviewViewSet(viewsets.ModelViewSet):
     Allows anyone to view reviews for service providers, but
     restricts creation to authenticated customers and updates to the review author.
     """
-    queryset = Review.objects.all()
     serializer_class = ReviewSerializer
+    pagination_class = None
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['provider', 'rating', 'reviewer']
     ordering_fields = ['created_at', 'rating']
     ordering = ['-created_at']
+
+    def get_queryset(self):
+        provider_pk = self.kwargs.get('provider_pk')
+        if provider_pk:
+            return Review.objects.filter(provider_id=provider_pk)
+        return Review.objects.all()
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { providersApi } from '../api/providers'
@@ -9,7 +9,21 @@ import { useLanguage } from '../hooks/useLanguage'
 import PageLayout from '../components/layout/PageLayout'
 import ReviewCard from '../components/providers/ReviewCard'
 import Spinner from '../components/ui/Spinner'
-import { Calendar, Clock, DollarSign, Star, CheckCircle, Phone, Mail, MapPin, Send, AlertCircle } from 'lucide-react'
+import { getAnimalIcon } from '../utils/animals'
+import { 
+  Calendar, 
+  Clock, 
+  Star, 
+  CheckCircle, 
+  Phone, 
+  Mail, 
+  MapPin, 
+  AlertCircle, 
+  Info, 
+  ArrowLeft, 
+  Heart,
+  CalendarCheck
+} from 'lucide-react'
 
 export const ProviderDetail = () => {
   const { id } = useParams()
@@ -18,20 +32,17 @@ export const ProviderDetail = () => {
   const queryClient = useQueryClient()
   const { user, token } = useAuthStore()
 
+  // Map Refs
+  const mapContainerRef = useRef(null)
+  const leafletMapRef = useRef(null)
+
   // Booking Form State
   const [selectedServiceId, setSelectedServiceId] = useState('')
   const [selectedPetId, setSelectedPetId] = useState('')
   const [bookingDate, setBookingDate] = useState('')
-  const [bookingTime, setBookingTime] = useState('')
   const [bookingNotes, setBookingNotes] = useState('')
   const [bookingError, setBookingError] = useState('')
   const [bookingSuccess, setBookingSuccess] = useState(false)
-
-  // Review Form State
-  const [reviewRating, setReviewRating] = useState(5)
-  const [reviewComment, setReviewComment] = useState('')
-  const [reviewError, setReviewError] = useState('')
-  const [reviewSuccess, setReviewSuccess] = useState(false)
 
   // Query provider detail
   const { data: provider, isLoading: isLoadingProvider, error: providerError } = useQuery({
@@ -55,10 +66,11 @@ export const ProviderDetail = () => {
   })
 
   // Query user's pets for booking dropdown
-  const { data: pets } = useQuery({
+  const { data: pets = [] } = useQuery({
     queryKey: ['userPets'],
     queryFn: () => petsApi.getPets(),
     enabled: !!token && (user?.role === 'pet_owner' || user?.role === 'farmer'),
+    select: (data) => (Array.isArray(data) ? data : data?.results ?? []),
   })
 
   // Booking Mutation
@@ -69,7 +81,6 @@ export const ProviderDetail = () => {
       setSelectedServiceId('')
       setSelectedPetId('')
       setBookingDate('')
-      setBookingTime('')
       setBookingNotes('')
       queryClient.invalidateQueries(['userBookings'])
       setTimeout(() => setBookingSuccess(false), 5000)
@@ -79,52 +90,52 @@ export const ProviderDetail = () => {
     },
   })
 
-  // Review Mutation
-  const reviewMutation = useMutation({
-    mutationFn: (data) => providersApi.createReview(data),
-    onSuccess: () => {
-      setReviewSuccess(true)
-      setReviewRating(5)
-      setReviewComment('')
-      queryClient.invalidateQueries(['providerReviews', id])
-      queryClient.invalidateQueries(['providerDetail', id])
-      setTimeout(() => setReviewSuccess(false), 5000)
-    },
-    onError: (err) => {
-      setReviewError(err.response?.data?.detail || err.response?.data?.message || t('common.error'))
-    },
-  })
+  // Initialize single provider Leaflet Map
+  useEffect(() => {
+    if (provider?.latitude && provider?.longitude && mapContainerRef.current && window.L) {
+      // Small timeout to ensure DOM is completely ready and container is sized
+      const timer = setTimeout(() => {
+        if (!leafletMapRef.current && mapContainerRef.current) {
+          const coords = [parseFloat(provider.latitude), parseFloat(provider.longitude)]
+          leafletMapRef.current = window.L.map(mapContainerRef.current, {
+            zoomControl: true,
+            scrollWheelZoom: false
+          }).setView(coords, 14)
+
+          window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+          }).addTo(leafletMapRef.current)
+
+          window.L.marker(coords).addTo(leafletMapRef.current)
+            .bindPopup(`<b>${provider.business_name}</b><br/>${provider.upazila || ''}, ${provider.district}`)
+            .openPopup()
+        }
+      }, 100)
+
+      return () => {
+        clearTimeout(timer)
+        if (leafletMapRef.current) {
+          leafletMapRef.current.remove()
+          leafletMapRef.current = null
+        }
+      }
+    }
+  }, [provider])
 
   const handleBookingSubmit = (e) => {
     e.preventDefault()
     setBookingError('')
     setBookingSuccess(false)
-    if (!selectedServiceId || !bookingDate || !bookingTime) return
+    if (!selectedServiceId || !bookingDate) return
 
     bookingMutation.mutate({
       provider: provider.id,
       service: selectedServiceId,
       pet: selectedPetId || null,
       booking_date: bookingDate,
-      booking_time: bookingTime,
+      booking_time: null, // services are booked on a date only
       notes: bookingNotes,
     })
-  }
-
-  const handleReviewSubmit = (e) => {
-    e.preventDefault()
-    setReviewError('')
-    setReviewSuccess(false)
-
-    // The review requires a booking. For a seamless demo, we fetch a completed booking for this provider
-    // In production, we'd pass a booking ID. For the frontend v2, we submit with provider ID or look upbooking.
-    // Wait, the Review model has a one-to-one with Booking: `booking` OneToOne.
-    // Let's verify what the review endpoint expects:
-    // POST `/reviews/` takes `booking`, `rating`, `comment_en`, `comment_bn`.
-    // Since we don't have a specific booking ID selected here, we can show instructions to submit reviews
-    // from the Bookings page where the completed booking is listed! That is mathematically 100% correct,
-    // safe, and matches DRF expectations perfectly!
-    navigate('/bookings')
   }
 
   if (isLoadingProvider) {
@@ -157,83 +168,158 @@ export const ProviderDetail = () => {
   const providerDesc = tField(provider, 'description')
   const showBookingForm = token && (user.role === 'pet_owner' || user.role === 'farmer')
 
+  // Gov Vet Badge Check
+  let govVetLabel = null
+  if (provider.provider_type === 'vet' && provider.is_government_vet) {
+    govVetLabel = language === 'bn' ? 'সরকারি চিকিৎসক' : 'Gov Vet'
+  }
+
   return (
     <PageLayout>
-      <div className="bg-pcp-surface/20 py-10 min-h-screen">
+      <div className="bg-pcp-surface/20 py-8 min-h-screen border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 animate-fade-in">
           
-          {/* Header Card */}
-          <div className="bg-card border border-border/80 rounded-2xl p-6 md:p-8 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div className="space-y-3 text-left">
-              {/* Type and Verification */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-bold bg-primary/10 text-primary px-3 py-1 rounded-full uppercase tracking-wider">
-                  {t(`providers.types.${provider.provider_type}`)}
-                </span>
-                {provider.is_verified && (
-                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50">
-                    <CheckCircle className="w-3.5 h-3.5 fill-current" />
-                    <span>{t('providers.verified')}</span>
-                  </span>
-                )}
-              </div>
+          {/* Back Button */}
+          <div className="flex justify-start">
+            <button
+              onClick={() => navigate('/providers')}
+              className="inline-flex items-center gap-2 text-xs font-bold text-pcp-text-secondary dark:text-muted-foreground hover:text-pcp-green transition-colors px-3 py-1.5 bg-card border border-border/80 dark:border-white/5 rounded-xl shadow-sm"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>{language === 'bn' ? 'সব সেবাদাতা' : 'All Providers'}</span>
+            </button>
+          </div>
 
-              {/* Name */}
-              <h1 className="text-xl md:text-3xl font-extrabold text-foreground leading-snug">
-                {provider.business_name}
-              </h1>
+          {/* Premium Header / Hero Banner Card */}
+          <div className="bg-card dark:bg-card border border-pcp-border/60 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm flex flex-col md:flex-row items-center md:items-stretch gap-6 md:gap-8 overflow-hidden relative group">
+            {/* Top-Right Abstract Background Gradient */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-pcp-green-muted/20 to-transparent rounded-full filter blur-2xl -z-0 pointer-events-none"></div>
 
-              {/* Rating */}
-              <div className="flex items-center gap-1.5">
-                <div className="flex text-amber-400">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-4 h-4 ${
-                        i < Math.round(ratingValue) ? 'fill-current' : 'text-muted/50'
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="text-sm font-bold text-foreground pl-0.5">
-                  {ratingValue > 0 ? ratingValue.toFixed(1) : ''}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {provider.total_reviews > 0
-                    ? `(${provider.total_reviews} ${t('providers.reviews')})`
-                    : `(${t('providers.no_reviews')})`}
-                </span>
-              </div>
-
-              {/* Contact info grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs md:text-sm text-muted-foreground pt-1.5 border-t border-border/40">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-                  <span>
-                    {provider.upazila ? `${provider.upazila}, ` : ''}
-                    {provider.district}, {provider.division}
+            {/* Provider Photo Container */}
+            <div className="w-36 h-36 md:w-48 md:h-48 shrink-0 rounded-2xl overflow-hidden bg-gradient-to-br from-pcp-green-muted/30 to-pcp-green-muted dark:from-muted/40 dark:to-muted/20 border border-pcp-border/40 relative z-10 shadow-sm">
+              {provider.profile_image_url ? (
+                <img 
+                  src={provider.profile_image_url} 
+                  alt={provider.business_name} 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-6xl font-black text-pcp-text-primary/10 dark:text-white/10 uppercase tracking-tighter">
+                    {provider.business_name.charAt(0)}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-primary flex-shrink-0" />
-                  <a href={`tel:${provider.phone}`} className="hover:underline">{provider.phone}</a>
+              )}
+            </div>
+
+            {/* Header Details */}
+            <div className="flex-grow flex flex-col justify-between text-center md:text-left py-2 relative z-10 space-y-4 md:space-y-0">
+              <div className="space-y-3">
+                {/* Badges Column */}
+                <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
+                  <span className="inline-flex items-center justify-center px-3 py-1 bg-pcp-green-bg dark:bg-pcp-green/10 text-pcp-text-secondary dark:text-pcp-green-light border border-pcp-border dark:border-pcp-green/20 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+                    {t(`providers.types.${provider.provider_type}`)}
+                  </span>
+                  
+                  {govVetLabel && (
+                    <span className="inline-flex items-center justify-center px-3 py-1 bg-[#E76F51] text-white rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm border border-[#E76F51]">
+                      {govVetLabel}
+                    </span>
+                  )}
+
+                  {provider.is_verified && (
+                    <span className="inline-flex items-center gap-0.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/30 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+                      <CheckCircle className="w-3.5 h-3.5 fill-current shrink-0" />
+                      <span>{t('providers.verified')}</span>
+                    </span>
+                  )}
                 </div>
-                {provider.email && (
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-primary flex-shrink-0" />
-                    <a href={`mailto:${provider.email}`} className="hover:underline">{provider.email}</a>
+
+                {/* Business Name */}
+                <h1 className="text-2xl md:text-4xl font-extrabold text-pcp-text-primary dark:text-foreground leading-tight tracking-tight">
+                  {provider.business_name}
+                </h1>
+
+                {/* Ratings Row */}
+                <div className="flex items-center justify-center md:justify-start gap-1.5 flex-wrap">
+                  <div className="flex text-amber-400">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${
+                          i < Math.round(ratingValue) ? 'fill-current' : 'text-muted/40 dark:text-white/10'
+                        }`}
+                      />
+                    ))}
                   </div>
-                )}
+                  <span className="text-sm font-extrabold text-foreground pl-0.5">
+                    {ratingValue > 0 ? ratingValue.toFixed(1) : '0.0'}
+                  </span>
+                  <span className="text-xs text-muted-foreground font-semibold">
+                    {provider.total_reviews > 0
+                      ? `(${provider.total_reviews} ${t('providers.reviews')})`
+                      : `(${t('providers.no_reviews')})`}
+                  </span>
+                </div>
+              </div>
+
+              {/* Location Badge Indicator */}
+              <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap text-xs font-semibold text-pcp-text-secondary dark:text-muted-foreground">
+                <MapPin className="w-4 h-4 text-pcp-green dark:text-pcp-green-light shrink-0" />
+                <span>
+                  {provider.upazila ? `${provider.upazila}, ` : ''}
+                  {provider.district}, {provider.division}
+                </span>
               </div>
             </div>
           </div>
 
+          {/* Main Grid: Split Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
-            {/* Left: Services List */}
+            {/* Left Column: Details, Animals, Services, Reviews */}
             <div className="lg:col-span-8 space-y-6">
-              <div className="bg-card border border-border/80 rounded-2xl p-6 shadow-sm">
-                <h3 className="text-lg font-bold text-foreground mb-4 border-b border-border/60 pb-2 text-left">
+              
+              {/* About / Description */}
+              <div className="bg-card dark:bg-card border border-pcp-border/60 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm text-left space-y-4">
+                <h3 className="text-lg font-bold text-pcp-text-primary dark:text-foreground border-b border-pcp-border/30 dark:border-border/30 pb-2">
+                  {language === 'bn' ? 'আমাদের সম্পর্কে' : 'About Us'}
+                </h3>
+                <p className="text-xs md:text-sm text-pcp-text-secondary dark:text-muted-foreground/90 leading-relaxed whitespace-pre-line">
+                  {providerDesc || (
+                    language === 'bn'
+                      ? `স্বাগতম ${provider.business_name}-এ! আমরা আপনার পোষা প্রাণী এবং গবাদি পশুর জন্য প্রফেশনাল সেবা প্রদান করি। আমাদের সেবা এবং যোগাযোগের বিবরণ নিচে দেওয়া হলো।`
+                      : `Welcome to ${provider.business_name}! We offer dedicated services for your animal companions and livestock. Please look through our services and contact details to get in touch.`
+                  )}
+                </p>
+              </div>
+
+              {/* Animals Serviced */}
+              {provider.supported_animal_types && provider.supported_animal_types.length > 0 && (
+                <div className="bg-card dark:bg-card border border-pcp-border/60 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm text-left space-y-4">
+                  <h3 className="text-lg font-bold text-pcp-text-primary dark:text-foreground border-b border-pcp-border/30 dark:border-border/30 pb-2">
+                    {language === 'bn' ? 'সেবা গ্রহণকারী প্রাণী' : 'Animals Serviced'}
+                  </h3>
+                  <div className="flex flex-wrap gap-2.5">
+                    {provider.supported_animal_types.map((at) => {
+                      const Icon = getAnimalIcon(at.slug)
+                      return (
+                        <span 
+                          key={at.id}
+                          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-pcp-green-bg dark:bg-pcp-green/10 text-pcp-text-secondary dark:text-pcp-green-light border border-pcp-border dark:border-pcp-green/20 hover:scale-[1.02] transition-all"
+                        >
+                          <Icon className="w-4 h-4 text-pcp-green dark:text-pcp-green-light shrink-0" />
+                          <span>{language === 'bn' ? at.name_bn : at.name_en}</span>
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Services Offered */}
+              <div className="bg-card dark:bg-card border border-pcp-border/60 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm text-left space-y-4">
+                <h3 className="text-lg font-bold text-pcp-text-primary dark:text-foreground border-b border-pcp-border/30 dark:border-border/30 pb-2">
                   {t('providers.services_offered')}
                 </h3>
                 
@@ -242,41 +328,39 @@ export const ProviderDetail = () => {
                 ) : !services || services.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-sm font-semibold text-muted-foreground">
-                      সেবাদাতার কোনো সার্ভিস এখনো যুক্ত করা হয়নি।
+                      {language === 'bn' ? 'এই সেবাদাতার কোনো সার্ভিস এখনো যুক্ত করা হয়নি।' : 'No services offered by this provider yet.'}
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {services.map((service) => {
                       const name = tField(service, 'name')
                       const desc = tField(service, 'description')
                       return (
                         <div
                           key={service.id}
-                          className="p-4 bg-pcp-surface/20 border border-border/80 rounded-xl flex justify-between items-start gap-4 hover:border-primary/20 transition-all text-left"
+                          className="p-4 bg-pcp-surface/20 dark:bg-pcp-green/5 border border-pcp-border/60 dark:border-pcp-green/15 rounded-2xl flex flex-col justify-between gap-3 hover:border-pcp-green/30 transition-all text-left"
                         >
                           <div className="space-y-1">
-                            <h4 className="font-extrabold text-sm sm:text-base text-foreground">
+                            <h4 className="font-extrabold text-sm sm:text-base text-pcp-text-primary dark:text-foreground">
                               {name}
                             </h4>
                             {desc && (
-                              <p className="text-xs text-muted-foreground leading-relaxed max-w-lg">
+                              <p className="text-xs text-muted-foreground leading-relaxed">
                                 {desc}
                               </p>
                             )}
-                            <div className="flex gap-4 text-xs font-semibold text-muted-foreground pt-1.5">
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5 text-primary" />
-                                <span>
-                                  {service.duration_minutes} {language === 'bn' ? 'মিনিট' : 'mins'}
-                                </span>
-                              </span>
-                            </div>
                           </div>
                           
-                          <div className="text-right flex-shrink-0">
-                            <span className="text-sm sm:text-base font-extrabold text-primary flex items-center gap-0.5 justify-end">
-                              ৳{service.price}
+                          <div className="flex justify-between items-center pt-2 border-t border-pcp-border/20 dark:border-white/5 flex-shrink-0">
+                            <span className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+                              <Clock className="w-3.5 h-3.5 text-pcp-green dark:text-pcp-green-light shrink-0" />
+                              <span>
+                                {service.duration_minutes} {language === 'bn' ? 'মিনিট' : 'mins'}
+                              </span>
+                            </span>
+                            <span className="text-sm sm:text-base font-extrabold text-pcp-green dark:text-pcp-green-light">
+                              ৳{parseFloat(service.price).toFixed(0)}
                             </span>
                           </div>
                         </div>
@@ -285,14 +369,88 @@ export const ProviderDetail = () => {
                   </div>
                 )}
               </div>
+
+              {/* Customer Reviews Section */}
+              <div className="bg-card dark:bg-card border border-pcp-border/60 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm text-left space-y-6">
+                <h3 className="text-lg font-bold text-pcp-text-primary dark:text-foreground border-b border-pcp-border/30 dark:border-border/30 pb-2">
+                  {t('providers.reviews_title')}
+                </h3>
+
+                {isLoadingReviews ? (
+                  <Spinner className="py-8" />
+                ) : !reviews || reviews.length === 0 ? (
+                  <div className="text-center py-8 bg-pcp-surface/20 dark:bg-pcp-green/5 border border-dashed border-pcp-border/80 dark:border-white/5 rounded-2xl">
+                    <p className="text-xs md:text-sm font-semibold text-muted-foreground">
+                      {t('providers.no_reviews')}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {reviews.map((review) => (
+                      <div key={review.id} className="animate-fade-in-up">
+                        <ReviewCard review={review} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
             </div>
 
-            {/* Right: Booking Form Container */}
+            {/* Right Column: Contact Cards, Booking, Maps */}
             <div className="lg:col-span-4 space-y-6">
-              <div className="bg-card border border-border/80 rounded-2xl p-6 shadow-sm">
-                <h3 className="text-lg font-bold text-foreground mb-4 border-b border-border/60 pb-2 text-left">
+              
+              {/* Contact Information Card */}
+              <div className="bg-card dark:bg-card border border-pcp-border/60 dark:border-white/5 rounded-3xl p-6 shadow-sm text-left space-y-4">
+                <h3 className="text-base font-bold text-pcp-text-primary dark:text-foreground border-b border-pcp-border/30 dark:border-border/30 pb-2">
+                  {language === 'bn' ? 'যোগাযোগের তথ্য' : 'Contact Details'}
+                </h3>
+                <div className="space-y-3.5 text-xs font-semibold text-pcp-text-secondary dark:text-muted-foreground">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-4 h-4 text-pcp-green dark:text-pcp-green-light shrink-0 mt-0.5" />
+                    <span>
+                      {provider.upazila ? `${provider.upazila}, ` : ''}
+                      {provider.district}, {provider.division}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Phone className="w-4 h-4 text-pcp-green dark:text-pcp-green-light shrink-0" />
+                    <a href={`tel:${provider.phone}`} className="hover:text-pcp-green dark:hover:text-pcp-green-light hover:underline transition-colors">
+                      {provider.phone}
+                    </a>
+                  </div>
+                  {provider.email && (
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-4 h-4 text-pcp-green dark:text-pcp-green-light shrink-0" />
+                      <a href={`mailto:${provider.email}`} className="hover:text-pcp-green dark:hover:text-pcp-green-light hover:underline transition-colors break-all">
+                        {provider.email}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Booking Form Card */}
+              <div className="bg-card dark:bg-card border border-pcp-border/60 dark:border-white/5 rounded-3xl p-6 shadow-sm relative overflow-hidden">
+                <h3 className="text-base font-bold text-pcp-text-primary dark:text-foreground mb-4 border-b border-pcp-border/30 dark:border-border/30 pb-2 text-left">
                   {t('bookings.title')}
                 </h3>
+
+                {/* Important Notice Banner */}
+                <div className="p-3 bg-pcp-green-bg dark:bg-pcp-green/10 border border-pcp-border dark:border-pcp-green/20 rounded-xl text-[11px] font-semibold text-pcp-text-secondary dark:text-pcp-green-light flex gap-2 items-start mb-4 text-left leading-relaxed">
+                  <Info className="w-4 h-4 text-pcp-green dark:text-pcp-green-light shrink-0 mt-0.5" />
+                  <div>
+                    {language === 'bn' ? (
+                      <span>
+                        <strong>গুরুত্বপূর্ণ তথ্য:</strong> অ্যাপয়েন্টমেন্ট শুধুমাত্র তারিখের ভিত্তিতে বুক করা হয় (কোনো নির্দিষ্ট সময় নয়)। বিস্তারিত আলোচনা বা নির্দিষ্ট সময়ের জন্য বুকিং করার পর দয়া করে সেবাদাতাকে সরাসরি কল করুন।
+                      </span>
+                    ) : (
+                      <span>
+                        <strong>Date-Only Booking:</strong> Appointments are scheduled on a date basis only. Once requested, please contact the provider to coordinate timing or other requirements.
+                      </span>
+                    )}
+                  </div>
+                </div>
 
                 {showBookingForm ? (
                   <form onSubmit={handleBookingSubmit} className="space-y-4 text-left">
@@ -305,12 +463,12 @@ export const ProviderDetail = () => {
                         value={selectedServiceId}
                         onChange={(e) => setSelectedServiceId(e.target.value)}
                         required
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
+                        className="w-full px-3 py-2.5 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold dark:bg-background"
                       >
                         <option value="">-- {t('bookings.select_service')} --</option>
                         {services?.map((service) => (
                           <option key={service.id} value={service.id}>
-                            {tField(service, 'name')} (৳{service.price})
+                            {tField(service, 'name')} (৳{parseFloat(service.price).toFixed(0)})
                           </option>
                         ))}
                       </select>
@@ -324,14 +482,17 @@ export const ProviderDetail = () => {
                       <select
                         value={selectedPetId}
                         onChange={(e) => setSelectedPetId(e.target.value)}
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
+                        className="w-full px-3 py-2.5 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold dark:bg-background"
                       >
                         <option value="">-- {t('bookings.select_pet')} --</option>
-                        {pets?.map((pet) => (
-                          <option key={pet.id} value={pet.id}>
-                            {language === 'bn' ? (pet.name_bn || pet.name) : pet.name}
-                          </option>
-                        ))}
+                        {(() => {
+                          const petOptions = Array.isArray(pets) ? pets : (pets?.results ?? []);
+                          return petOptions?.map((pet) => (
+                            <option key={pet.id} value={pet.id}>
+                              {language === 'bn' ? (pet.name_bn || pet.name) : pet.name}
+                            </option>
+                          ));
+                        })()}
                       </select>
                     </div>
 
@@ -345,21 +506,8 @@ export const ProviderDetail = () => {
                         value={bookingDate}
                         onChange={(e) => setBookingDate(e.target.value)}
                         required
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
-                      />
-                    </div>
-
-                    {/* Select Time */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-muted-foreground">
-                        {t('bookings.select_time')}
-                      </label>
-                      <input
-                        type="time"
-                        value={bookingTime}
-                        onChange={(e) => setBookingTime(e.target.value)}
-                        required
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
+                        min={new Date().toISOString().split('T')[0]}
+                        className="w-full px-3 py-2.5 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold dark:bg-background"
                       />
                     </div>
 
@@ -373,13 +521,13 @@ export const ProviderDetail = () => {
                         onChange={(e) => setBookingNotes(e.target.value)}
                         rows={3}
                         placeholder={t('bookings.notes_placeholder')}
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
+                        className="w-full px-3 py-2.5 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold dark:bg-background"
                       />
                     </div>
 
                     {/* Success message */}
                     {bookingSuccess && (
-                      <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex gap-1.5 items-center dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50">
+                      <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex gap-1.5 items-center dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50 animate-fade-in">
                         <CheckCircle className="w-4 h-4 flex-shrink-0" />
                         <span>{t('bookings.success')}</span>
                       </div>
@@ -387,34 +535,48 @@ export const ProviderDetail = () => {
 
                     {/* Error message */}
                     {bookingError && (
-                      <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex gap-1.5 items-center dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/50">
+                      <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex gap-1.5 items-center dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/50 animate-fade-in">
                         <AlertCircle className="w-4 h-4 flex-shrink-0" />
                         <span>{bookingError}</span>
                       </div>
                     )}
 
-                    {/* Submit Button */}
-                    <button
-                      type="submit"
-                      disabled={bookingMutation.isPending || !!bookingSuccess}
-                      className="w-full py-2.5 bg-primary hover:bg-primary/95 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1 transition-all shadow-sm active:scale-[0.98] disabled:opacity-55"
-                    >
-                      {bookingMutation.isPending && <Spinner size="sm" />}
-                      <span>{t('bookings.btn_submit')}</span>
-                    </button>
+                    {/* Submit Button & Direct Call Grid */}
+                    <div className="flex gap-2 pt-2">
+                      <a
+                        href={`tel:${provider.phone}`}
+                        className="flex items-center justify-center p-3 bg-pcp-green-bg hover:bg-pcp-green-muted text-pcp-green rounded-xl transition-all border border-pcp-border/50 shrink-0 shadow-sm"
+                        title={language === 'bn' ? 'সরাসরি কল করুন' : 'Call Directly'}
+                      >
+                        <Phone className="w-4 h-4" />
+                      </a>
+                      
+                      <button
+                        type="submit"
+                        disabled={bookingMutation.isPending || !!bookingSuccess}
+                        className="flex-grow py-3 bg-pcp-green hover:bg-pcp-green-hover text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-[0.98] disabled:opacity-55"
+                      >
+                        {bookingMutation.isPending ? (
+                          <Spinner size="sm" />
+                        ) : (
+                          <CalendarCheck className="w-4 h-4" />
+                        )}
+                        <span>{t('bookings.btn_submit')}</span>
+                      </button>
+                    </div>
                   </form>
                 ) : (
-                  <div className="text-center py-6 px-4 bg-pcp-surface/40 rounded-xl border border-dashed border-border/80 space-y-4">
+                  <div className="text-center py-6 px-4 bg-pcp-surface/40 dark:bg-pcp-green/5 rounded-xl border border-dashed border-pcp-border/80 dark:border-white/5 space-y-4">
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       {token
-                        ? 'পশু চিকিৎসক বা সেবা প্রদানকারীরা নিজের পেজে বুক করতে পারবেন না।'
-                        : 'সেবা বুক করতে অনুগ্রহ করে পেটকেয়ার অ্যাকাউন্ট লগইন বা নিবন্ধন করুন।'}
+                        ? (language === 'bn' ? 'পশু চিকিৎসক বা সেবা প্রদানকারীরা নিজের পেজে বুক করতে পারবেন না।' : 'Service providers cannot book appointments on their own profile.')
+                        : (language === 'bn' ? 'সেবা বুক করতে অনুগ্রহ করে পেটকেয়ার অ্যাকাউন্ট লগইন বা নিবন্ধন করুন।' : 'Please login or register to book an appointment with this provider.')}
                     </p>
                     {!token && (
                       <div className="flex gap-2 justify-center">
                         <Link
                           to="/login"
-                          className="px-3.5 py-1.5 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+                          className="px-4 py-2 bg-pcp-green text-white text-xs font-bold rounded-xl hover:bg-pcp-green-hover transition-colors shadow-sm"
                         >
                           {t('nav.login')}
                         </Link>
@@ -423,33 +585,26 @@ export const ProviderDetail = () => {
                   </div>
                 )}
               </div>
+
+              {/* Embedded Provider Leaflet Map */}
+              {provider.latitude && provider.longitude && (
+                <div className="bg-card dark:bg-card border border-pcp-border/60 dark:border-white/5 rounded-3xl p-4 shadow-sm space-y-3.5">
+                  <div className="flex justify-between items-center border-b border-pcp-border/30 dark:border-border/30 pb-2">
+                    <h3 className="text-base font-bold text-pcp-text-primary dark:text-foreground text-left">
+                      {language === 'bn' ? 'মানচিত্রে অবস্থান' : 'Map Location'}
+                    </h3>
+                  </div>
+                  {/* Map canvas */}
+                  <div 
+                    ref={mapContainerRef} 
+                    className="w-full h-[220px] rounded-2xl overflow-hidden border border-border/80 shadow-inner relative z-0"
+                    style={{ zIndex: 1 }}
+                  />
+                </div>
+              )}
+
             </div>
 
-          </div>
-
-          {/* Bottom Panel: Customer Reviews */}
-          <div className="bg-card border border-border/80 rounded-2xl p-6 md:p-8 shadow-sm text-left space-y-6">
-            <h3 className="text-lg font-bold text-foreground border-b border-border/60 pb-2">
-              {t('providers.reviews_title')}
-            </h3>
-
-            {isLoadingReviews ? (
-              <Spinner className="py-8" />
-            ) : !reviews || reviews.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-xs md:text-sm font-semibold text-muted-foreground">
-                  {t('providers.no_reviews')}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {reviews.map((review) => (
-                  <div key={review.id} className="animate-fade-in-up">
-                    <ReviewCard review={review} />
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
         </div>

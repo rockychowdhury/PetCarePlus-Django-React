@@ -8,7 +8,7 @@ import { useLocationStore } from '../store/locationStore'
 import { BANGLADESH_GEOGRAPHY } from '../utils/geo'
 import PageLayout from '../components/layout/PageLayout'
 import ProviderGrid from '../components/providers/ProviderGrid'
-import { Stethoscope, Scissors, UserCheck, LayoutGrid, MapPin, Dumbbell, Pill, Compass, List } from 'lucide-react'
+import { Stethoscope, Scissors, UserCheck, LayoutGrid, MapPin, Dumbbell, Pill, Compass, List, AlertTriangle } from 'lucide-react'
 import { LocationModal } from '../components/providers/LocationModal'
 import { CustomSelect } from '../components/common/CustomSelect'
 import { getAnimalIcon } from '../utils/animals'
@@ -152,6 +152,24 @@ export const Providers = () => {
               />
             </div>
           </div>
+
+          {/* Fallback Location Alert Banner */}
+          {!isLoading && providersResponse && providersResponse.exact_match_found === false && (
+            <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded-2xl flex gap-3 items-start animate-fade-in text-left">
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="text-xs md:text-sm text-amber-800 dark:text-amber-300 space-y-1">
+                <p className="font-extrabold text-sm">
+                  {language === 'bn' ? 'আপনার নির্দিষ্ট এলাকায় কোনো সেবাদাতা পাওয়া যায়নি!' : 'No service providers found in your selected location!'}
+                </p>
+                <p className="font-medium opacity-90 leading-relaxed text-xs">
+                  {language === 'bn' 
+                    ? `"${locationText}"-এ কোনো ম্যাচ পাওয়া যায়নি। বিকল্প হিসেবে পার্শ্ববর্তী এলাকা বা দেশজুড়ে অন্যান্য সেবাদাতাদের তালিকা দেখানো হচ্ছে।` 
+                    : `We couldn't find any service providers directly in "${locationText}". Showing results from surrounding regions or nationwide instead.`
+                  }
+                </p>
+              </div>
+            </div>
+          )}
 
           <ProviderGrid providers={providers} isLoading={isLoading} />
 
