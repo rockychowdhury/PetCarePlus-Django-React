@@ -46,6 +46,8 @@ class ServiceProvider(models.Model):
         help_text='Indicates if this is a Government Vet'
     )
 
+    profile_image_url = models.URLField(max_length=500, blank=True, null=True, help_text="Direct link to profile image")
+
     # Location (Bangladesh hierarchy)
     division = models.CharField(max_length=20, choices=DIVISION_CHOICES)
     district = models.CharField(max_length=50)

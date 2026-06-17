@@ -47,7 +47,10 @@ export const Navbar = () => {
         <div className="flex justify-between h-16">
           {/* Logo Section */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center shadow-sm border border-primary/20 shrink-0 bg-[#CBE8B9]">
+                <img src="/favicon.png" alt="PetCarePlus Logo" className="w-[110%] h-auto max-w-none object-cover" />
+              </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-pcp-green to-pcp-green-light bg-clip-text text-transparent tracking-tight">
                 PetCarePlus
               </span>

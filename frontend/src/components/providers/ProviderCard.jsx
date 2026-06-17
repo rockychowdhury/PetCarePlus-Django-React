@@ -18,6 +18,7 @@ export const ProviderCard = ({ provider }) => {
     business_name,
     provider_type,
     is_government_vet,
+    profile_image_url,
     division,
     district,
     upazila,
@@ -86,8 +87,15 @@ export const ProviderCard = ({ provider }) => {
           )}
         </div>
 
-        {/* Business Name */}
-        <div>
+        {/* Business Name & Avatar */}
+        <div className="flex items-center gap-3">
+          {profile_image_url ? (
+            <img src={profile_image_url} alt={business_name} className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border-2 border-primary/20 flex-shrink-0" />
+          ) : (
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg border-2 border-primary/20 flex-shrink-0">
+              {business_name.charAt(0).toUpperCase()}
+            </div>
+          )}
           <h4 className="text-base md:text-lg font-bold text-foreground leading-snug group-hover:text-primary transition-colors">
             {business_name}
           </h4>

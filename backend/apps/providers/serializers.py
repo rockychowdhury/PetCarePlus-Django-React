@@ -59,7 +59,7 @@ class ServiceProviderSerializer(BilingualMixin, serializers.ModelSerializer):
     class Meta:
         model = ServiceProvider
         fields = [
-            'id', 'user', 'user_email', 'user_name', 'business_name', 'description',
+            'id', 'user', 'user_email', 'user_name', 'business_name', 'description', 'profile_image_url',
             'provider_type', 'is_government_vet', 'division', 'district', 'upazila', 'latitude', 'longitude', 'phone', 'email',
             'is_verified', 'is_active', 'avg_rating', 'total_reviews', 'services',
             'supported_animal_types', 'animal_type_ids', 'created_at', 'updated_at',
