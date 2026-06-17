@@ -10,6 +10,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 
+from common.pagination import StandardPagination
 from common.permissions import IsOwnerOrAdmin
 from common.utils import get_local_providers
 from apps.providers.models import ServiceProvider, ProviderService
@@ -19,6 +20,10 @@ from apps.providers.serializers import (
 )
 
 
+class ServiceProviderPagination(StandardPagination):
+    page_size = 16
+
+
 class ServiceProviderViewSet(viewsets.ModelViewSet):
     """
     ViewSet for ServiceProvider.
@@ -26,6 +31,7 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
     and restricts profile modifications to the owner or an admin.
     """
     serializer_class = ServiceProviderSerializer
+    pagination_class = ServiceProviderPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     search_fields = ['business_name', 'description_en', 'description_bn']
 

@@ -31,19 +31,19 @@ images = [
 ]
 
 dhaka_locations = [
-    {'division': 'Dhaka', 'district': 'Dhaka', 'upazila': 'Dhanmondi', 'lat': 23.7461, 'lng': 90.3742},
-    {'division': 'Dhaka', 'district': 'Dhaka', 'upazila': 'Gulshan', 'lat': 23.7925, 'lng': 90.4078},
-    {'division': 'Dhaka', 'district': 'Dhaka', 'upazila': 'Banani', 'lat': 23.7940, 'lng': 90.4043},
-    {'division': 'Dhaka', 'district': 'Dhaka', 'upazila': 'Uttara', 'lat': 23.8759, 'lng': 90.3996},
-    {'division': 'Dhaka', 'district': 'Dhaka', 'upazila': 'Mirpur', 'lat': 23.8223, 'lng': 90.3654},
+    {'division': 'dhaka', 'district': 'Dhaka', 'upazila': 'Dhanmondi', 'lat': 23.7461, 'lng': 90.3742},
+    {'division': 'dhaka', 'district': 'Dhaka', 'upazila': 'Gulshan', 'lat': 23.7925, 'lng': 90.4078},
+    {'division': 'dhaka', 'district': 'Dhaka', 'upazila': 'Banani', 'lat': 23.7940, 'lng': 90.4043},
+    {'division': 'dhaka', 'district': 'Dhaka', 'upazila': 'Uttara', 'lat': 23.8759, 'lng': 90.3996},
+    {'division': 'dhaka', 'district': 'Dhaka', 'upazila': 'Mirpur', 'lat': 23.8223, 'lng': 90.3654},
 ]
 
-other_locations = [
-    {'division': 'Chattogram', 'district': 'Chattogram', 'upazila': 'Panchlaish', 'lat': 22.3569, 'lng': 91.8205},
-    {'division': 'Sylhet', 'district': 'Sylhet', 'upazila': 'Sylhet Sadar', 'lat': 24.8949, 'lng': 91.8687},
-    {'division': 'Rajshahi', 'district': 'Rajshahi', 'upazila': 'Boalia', 'lat': 24.3636, 'lng': 88.6241},
-    {'division': 'Khulna', 'district': 'Khulna', 'upazila': 'Sonadanga', 'lat': 22.8456, 'lng': 89.5403},
-    {'division': 'Barishal', 'district': 'Barishal', 'upazila': 'Barishal Sadar', 'lat': 22.7010, 'lng': 90.3535},
+chattogram_locations = [
+    {'division': 'chattogram', 'district': 'Chattogram', 'upazila': 'Hathazari', 'lat': 22.5083, 'lng': 91.8083},
+    {'division': 'chattogram', 'district': 'Chattogram', 'upazila': 'Patiya', 'lat': 22.2989, 'lng': 91.9772},
+    {'division': 'chattogram', 'district': 'Chattogram', 'upazila': 'Sitakunda', 'lat': 22.6208, 'lng': 91.6603},
+    {'division': 'chattogram', 'district': 'Chattogram', 'upazila': 'Anwara', 'lat': 22.2144, 'lng': 91.9111},
+    {'division': 'chattogram', 'district': 'Chattogram', 'upazila': 'Mirsharai', 'lat': 22.7722, 'lng': 91.5756},
 ]
 
 names = ["Pet Care Hospital", "Happy Paws Clinic", "Furry Friends Shelter", "Green Vet Center", "City Animal Care", "Safe Hands Pet Grooming", "Loyal Pets Training", "Best Care Vet", "Elite Pet Pharmacy", "Guardian Pet Sitter"]
@@ -56,7 +56,7 @@ User.objects.filter(email__contains='dummy').delete()
 print("Creating 20 new providers...")
 providers = []
 for i in range(20):
-    loc = random.choice(dhaka_locations) if i < 10 else random.choice(other_locations)
+    loc = random.choice(dhaka_locations) if i < 10 else random.choice(chattogram_locations)
     img = random.choice(images)
     name = f"{random.choice(names)} {i+1}"
     ptype = random.choice([t[0] for t in ServiceProvider.ProviderType.choices])

@@ -11,6 +11,16 @@ import ProviderGrid from '../components/providers/ProviderGrid'
 import { Stethoscope, Scissors, UserCheck, LayoutGrid, MapPin, Dumbbell, Pill, Compass, List } from 'lucide-react'
 import { LocationModal } from '../components/providers/LocationModal'
 import { CustomSelect } from '../components/common/CustomSelect'
+import { getAnimalIcon } from '../utils/animals'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '../components/ui/pagination'
 
 export const Providers = () => {
   const { language, t } = useLanguage()
@@ -29,6 +39,12 @@ export const Providers = () => {
   const [activeType, setActiveType] = useState('all')
   const [selectedAnimalId, setSelectedAnimalId] = useState('all')
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeType, selectedAnimalId])
 
   // Fetch animal specialties
   const { data: animalTypes } = useQuery({
@@ -37,7 +53,7 @@ export const Providers = () => {
   })
 
   // Build active filters
-  const apiFilters = {}
+  const apiFilters = { page: currentPage }
   if (activeType !== 'all') apiFilters.provider_type = activeType
   if (selectedAnimalId !== 'all') apiFilters.animal_type = selectedAnimalId
 
@@ -124,13 +140,73 @@ export const Providers = () => {
                 value={selectedAnimalId}
                 onChange={setSelectedAnimalId}
                 icon={<Compass className="w-4.5 h-4.5" />}
-                options={(animalTypes || []).map(a => ({ id: a.id, label: language === 'bn' ? a.name_bn : a.name_en }))}
+                options={(animalTypes || []).map(a => {
+                  const Icon = getAnimalIcon(a.slug)
+                  return {
+                    id: a.id,
+                    label: language === 'bn' ? a.name_bn : a.name_en,
+                    icon: <Icon className="w-4 h-4 text-pcp-green dark:text-pcp-green-light shrink-0" />
+                  }
+                })}
                 placeholder={language === 'bn' ? '-- পশু বিশেষজ্ঞ --' : '-- Animal Specialty --'}
               />
             </div>
           </div>
 
           <ProviderGrid providers={providers} isLoading={isLoading} />
+
+          {/* Pagination controls */}
+          {!isLoading && providersResponse && providersResponse.count > 16 && (
+            <div className="border-t border-border/80 pt-6 mt-8">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => {
+                        if (currentPage > 1) {
+                          setCurrentPage(prev => Math.max(1, prev - 1));
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                      }}
+                      className="cursor-pointer text-pcp-text-primary dark:text-muted-foreground"
+                      disabled={currentPage === 1}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: Math.ceil(providersResponse.count / 16) }).map((_, index) => {
+                    const pageNum = index + 1;
+                    return (
+                      <PaginationItem key={pageNum}>
+                        <PaginationLink
+                          isActive={currentPage === pageNum}
+                          onClick={() => {
+                            setCurrentPage(pageNum);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="cursor-pointer text-pcp-text-primary dark:text-muted-foreground"
+                        >
+                          {pageNum}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => {
+                        if (providersResponse.next) {
+                          setCurrentPage(prev => prev + 1);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                      }}
+                      className="cursor-pointer text-pcp-text-primary dark:text-muted-foreground"
+                      disabled={!providersResponse.next}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
 
         </div>
       </div>

@@ -24,7 +24,11 @@ export const CustomSelect = ({ value, onChange, options, placeholder, disabled, 
         onClick={() => !disabled && setIsOpen(!isOpen)}
       >
         <div className="flex items-center gap-2 overflow-hidden">
-          {icon && <span className="text-primary flex-shrink-0">{icon}</span>}
+          {selectedOption?.icon ? (
+            <span className="flex-shrink-0">{selectedOption.icon}</span>
+          ) : icon ? (
+            <span className="text-primary flex-shrink-0">{icon}</span>
+          ) : null}
           <span className={`truncate ${selectedOption ? 'text-foreground' : 'text-muted-foreground'}`}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
@@ -43,10 +47,11 @@ export const CustomSelect = ({ value, onChange, options, placeholder, disabled, 
           {safeOptions.map((opt) => (
             <div 
               key={opt.id} 
-              className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-primary/10 transition-colors ${String(value) === String(opt.id) ? 'bg-primary/10 text-primary font-bold border-l-2 border-primary' : 'text-foreground'}`}
+              className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-primary/10 transition-colors flex items-center gap-2.5 ${String(value) === String(opt.id) ? 'bg-primary/10 text-primary font-bold border-l-2 border-primary' : 'text-foreground'}`}
               onClick={() => { onChange(opt.id); setIsOpen(false) }}
             >
-              {opt.label}
+              {opt.icon && <span className="flex-shrink-0">{opt.icon}</span>}
+              <span>{opt.label}</span>
             </div>
           ))}
         </div>

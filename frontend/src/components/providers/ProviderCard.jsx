@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useLocationStore } from '../../store/locationStore'
 import { useLanguage } from '../../hooks/useLanguage'
-import { Star, MapPin, CheckCircle, ArrowRight, Stethoscope, Scissors, UserCheck, Dumbbell, Pill } from 'lucide-react'
+import { Star, MapPin, Heart, Phone } from 'lucide-react'
+import { getAnimalIcon } from '../../utils/animals'
 
 export const ProviderCard = ({ provider }) => {
   const { language, t } = useLanguage()
@@ -24,7 +25,9 @@ export const ProviderCard = ({ provider }) => {
     upazila,
     avg_rating,
     total_reviews,
-    is_verified,
+    supported_animal_types = [],
+    phone,
+    email,
   } = provider
 
   const ratingValue = parseFloat(avg_rating) || 0.0
@@ -42,118 +45,131 @@ export const ProviderCard = ({ provider }) => {
     distanceLabel = t('providers.distance_national')
   }
 
-  // Map provider types to corresponding premium icons
-  const getProviderIcon = () => {
-    switch (provider_type) {
-      case 'vet':
-        return <Stethoscope className="w-5 h-5 text-emerald-600" />
-      case 'groomer':
-        return <Scissors className="w-5 h-5 text-indigo-600" />
-      case 'sitter':
-        return <UserCheck className="w-5 h-5 text-blue-600" />
-      case 'trainer':
-        return <Dumbbell className="w-5 h-5 text-orange-600" />
-      case 'pharmacy':
-        return <Pill className="w-5 h-5 text-red-600" />
-      default:
-        return <Stethoscope className="w-5 h-5 text-primary" />
-    }
+  // Type translation
+  const typeLabel = t(`providers.types.${provider_type}`)
+
+  // Specific Gov Vet logic
+  let govVetLabel = null
+  if (provider_type === 'vet' && is_government_vet) {
+    govVetLabel = language === 'bn' ? 'সরকারি চিকিৎসক' : 'Gov Vet'
   }
 
   return (
-    <div className="pcp-card p-5 hover:border-primary/20 flex flex-col justify-between h-full group">
-      <div className="space-y-3">
-        {/* Type & Verification Header */}
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <div className="p-1.5 rounded-lg bg-muted flex items-center justify-center">
-              {getProviderIcon()}
-            </div>
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-              {t(`providers.types.${provider_type}`)}
+    <div className="group relative flex flex-col justify-between h-full bg-pcp-card dark:bg-card rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-pcp-border/60 dark:border-white/5 p-4 overflow-hidden">
+      
+      {/* Top Banner Cover Area */}
+      <div className="relative h-[150px] w-full shrink-0 rounded-2xl overflow-hidden mb-4 bg-gradient-to-br from-pcp-green-muted/30 to-pcp-green-muted dark:from-muted/40 dark:to-muted/20">
+        {profile_image_url ? (
+          <img 
+            src={profile_image_url} 
+            alt={business_name} 
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-5xl font-black text-pcp-text-primary/10 dark:text-white/10 uppercase tracking-tighter">
+              {business_name.charAt(0)}
             </span>
-            {provider_type === 'vet' && (
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ml-1 ${is_government_vet ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-orange-100 text-orange-700 border border-orange-200'}`}>
-                {is_government_vet ? (language === 'bn' ? 'সরকারি চিকিৎসক' : 'Gov Vet') : (language === 'bn' ? 'স্থানীয় চিকিৎসক' : 'Local Vet')}
-              </span>
-            )}
           </div>
+        )}
 
-          {is_verified && (
-            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50">
-              <CheckCircle className="w-3 h-3 fill-current" />
-              <span>{t('providers.verified')}</span>
+        {/* Badges Floating Over Image */}
+        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5 items-start">
+          <span className="inline-flex items-center justify-center px-3 py-1 bg-white/90 dark:bg-zinc-900/90 text-pcp-text-secondary dark:text-pcp-green-light backdrop-blur-md rounded-full text-[10px] font-extrabold uppercase tracking-wider border border-pcp-border/30 shadow-sm">
+            {typeLabel}
+          </span>
+          {govVetLabel && (
+            <span className="inline-flex items-center justify-center px-3 py-1 bg-[#E76F51] text-white rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm border border-[#E76F51]">
+              {govVetLabel}
             </span>
           )}
         </div>
+        
+        {/* Floating Heart / Save Icon */}
+        <button className="absolute top-2.5 right-2.5 p-2 rounded-full bg-white/30 hover:bg-white/50 backdrop-blur-md transition-colors border border-white/40">
+          <Heart className="w-3.5 h-3.5 text-white drop-shadow-sm" />
+        </button>
 
-        {/* Business Name & Avatar */}
-        <div className="flex items-center gap-3">
-          {profile_image_url ? (
-            <img src={profile_image_url} alt={business_name} className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border-2 border-primary/20 flex-shrink-0" />
-          ) : (
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg border-2 border-primary/20 flex-shrink-0">
-              {business_name.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <h4 className="text-base md:text-lg font-bold text-foreground leading-snug group-hover:text-primary transition-colors">
-            {business_name}
-          </h4>
+        {/* Rating Floating Over Image (Bottom Right) */}
+        <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 px-2.5 py-1 bg-black/60 dark:bg-zinc-950/70 text-white backdrop-blur-sm rounded-lg text-[11px] font-bold shadow-sm">
+          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+          <span>{ratingValue > 0 ? ratingValue.toFixed(1) : '0.0'}</span>
+          <span className="opacity-70 font-medium">({total_reviews})</span>
         </div>
+      </div>
 
-        {/* Rating Section */}
-        <div className="flex items-center gap-1">
-          <div className="flex text-amber-400">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-3.5 h-3.5 ${
-                  i < Math.round(ratingValue) ? 'fill-current' : 'text-muted/50'
-                }`}
-              />
-            ))}
-          </div>
-          <span className="text-xs font-bold text-foreground pl-0.5">
-            {ratingValue > 0 ? ratingValue.toFixed(1) : ''}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {total_reviews > 0
-              ? `(${total_reviews} ${t('providers.reviews')})`
-              : `(${t('providers.no_reviews')})`}
-          </span>
-        </div>
+      {/* Content Area */}
+      <div className="flex flex-col flex-grow px-1">
+        {/* Business Name */}
+        <h4 className="text-[19px] leading-snug font-extrabold text-pcp-text-primary dark:text-foreground mb-1.5 line-clamp-1 group-hover:text-pcp-green transition-colors">
+          {business_name}
+        </h4>
 
-        {/* Location Markers */}
-        <div className="space-y-1 pt-1 border-t border-border/40">
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-primary" />
-            <span className="truncate">
-              {upazila ? `${upazila}, ` : ''}
-              {district}, {division}
+        {/* Location Row */}
+        <div className="flex items-center gap-2 mb-2.5 flex-wrap">
+          <div className="flex items-center gap-1">
+            <MapPin className="w-4 h-4 text-pcp-text-muted dark:text-muted-foreground shrink-0" />
+            <span className="text-xs font-semibold text-pcp-text-secondary dark:text-muted-foreground/80 line-clamp-1">
+              {upazila ? `${upazila}, ` : ''}{district}
             </span>
           </div>
           {distanceLabel && (
-            <div className="pl-5">
-              <span className="inline-block text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                {distanceLabel}
-              </span>
-            </div>
+            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30">
+              {distanceLabel}
+            </span>
           )}
         </div>
+
+        <div className="h-px bg-pcp-border/30 dark:bg-border/30 my-2.5"></div>
+
+        {/* Animal Types Specialties */}
+        {supported_animal_types && supported_animal_types.length > 0 && (
+          <div className="mb-2.5">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-pcp-text-muted dark:text-muted-foreground block mb-1.5">
+              {language === 'bn' ? 'সেবা গ্রহণকারী প্রাণী:' : 'Animals Serviced:'}
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {supported_animal_types.map((at) => {
+                const Icon = getAnimalIcon(at.slug)
+                return (
+                  <span 
+                    key={at.id}
+                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-pcp-green-bg dark:bg-pcp-green/10 text-pcp-text-secondary dark:text-pcp-green-light border border-pcp-border dark:border-pcp-green/20"
+                  >
+                    <Icon className="w-3.5 h-3.5 text-pcp-green dark:text-pcp-green-light shrink-0" />
+                    <span>{language === 'bn' ? at.name_bn : at.name_en}</span>
+                  </span>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Button CTA Link */}
-      <div className="pt-4 mt-auto">
+      {/* Footer / Contact Action Area */}
+      <div className="mt-4 pt-3 border-t border-pcp-border/40 dark:border-border/40 flex items-center gap-2">
+        {phone && (
+          <a
+            href={`tel:${phone}`}
+            className="flex items-center justify-center p-2.5 bg-pcp-green-bg hover:bg-pcp-green-muted text-pcp-green rounded-xl transition-all border border-pcp-border/50 shrink-0"
+            title={language === 'bn' ? 'কল করুন' : 'Call Provider'}
+          >
+            <Phone className="w-4 h-4" />
+          </a>
+        )}
+        
         <Link
           to={`/providers/${id}`}
-          className="w-full py-2 bg-muted hover:bg-primary hover:text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all group-hover:shadow-sm"
+          className="flex-grow flex items-center justify-center py-2.5 bg-pcp-green hover:bg-pcp-green-hover text-white font-extrabold text-xs rounded-xl transition-colors shadow-sm"
         >
-          <span>{t('providers.btn_details')}</span>
-          <ArrowRight className="w-3.5 h-3.5" />
+          {t('providers.btn_details')}
         </Link>
       </div>
+
     </div>
   )
 }
 
 export default ProviderCard
+
+
