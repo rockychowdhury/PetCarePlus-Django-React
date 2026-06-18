@@ -46,7 +46,13 @@ class RehomingListing(models.Model):
         choices=Gender.choices,
         default=Gender.UNKNOWN
     )
-    birth_date = models.DateField(null=True, blank=True)
+    age = models.DecimalField(
+        max_digits=4, 
+        decimal_places=1, 
+        null=True, 
+        blank=True, 
+        help_text='Age in years'
+    )
     description = models.TextField(max_length=1000, blank=True)
 
     # Physical & Health
@@ -62,7 +68,32 @@ class RehomingListing(models.Model):
     # Media
     photo_url = models.URLField(max_length=500, blank=True)
 
+    # Location
+    district = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text='জেলা (District) of the pet/owner'
+    )
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text='Latitude for distance matching'
+    )
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text='Longitude for distance matching'
+    )
+
     reason = models.TextField(help_text='Reason for rehoming')
+    adopter_requirements = models.TextField(
+        blank=True,
+        help_text='Requirements for the potential adopter (e.g. Must have yard, no other pets)'
+    )
     status = models.CharField(
         max_length=10,
         choices=Status.choices,
@@ -112,19 +143,17 @@ class RehomingApplication(models.Model):
     )
 
     message = models.TextField(help_text='Why do you want to adopt this pet?')
-    living_situation = models.TextField(
-        blank=True,
-        help_text='Describe your living situation'
-    )
-    experience = models.TextField(
-        blank=True,
-        help_text='Previous pet ownership experience'
-    )
 
     status = models.CharField(
         max_length=10,
         choices=Status.choices,
         default=Status.PENDING
+    )
+    
+    ai_score = models.IntegerField(
+        null=True, 
+        blank=True,
+        help_text='AI-generated matching score out of 10'
     )
 
     created_at = models.DateTimeField(auto_now_add=True)

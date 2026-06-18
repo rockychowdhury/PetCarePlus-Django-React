@@ -197,3 +197,21 @@ class AISessionDetailView(generics.RetrieveAPIView):
             if obj.user != self.request.user and self.request.user.role != 'admin':
                 raise PermissionDenied("You do not have permission to view this session.")
         return obj
+
+class AIPolishView(APIView):
+    """
+    POST endpoint to refine and polish user text using AI.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        text = request.data.get('text')
+        language = request.data.get('language', 'bn')
+
+        if not text:
+            raise ValidationError({"text": "Required to polish."})
+
+        from apps.ai_assistant.gemini import polish_text
+        polished_text = polish_text(text, language)
+
+        return Response({"polished_text": polished_text}, status=status.HTTP_200_OK)

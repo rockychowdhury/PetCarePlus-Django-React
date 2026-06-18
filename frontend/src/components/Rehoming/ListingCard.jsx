@@ -47,98 +47,82 @@ export const ListingCard = ({ listing }) => {
   }
 
   return (
-    <div className="pcp-card overflow-hidden group flex flex-col h-full border-border/80 hover:border-primary/20">
-      {/* Pet Photo Container */}
-      <div className="relative aspect-square w-full bg-muted flex items-center justify-center overflow-hidden">
+    <div className="group relative flex flex-col justify-between h-full bg-pcp-card dark:bg-card rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-pcp-border/60 dark:border-white/5 p-4 overflow-hidden">
+      
+      {/* Top Banner Cover Area */}
+      <div className="relative h-[150px] w-full shrink-0 rounded-2xl overflow-hidden mb-4 bg-gradient-to-br from-pcp-green-muted/30 to-pcp-green-muted dark:from-muted/40 dark:to-muted/20">
         {photo_url ? (
           <img
             src={photo_url}
             alt={petNameDisplay}
-            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
-            <Heart className="w-10 h-10 stroke-1 fill-muted" />
-            <span className="text-[10px] uppercase font-bold tracking-wider">No Photo</span>
+          <div className="w-full h-full flex items-center justify-center text-pcp-text-primary/20 dark:text-white/20">
+            <Heart className="w-10 h-10 stroke-1" />
           </div>
         )}
 
-        {/* Free / Adoption Indicator Badge */}
-        <div className="absolute top-3 left-3 bg-accent text-accent-foreground text-[10px] sm:text-xs font-bold px-3 py-1 rounded-full shadow-sm">
-          {language === 'bn' ? 'ফ্রি দত্তক' : 'FREE ADOPTION'}
-        </div>
-
         {/* Status Badge */}
-        <div className="absolute top-3 right-3 shadow-sm">
+        <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5 items-end">
           {getStatusBadge()}
         </div>
       </div>
 
-      {/* Pet Details body */}
-      <div className="p-5 flex-grow flex flex-col justify-between space-y-4">
-        <div className="space-y-2">
-          {/* Header Name & Breed */}
-          <div>
-            <h4 className="text-base sm:text-lg font-bold text-foreground truncate">
-              {petNameDisplay}
-            </h4>
-            <p className="text-xs text-muted-foreground font-semibold">
-              {breed || (language === 'bn' ? 'মিশ্র জাত' : 'Mixed Breed')}
+      {/* Content Area */}
+      <div className="flex flex-col flex-grow px-1">
+        {/* Pet Name */}
+        <h4 className="text-[19px] leading-snug font-extrabold text-pcp-text-primary dark:text-foreground mb-1.5 line-clamp-1 group-hover:text-pcp-green transition-colors">
+          {petNameDisplay}
+        </h4>
+        <p className="text-xs text-pcp-text-secondary dark:text-muted-foreground font-semibold mb-2.5">
+          {breed || (language === 'bn' ? 'মিশ্র জাত' : 'Mixed Breed')}
+        </p>
+
+        {/* Info Row */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-2.5">
+          <div className="flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 text-pcp-green dark:text-pcp-green-light shrink-0" />
+            <span className="text-xs font-semibold text-pcp-text-secondary dark:text-muted-foreground/80">
+              {age ? `${age} ${language === 'bn' ? 'বছর' : (age > 1 ? 'years' : 'year')}` : (language === 'bn' ? 'অজানা' : 'Unknown')}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <BadgeCheck className="w-3.5 h-3.5 text-pcp-green dark:text-pcp-green-light shrink-0" />
+            <span className="text-xs font-semibold text-pcp-text-secondary dark:text-muted-foreground/80 capitalize">
+              {language === 'bn' ? (gender === 'male' ? 'পুরুষ' : 'স্ত্রী') : gender}
+            </span>
+          </div>
+        </div>
+
+        {/* Location Row */}
+        <div className="flex items-center gap-1.5 mb-2.5">
+          <MapPin className="w-3.5 h-3.5 text-pcp-text-muted dark:text-muted-foreground shrink-0" />
+          <span className="text-xs font-semibold text-pcp-text-secondary dark:text-muted-foreground/80 line-clamp-1">
+            {listing.district || listing.owner_details?.district || 'Bangladesh'}
+          </span>
+        </div>
+
+        <div className="h-px bg-pcp-border/30 dark:bg-border/30 my-2.5"></div>
+
+        {/* Reason excerpt */}
+        {reason && (
+          <div className="mb-2.5">
+            <p className="text-xs text-pcp-text-secondary dark:text-muted-foreground leading-relaxed italic line-clamp-2">
+              "{reason}"
             </p>
           </div>
+        )}
+      </div>
 
-          {/* Age & Gender Row */}
-          <div className="flex gap-4 text-xs text-muted-foreground font-medium pt-1">
-            <span className="flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-primary" />
-              {age ? (
-                <span>
-                  {age} {language === 'bn' ? 'বছর' : `${age > 1 ? 'years' : 'year'}`}
-                </span>
-              ) : (
-                <span>{language === 'bn' ? 'অজানা' : 'Unknown'}</span>
-              )}
-            </span>
-            <span className="flex items-center gap-1">
-              <BadgeCheck className="w-3.5 h-3.5 text-primary" />
-              <span className="capitalize">
-                {language === 'bn'
-                  ? gender === 'male'
-                    ? 'পুরুষ'
-                    : 'স্ত্রী'
-                  : gender}
-              </span>
-            </span>
-          </div>
-
-          {/* Location */}
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
-            <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-            <span className="truncate">
-              {listing.owner_details?.upazila ? `${listing.owner_details.upazila}, ` : ''}
-              {listing.owner_details?.district || 'Bangladesh'}
-            </span>
-          </div>
-
-          {/* Reason excerpt */}
-          {reason && (
-            <div className="pt-2 border-t border-border/40">
-              <p className="text-xs text-foreground/80 leading-relaxed italic line-clamp-2">
-                "{reason}"
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Action button */}
-        <div className="pt-3">
-          <Link
-            to={`/rehoming/${id}`}
-            className="w-full py-2 bg-muted hover:bg-primary hover:text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all"
-          >
-            <span>{t('providers.btn_details')}</span>
-          </Link>
-        </div>
+      {/* Footer / Action Area */}
+      <div className="mt-4 pt-3 border-t border-pcp-border/40 dark:border-border/40 flex items-center gap-2">
+        <Link
+          to={`/rehoming/${id}`}
+          className="flex-grow flex items-center justify-center py-2.5 bg-pcp-green hover:bg-pcp-green-hover text-white font-extrabold text-xs rounded-xl transition-colors shadow-sm"
+        >
+          {t('providers.btn_details')}
+        </Link>
       </div>
     </div>
   )

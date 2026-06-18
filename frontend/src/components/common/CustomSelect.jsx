@@ -20,20 +20,20 @@ export const CustomSelect = ({ value, onChange, options, placeholder, disabled, 
   return (
     <div ref={wrapperRef} className={`relative w-full ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
       <div 
-        className="w-full px-4 py-2.5 text-sm rounded-xl border border-border bg-card cursor-pointer flex justify-between items-center transition-all font-medium hover:border-primary/50"
+        className={`w-full px-4 py-2 text-sm rounded-full border border-pcp-border dark:border-border/60 bg-white dark:bg-pcp-card cursor-pointer flex justify-between items-center transition-all font-bold shadow-sm hover:border-pcp-green/50 ${isOpen ? 'ring-1 ring-pcp-green' : ''}`}
         onClick={() => !disabled && setIsOpen(!isOpen)}
       >
         <div className="flex items-center gap-2 overflow-hidden">
           {selectedOption?.icon ? (
             <span className="flex-shrink-0">{selectedOption.icon}</span>
           ) : icon ? (
-            <span className="text-primary flex-shrink-0">{icon}</span>
+            <span className="text-pcp-green flex-shrink-0">{icon}</span>
           ) : null}
-          <span className={`truncate ${selectedOption ? 'text-foreground' : 'text-muted-foreground'}`}>
+          <span className={`truncate text-pcp-green`}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </div>
-        <svg className={`w-4 h-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180 text-primary' : 'text-muted-foreground opacity-70'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+        <svg className={`w-4 h-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180 text-pcp-green' : 'text-pcp-green/70'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
       </div>
       
       {isOpen && (

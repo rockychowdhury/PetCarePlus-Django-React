@@ -22,10 +22,23 @@ class RehomingListingSerializer(serializers.ModelSerializer):
         model = RehomingListing
         fields = [
             'id', 'animal_type', 'animal_type_details', 'pet_name', 'breed', 'gender',
-            'birth_date', 'description', 'weight_kg', 'spayed_neutered', 'vaccinated', 'photo_url',
+            'age', 'description', 'weight_kg', 'spayed_neutered', 'vaccinated', 'photo_url',
+            'district', 'latitude', 'longitude', 'adopter_requirements',
             'owner', 'owner_name', 'owner_email', 'reason', 'status', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'owner', 'status', 'created_at', 'updated_at']
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        if request and request.user:
+            # Auto-populate location from user if not provided
+            if not validated_data.get('district'):
+                validated_data['district'] = request.user.district
+            if validated_data.get('latitude') is None:
+                validated_data['latitude'] = request.user.latitude
+            if validated_data.get('longitude') is None:
+                validated_data['longitude'] = request.user.longitude
+        return super().create(validated_data)
 
     def get_animal_type_details(self, obj):
         from apps.animals.serializers import AnimalTypeSerializer
@@ -56,9 +69,9 @@ class RehomingApplicationSerializer(serializers.ModelSerializer):
         model = RehomingApplication
         fields = [
             'id', 'listing', 'listing_details', 'applicant', 'applicant_name', 'applicant_email',
-            'message', 'living_situation', 'experience', 'status', 'created_at', 'updated_at'
+            'message', 'status', 'ai_score', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'applicant', 'status', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'applicant', 'status', 'ai_score', 'created_at', 'updated_at']
 
     def validate(self, attrs):
         listing = attrs.get('listing')
@@ -76,6 +89,10 @@ class RehomingApplicationSerializer(serializers.ModelSerializer):
             # 2. Active listing check
             if listing.status != RehomingListing.Status.ACTIVE:
                 raise serializers.ValidationError("This rehoming listing is no longer active.")
+
+            # 3. Duplicate application check
+            if RehomingApplication.objects.filter(listing=listing, applicant=request.user).exists():
+                raise serializers.ValidationError("You have already submitted an application for this pet.")
 
         return attrs
 

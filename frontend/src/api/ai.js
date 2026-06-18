@@ -15,4 +15,9 @@ export const aiApi = {
     const response = await client.get(`/ai/sessions/${sessionId}/`)
     return response.data
   },
+
+  polishText: async (text, language = 'bn') => {
+    const response = await client.post('/ai/polish/', { text, language })
+    return response.data
+  },
 }

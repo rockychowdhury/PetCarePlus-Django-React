@@ -138,3 +138,84 @@ You MUST respond strictly in the following JSON format:
             "diagnosis_summary": "",
             "care_advice": ""
         }
+
+def polish_text(text, language='bn'):
+    """
+    Polishes and rewrites a pet adoption application text.
+    """
+    import sys
+    is_test = (
+        'test' in sys.argv or
+        'test' in str(settings.DATABASES.get('default', {}).get('NAME', '')) or
+        'memory' in str(settings.DATABASES.get('default', {}).get('NAME', ''))
+    )
+    if not settings.GEMINI_API_KEY or is_test:
+        return f"✨ [Polished] {text}"
+
+    try:
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        
+        system_instruction = f"You are a helpful assistant. The user is writing a pet adoption application. Polish the provided text to make it sound professional, empathetic, and responsible. Keep it in the {'Bangla' if language == 'bn' else 'English'} language. Do NOT add greetings like 'Hello' or closings like 'Sincerely'. Just return the polished body text directly."
+
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[types.Content(role='user', parts=[types.Part.from_text(text=text)])],
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=0.3
+            )
+        )
+        return response.text.strip()
+    except Exception as e:
+        logger.error(f"Error calling Gemini for polishing: {e}")
+        return text
+
+def analyze_adoption_application(listing_details, application_text):
+    """
+    Analyzes the adoption application against the listing details and requirements.
+    Returns a score out of 10 (int).
+    """
+    import sys
+    is_test = (
+        'test' in sys.argv or
+        'test' in str(settings.DATABASES.get('default', {}).get('NAME', '')) or
+        'memory' in str(settings.DATABASES.get('default', {}).get('NAME', ''))
+    )
+    if not settings.GEMINI_API_KEY or is_test:
+        return 7  # Mock score
+
+    try:
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        
+        system_instruction = (
+            "You are an expert pet adoption counselor. Evaluate the adopter's application "
+            "based on the pet's details, requirements, and the applicant's message. "
+            "Score the application strictly from 1 to 10 based on suitability. "
+            "Return ONLY the integer score (e.g., '8'). Do not include any other text."
+        )
+
+        prompt = (
+            f"Pet Details & Requirements:\n{listing_details}\n\n"
+            f"Adopter Application Message:\n{application_text}\n\n"
+            "Score this application out of 10. Reply with just the number."
+        )
+
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[types.Content(role='user', parts=[types.Part.from_text(text=prompt)])],
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=0.1
+            )
+        )
+        
+        # Try to parse the integer from the response
+        try:
+            score = int(response.text.strip())
+            return min(max(score, 1), 10)  # Clamp between 1 and 10
+        except ValueError:
+            return 5  # Fallback score if parsing fails
+            
+    except Exception as e:
+        logger.error(f"Error calling Gemini for application analysis: {e}")
+        return 5

@@ -95,14 +95,14 @@ export const Providers = () => {
               </p>
             </div>
 
-            <div className="flex items-center gap-3 bg-card border shadow-sm px-4 py-2.5 rounded-2xl">
-              <div className="flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
-                <MapPin className="w-4 h-4 text-primary" />
+            <div className="flex items-center gap-3 bg-white dark:bg-pcp-card border border-pcp-border shadow-sm px-3 py-1.5 rounded-full">
+              <div className="flex items-center gap-1.5 text-sm font-bold text-pcp-green pl-1">
+                <MapPin className="w-4 h-4 text-pcp-green shrink-0" />
                 <span className="max-w-[200px] truncate">{locationText}</span>
               </div>
               <button 
                 onClick={() => setIsLocationModalOpen(true)}
-                className="text-xs font-bold text-primary hover:text-primary/80 transition-colors bg-primary/10 px-3 py-1.5 rounded-lg"
+                className="text-xs font-bold text-pcp-green hover:bg-pcp-green-muted/50 transition-colors bg-pcp-green-bg px-3 py-1.5 rounded-full"
               >
                 {language === 'bn' ? 'পরিবর্তন করুন' : 'Change'}
               </button>

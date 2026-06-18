@@ -15,6 +15,7 @@ const Providers = lazy(() => import('./pages/Providers'))
 const ProviderDetail = lazy(() => import('./pages/ProviderDetail'))
 const AIAssistant = lazy(() => import('./pages/AIAssistant'))
 const Rehoming = lazy(() => import('./pages/Rehoming'))
+const RehomingDetail = lazy(() => import('./pages/RehomingDetail'))
 const Login = lazy(() => import('./pages/auth/Login'))
 const Register = lazy(() => import('./pages/auth/Register'))
 
@@ -116,6 +117,7 @@ export const App = () => {
           <Route path="/providers/:id" element={<ProviderDetail />} />
           <Route path="/ai-assistant" element={<AIAssistant />} />
           <Route path="/rehoming" element={<Rehoming />} />
+          <Route path="/rehoming/:id" element={<RehomingDetail />} />
 
           {/* Anonymous Auth Routes */}
           <Route

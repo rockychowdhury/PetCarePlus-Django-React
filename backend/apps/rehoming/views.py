@@ -7,7 +7,7 @@ Includes cascade regional scoping for active listings and adoption transfer tran
 
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from django.db.models import Q
+from django.db.models import Q, F
 from django_filters.rest_framework import DjangoFilterBackend
 
 from common.permissions import IsOwnerOrAdmin
@@ -38,9 +38,45 @@ class RehomingListingViewSet(viewsets.ModelViewSet):
         # Public listings: only ACTIVE listings
         qs = RehomingListing.objects.filter(status=RehomingListing.Status.ACTIVE)
 
-        # Scoped cascade logic for local network match
-        if user and user.is_authenticated and user.district:
-            return get_local_queryset(qs, user, location_field_prefix='owner__')
+        # 1. Explicit district filter
+        district = self.request.query_params.get('district')
+        if district:
+            qs = qs.filter(district__iexact=district)
+
+        # 2. Distance filter
+        lat = self.request.query_params.get('lat')
+        lng = self.request.query_params.get('lng')
+        radius = self.request.query_params.get('radius', 15)
+
+        if lat and lng:
+            try:
+                lat_val = float(lat)
+                lng_val = float(lng)
+                radius_val = float(radius)
+
+                import math
+                valid_ids = []
+                for listing in qs:
+                    if listing.latitude and listing.longitude:
+                        l_lat = float(listing.latitude)
+                        l_lng = float(listing.longitude)
+                        # Haversine distance
+                        R = 6371
+                        dlat = math.radians(l_lat - lat_val)
+                        dlon = math.radians(l_lng - lng_val)
+                        a = math.sin(dlat/2)**2 + math.cos(math.radians(lat_val)) * math.cos(math.radians(l_lat)) * math.sin(dlon/2)**2
+                        c = 2 * math.asin(math.sqrt(a))
+                        distance = R * c
+                        if distance <= radius_val:
+                            valid_ids.append(listing.id)
+                qs = qs.filter(id__in=valid_ids)
+            except (ValueError, TypeError):
+                pass
+
+        # 3. Scoped cascade logic for local network match (fallback)
+        if not district and not (lat and lng) and user and user.is_authenticated and user.district:
+            # We now use the 'district' directly on the RehomingListing
+            return get_local_queryset(qs, user, location_field_prefix='')
 
         return qs
 
@@ -81,14 +117,34 @@ class RehomingApplicationViewSet(viewsets.ModelViewSet):
         # Users see applications they sent, or received on their listings
         return RehomingApplication.objects.filter(
             Q(applicant=user) | Q(listing__owner=user)
-        )
+        ).order_by(F('ai_score').desc(nulls_last=True), '-created_at')
 
     def get_permissions(self):
         return [permissions.IsAuthenticated()]
 
     def perform_create(self, serializer):
-        # Auto-bind applicant
-        serializer.save(applicant=self.request.user, status=RehomingApplication.Status.PENDING)
+        from apps.ai_assistant.gemini import analyze_adoption_application
+        
+        # Build context for AI evaluation
+        listing = serializer.validated_data.get('listing')
+        message = serializer.validated_data.get('message', '')
+        
+        listing_details = (
+            f"Pet Name: {listing.pet_name}\n"
+            f"Breed: {listing.breed}\n"
+            f"Description: {listing.description}\n"
+            f"Adopter Requirements: {listing.adopter_requirements}\n"
+        )
+        
+        # Analyze and score
+        score = analyze_adoption_application(listing_details, message)
+
+        # Auto-bind applicant and save
+        serializer.save(
+            applicant=self.request.user, 
+            status=RehomingApplication.Status.PENDING,
+            ai_score=score
+        )
 
     def perform_update(self, serializer):
         instance = self.get_object()
