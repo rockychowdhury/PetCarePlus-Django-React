@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useLanguage } from '../../hooks/useLanguage'
 import { authApi } from '../../api/auth'
-import { Menu, X, Globe, LogOut, LayoutDashboard, Heart, Info, PhoneCall, Bot } from 'lucide-react'
+import { Menu, X, Languages, LogOut, LayoutGrid, Heart, Info, PhoneCall, Bot, Calendar } from 'lucide-react'
 
 export const Navbar = () => {
   const { language, setLanguage, t } = useLanguage()
@@ -11,6 +11,18 @@ export const Navbar = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const [isOpen, setIsOpen] = useState(false)
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const userMenuRef = React.useRef(null)
+
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   const handleLanguageToggle = async () => {
     const nextLang = language === 'bn' ? 'en' : 'bn'
@@ -31,13 +43,10 @@ export const Navbar = () => {
   }
 
   const navItems = [
-    { name: t('nav.home'), path: '/' },
-    { name: 'AI Assistant', path: '/ai-assistant' },
-    { name: t('nav.guidelines'), path: '/guidelines' },
-    { name: t('nav.vaccination'), path: '/vaccination' },
     { name: t('nav.providers'), path: '/providers' },
+    { name: 'AI Assistant', path: '/ai-assistant' },
     { name: t('nav.rehoming'), path: '/rehoming' },
-    { name: t('nav.govt_resources'), path: '/resources' },
+    { name: t('nav.guidelines'), path: '/guidelines' },
   ]
 
   const isActive = (path) => location.pathname === path
@@ -83,29 +92,58 @@ export const Navbar = () => {
               className="p-2 text-muted-foreground hover:text-foreground rounded-lg transition-colors flex items-center gap-1.5 border border-transparent hover:border-border hover:bg-muted/30"
               title={language === 'bn' ? 'Switch to English' : 'বাংলায় পরিবর্তন করুন'}
             >
-              <Globe className="w-4.5 h-4.5" />
+              <Languages className="w-4.5 h-4.5" />
               <span className="text-xs font-semibold">
                 {language === 'bn' ? 'EN' : 'বাং'}
               </span>
             </button>
 
             {token && user ? (
-              <div className="flex items-center space-x-1">
-                <Link
-                  to="/dashboard"
-                  className={`p-2 text-primary hover:text-primary-dark rounded-lg transition-colors border border-primary/20 hover:border-primary/50 hover:bg-primary/10 flex items-center gap-1.5`}
-                  title="Dashboard"
-                >
-                  <LayoutDashboard className="w-4.5 h-4.5" />
-                  <span className="text-sm font-bold hidden lg:block">Dashboard</span>
-                </Link>
+              <div className="relative flex items-center" ref={userMenuRef}>
                 <button
-                  onClick={handleLogout}
-                  className="p-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
-                  title={t('nav.logout')}
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-lg transition-colors border border-transparent hover:border-border/60"
+                  title="User Menu"
                 >
-                  <LogOut className="w-4.5 h-4.5" />
+                  <Menu className="w-5 h-5" />
                 </button>
+
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border/80 rounded-xl shadow-lg py-2 animate-fade-in z-50">
+                    <div className="px-4 py-3 border-b border-border/50 mb-2 bg-muted/20">
+                      <p className="text-sm font-bold text-foreground truncate">{user.name}</p>
+                      <p className="text-xs text-muted-foreground capitalize mt-0.5">{t(`profile.roles.${user.role}`)}</p>
+                    </div>
+                    
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-foreground hover:bg-pcp-green/10 hover:text-pcp-green transition-colors"
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                      Dashboard
+                    </Link>
+                    
+                    <Link
+                      to="/dashboard/bookings"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-foreground hover:bg-pcp-green/10 hover:text-pcp-green transition-colors"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      Bookings
+                    </Link>
+
+                    <div className="mt-2 pt-2 border-t border-border/50">
+                      <button
+                        onClick={() => { setIsUserMenuOpen(false); handleLogout(); }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        {t('nav.logout')}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center space-x-2 pl-2">
@@ -132,7 +170,7 @@ export const Navbar = () => {
               onClick={handleLanguageToggle}
               className="p-2 text-muted-foreground hover:text-foreground rounded-lg border border-border/60 hover:bg-muted/30 flex items-center gap-1"
             >
-              <Globe className="w-4 h-4" />
+              <Languages className="w-4 h-4" />
               <span className="text-xs font-bold">{language === 'bn' ? 'EN' : 'বাং'}</span>
             </button>
 
@@ -171,7 +209,7 @@ export const Navbar = () => {
               <div className="space-y-1">
                 <div className="flex items-center gap-3 px-3 py-2">
                   <div className="bg-primary/10 text-primary p-2 rounded-full">
-                    <LayoutDashboard className="w-5 h-5" />
+                    <LayoutGrid className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="text-sm font-bold text-foreground">{user.name}</div>
@@ -186,7 +224,7 @@ export const Navbar = () => {
                   onClick={() => setIsOpen(false)}
                   className="flex items-center gap-3 px-3 py-2.5 text-base font-semibold text-primary hover:text-primary-dark rounded-lg hover:bg-primary/10 transition-colors"
                 >
-                  <LayoutDashboard className="w-5 h-5" />
+                  <LayoutGrid className="w-5 h-5" />
                   Dashboard
                 </Link>
 
@@ -194,7 +232,7 @@ export const Navbar = () => {
                   onClick={handleLogout}
                   className="w-full flex items-center gap-3 px-3 py-2.5 text-base font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
                 >
-                  <LogOut className="w-5 h-5" />
+                  <Power className="w-5 h-5" />
                   {t('nav.logout')}
                 </button>
               </div>
