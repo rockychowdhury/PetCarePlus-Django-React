@@ -11,6 +11,10 @@ import WriteReviewDialog from '../components/providers/WriteReviewDialog'
 import Spinner from '../components/ui/Spinner'
 import { getAnimalIcon } from '../utils/animals'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
+import { Calendar as CalendarUI } from '../components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover'
+import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import {
   Calendar,
@@ -659,21 +663,18 @@ export const ProviderDetail = () => {
                         <label className="text-xs font-bold text-muted-foreground">
                           {t('bookings.select_service')}
                         </label>
-                        <select
-                          value={selectedServiceId}
-                          onChange={(e) => setSelectedServiceId(e.target.value)}
-                          required
-                          className="w-full px-3 py-2.5 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 font-semibold dark:bg-background transition-colors"
-                        >
-                          <option value="">
-                            -- {t('bookings.select_service')} --
-                          </option>
-                          {services?.map((service) => (
-                            <option key={service.id} value={service.id}>
-                              {tField(service, 'name')} (৳{parseFloat(service.price).toFixed(0)})
-                            </option>
-                          ))}
-                        </select>
+                        <Select value={selectedServiceId} onValueChange={setSelectedServiceId} required>
+                          <SelectTrigger className="w-full px-3 py-2.5 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:ring-1 focus:ring-primary/20 font-semibold dark:bg-background transition-colors h-auto">
+                            <SelectValue placeholder={`-- ${t('bookings.select_service')} --`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {services?.map((service) => (
+                              <SelectItem key={service.id} value={String(service.id)} className="text-xs">
+                                {tField(service, 'name')} (৳{parseFloat(service.price).toFixed(0)})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
 
@@ -685,45 +686,58 @@ export const ProviderDetail = () => {
                           {language === 'bn' ? '(আবশ্যক)' : '(Required)'}
                         </span>
                       </label>
-                      <select
+                      <Select
                         value={selectedAnimalTypeId}
-                        onChange={(e) => setSelectedAnimalTypeId(e.target.value)}
+                        onValueChange={setSelectedAnimalTypeId}
                         required
                         disabled={animalTypeOptions.length === 0}
-                        className="w-full px-3 py-2.5 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 font-semibold dark:bg-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {animalTypeOptions.length === 0 ? (
-                          <option value="">
-                            -- {language === 'bn' ? 'কোনো প্রাণীর ধরন পাওয়া যায়নি' : 'No animal types available'} --
-                          </option>
-                        ) : (
-                          <>
-                            <option value="">
-                              -- {language === 'bn' ? 'প্রাণীর ধরন নির্বাচন করুন' : 'Select Animal Type'} --
-                            </option>
-                            {animalTypeOptions.map((at) => (
-                              <option key={at.id} value={at.id}>
-                                {language === 'bn' ? at.name_bn || at.name_en : at.name_en}
-                              </option>
-                            ))}
-                          </>
-                        )}
-                      </select>
+                        <SelectTrigger className="w-full px-3 py-2.5 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:ring-1 focus:ring-primary/20 font-semibold dark:bg-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed h-auto">
+                          <SelectValue
+                            placeholder={
+                              animalTypeOptions.length === 0
+                                ? `-- ${language === 'bn' ? 'কোনো প্রাণীর ধরন পাওয়া যায়নি' : 'No animal types available'} --`
+                                : `-- ${language === 'bn' ? 'প্রাণীর ধরন নির্বাচন করুন' : 'Select Animal Type'} --`
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {animalTypeOptions.map((at) => (
+                            <SelectItem key={at.id} value={String(at.id)} className="text-xs">
+                              {language === 'bn' ? at.name_bn || at.name_en : at.name_en}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
-                    {/* Select Date */}
-                    <div className="space-y-1.5">
+                    {/* Select Date with Calendar Popover */}
+                    <div className="space-y-1.5 flex flex-col">
                       <label className="text-xs font-bold text-muted-foreground">
                         {t('bookings.select_date')}
                       </label>
-                      <input
-                        type="date"
-                        value={bookingDate}
-                        onChange={(e) => setBookingDate(e.target.value)}
-                        required
-                        min={new Date().toISOString().split('T')[0]}
-                        className="w-full px-3 py-2.5 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 font-semibold dark:bg-background transition-colors"
-                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className={`w-full flex items-center gap-2 px-3 py-2.5 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 font-semibold dark:bg-background transition-colors text-left ${
+                              !bookingDate && "text-muted-foreground"
+                            }`}
+                          >
+                            <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                            {bookingDate ? format(new Date(bookingDate), "PPP") : <span>{t('bookings.select_date')}</span>}
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 z-50" align="start">
+                          <CalendarUI
+                            mode="single"
+                            selected={bookingDate ? new Date(bookingDate) : undefined}
+                            onSelect={(date) => setBookingDate(date ? format(date, 'yyyy-MM-dd') : '')}
+                            disabled={(date) => date < new Date().setHours(0, 0, 0, 0)}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
 
                     {/* Notes */}
