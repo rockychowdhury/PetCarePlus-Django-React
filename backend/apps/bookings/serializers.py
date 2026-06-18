@@ -20,20 +20,27 @@ class BookingSerializer(serializers.ModelSerializer):
 
     provider_details = ServiceProviderSerializer(source='provider', read_only=True)
     service_details = ProviderServiceSerializer(source='service', read_only=True)
+    animal_type_details = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
         fields = [
             'id', 'user', 'user_email', 'user_name', 'provider', 'provider_details',
-            'service', 'service_details', 'pet', 'booking_date', 'booking_time',
+            'service', 'service_details', 'animal_type', 'animal_type_details', 'booking_date', 'booking_time',
             'status', 'notes', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'user', 'status', 'created_at', 'updated_at']
 
+    def get_animal_type_details(self, obj):
+        from apps.animals.serializers import AnimalTypeSerializer
+        if obj.animal_type:
+            return AnimalTypeSerializer(obj.animal_type, context=self.context).data
+        return None
+
     def validate(self, attrs):
         provider = attrs.get('provider')
         service = attrs.get('service')
-        pet = attrs.get('pet')
+        animal_type = attrs.get('animal_type')
         request = self.context.get('request')
 
         # 1. Validate that the service belongs to the chosen provider
@@ -42,10 +49,10 @@ class BookingSerializer(serializers.ModelSerializer):
                 {'service': "The selected service is not offered by the chosen service provider."}
             )
 
-        # 2. Validate that the pet belongs to the requesting customer
-        if pet and request and request.user and pet.owner != request.user:
+        # 2. Validate that the chosen animal type is supported by the provider
+        if animal_type and not provider.animal_types.filter(animal_type=animal_type).exists():
             raise serializers.ValidationError(
-                {'pet': "The selected pet does not belong to your account."}
+                {'animal_type': "The selected provider does not support this animal type."}
             )
 
         return attrs

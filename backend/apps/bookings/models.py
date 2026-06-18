@@ -37,8 +37,8 @@ class Booking(models.Model):
         blank=True,
         related_name='bookings'
     )
-    pet = models.ForeignKey(
-        'pets.Pet',
+    animal_type = models.ForeignKey(
+        'animals.AnimalType',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

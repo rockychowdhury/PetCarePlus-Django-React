@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { rehomingApi } from '../api/rehoming'
+import { animalsApi } from '../api/animals'
 import { guidelinesApi } from '../api/guidelines'
-import { petsApi } from '../api/pets'
 import { useAuthStore } from '../store/authStore'
 import { useLanguage } from '../hooks/useLanguage'
 import PageLayout from '../components/layout/PageLayout'
@@ -19,8 +19,18 @@ export const Rehoming = () => {
   // Modal / Form States
   const [selectedListing, setSelectedListing] = useState(null)
   const [createFormOpen, setCreateFormOpen] = useState(false)
-  const [selectedPetId, setSelectedPetId] = useState('')
-  const [rehomingReason, setRehomingReason] = useState('')
+  const [formData, setFormData] = useState({
+    pet_name: '',
+    animal_type: '',
+    breed: '',
+    gender: 'Unknown',
+    age: '',
+    weight_kg: '',
+    vaccinated: false,
+    spayed_neutered: false,
+    description: '',
+    reason: '',
+  })
   const [formError, setFormError] = useState('')
   const [formSuccess, setFormSuccess] = useState(false)
 
@@ -31,18 +41,12 @@ export const Rehoming = () => {
   })
   const listings = listingsResponse?.results || []
 
-  // Query user's pets to display in rehoming creation dropdown
-  const { data: userPets } = useQuery({
-    queryKey: ['userPetsRehoming'],
-    queryFn: () => petsApi.getPets(),
-    enabled: !!token && user?.role === 'pet_owner',
+  // Fetch animal types for the form
+  const { data: animalTypesData } = useQuery({
+    queryKey: ['animalTypes'],
+    queryFn: () => animalsApi.getAnimalTypes(),
   })
-  // Filter user's pets to show only active cats/dogs not already rehoming
-  const rehomingEligiblePets = userPets?.filter(
-    (pet) =>
-      pet.is_active &&
-      (pet.animal_type_details?.slug === 'cat' || pet.animal_type_details?.slug === 'dog')
-  ) || []
+  const animalTypes = Array.isArray(animalTypesData) ? animalTypesData : (animalTypesData?.results || [])
 
   // Query rehoming applications (sent or received)
   const { data: applicationsResponse, isLoading: isLoadingApps } = useQuery({
@@ -57,10 +61,19 @@ export const Rehoming = () => {
     mutationFn: (data) => rehomingApi.createListing(data),
     onSuccess: () => {
       setFormSuccess(true)
-      setSelectedPetId('')
-      setRehomingReason('')
+      setFormData({
+        pet_name: '',
+        animal_type: '',
+        breed: '',
+        gender: 'Unknown',
+        age: '',
+        weight_kg: '',
+        vaccinated: false,
+        spayed_neutered: false,
+        description: '',
+        reason: '',
+      })
       queryClient.invalidateQueries(['rehomingListings'])
-      queryClient.invalidateQueries(['userPetsRehoming'])
       setTimeout(() => {
         setFormSuccess(false)
         setCreateFormOpen(false)
@@ -91,12 +104,9 @@ export const Rehoming = () => {
     e.preventDefault()
     setFormError('')
     setFormSuccess(false)
-    if (!selectedPetId || !rehomingReason.trim()) return
+    if (!formData.pet_name || !formData.animal_type || !formData.reason.trim()) return
 
-    createListingMutation.mutate({
-      pet: selectedPetId,
-      reason: rehomingReason,
-    })
+    createListingMutation.mutate(formData)
   }
 
   const handleApprove = (appId) => {
@@ -198,9 +208,7 @@ export const Rehoming = () => {
                   <div className="space-y-3">
                     {applications.map((app) => {
                       const isReceived = app.listing_details?.owner === user.id
-                      const petName = language === 'bn'
-                        ? (app.listing_details?.pet_name_bn || app.listing_details?.pet_name)
-                        : app.listing_details?.pet_name
+                      const petName = app.listing_details?.pet_name
 
                       return (
                         <div
@@ -254,29 +262,107 @@ export const Rehoming = () => {
                 </h3>
 
                 <form onSubmit={handleCreateSubmit} className="space-y-4">
-                  {/* Select Pet */}
+                  {/* Pet Name */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-muted-foreground">
-                      {language === 'bn' ? 'পোষা প্রাণী নির্বাচন করুন' : 'Select Pet'}
+                      {language === 'bn' ? 'পোষা প্রাণীর নাম' : 'Pet Name'}
                     </label>
-                    <select
-                      value={selectedPetId}
-                      onChange={(e) => setSelectedPetId(e.target.value)}
+                    <input
+                      type="text"
+                      value={formData.pet_name}
+                      onChange={(e) => setFormData({ ...formData, pet_name: e.target.value })}
                       required
+                      placeholder={language === 'bn' ? 'যেমন: টমি' : 'e.g. Tommy'}
                       className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
-                    >
-                      <option value="">-- {language === 'bn' ? 'প্রাণী নির্বাচন করুন' : 'Select Pet'} --</option>
-                      {rehomingEligiblePets.map((pet) => (
-                        <option key={pet.id} value={pet.id}>
-                          {language === 'bn' ? (pet.name_bn || pet.name) : pet.name} ({pet.breed})
-                        </option>
-                      ))}
-                    </select>
-                    {rehomingEligiblePets.length === 0 && (
-                      <p className="text-[10px] text-rose-500 font-medium leading-relaxed">
-                        পুনর্বাসন শুধুমাত্র আপনার নিজের বিড়াল ও কুকুরের জন্য সমর্থিত। প্রোফাইল থেকে পোষা প্রাণী আগে যুক্ত করুন।
-                      </p>
-                    )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Select Animal Type */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-muted-foreground">
+                        {language === 'bn' ? 'প্রাণীর ধরন' : 'Animal Type'}
+                      </label>
+                      <select
+                        value={formData.animal_type}
+                        onChange={(e) => setFormData({ ...formData, animal_type: e.target.value })}
+                        required
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
+                      >
+                        <option value="">-- {language === 'bn' ? 'নির্বাচন করুন' : 'Select'} --</option>
+                        {animalTypes.map((at) => (
+                          <option key={at.id} value={at.id}>
+                            {language === 'bn' ? at.name_bn || at.name_en : at.name_en}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Breed */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-muted-foreground">
+                        {language === 'bn' ? 'জাত (যদি থাকে)' : 'Breed (Optional)'}
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.breed}
+                        onChange={(e) => setFormData({ ...formData, breed: e.target.value })}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Gender */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-muted-foreground">
+                        {language === 'bn' ? 'লিঙ্গ' : 'Gender'}
+                      </label>
+                      <select
+                        value={formData.gender}
+                        onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
+                      >
+                        <option value="Male">{language === 'bn' ? 'পুরুষ' : 'Male'}</option>
+                        <option value="Female">{language === 'bn' ? 'মহিলা' : 'Female'}</option>
+                        <option value="Unknown">{language === 'bn' ? 'অজানা' : 'Unknown'}</option>
+                      </select>
+                    </div>
+
+                    {/* Weight */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-muted-foreground">
+                        {language === 'bn' ? 'ওজন (কেজি)' : 'Weight (kg)'}
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={formData.weight_kg}
+                        onChange={(e) => setFormData({ ...formData, weight_kg: e.target.value })}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-6 pt-2 pb-2">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={formData.vaccinated}
+                        onChange={(e) => setFormData({ ...formData, vaccinated: e.target.checked })}
+                        className="rounded border-border text-primary focus:ring-primary w-4 h-4"
+                      />
+                      {language === 'bn' ? 'ভ্যাকসিন দেওয়া হয়েছে' : 'Vaccinated'}
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={formData.spayed_neutered}
+                        onChange={(e) => setFormData({ ...formData, spayed_neutered: e.target.checked })}
+                        className="rounded border-border text-primary focus:ring-primary w-4 h-4"
+                      />
+                      {language === 'bn' ? 'বন্ধ্যাকরণ করা হয়েছে' : 'Spayed/Neutered'}
+                    </label>
                   </div>
 
                   {/* Reason */}
@@ -285,11 +371,24 @@ export const Rehoming = () => {
                       {t('rehoming.reason')}
                     </label>
                     <textarea
-                      value={rehomingReason}
-                      onChange={(e) => setRehomingReason(e.target.value)}
+                      value={formData.reason}
+                      onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
                       required
                       rows={3}
                       placeholder={language === 'bn' ? 'পুনর্বাসনের কারণ উল্লেখ করুন...' : 'Specify rehoming reason...'}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-muted-foreground">
+                      {language === 'bn' ? 'অন্যান্য বিবরণ' : 'Description'}
+                    </label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      rows={2}
                       className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
                     />
                   </div>
@@ -321,7 +420,7 @@ export const Rehoming = () => {
                     </button>
                     <button
                       type="submit"
-                      disabled={createListingMutation.isPending || !selectedPetId || !!formSuccess}
+                      disabled={createListingMutation.isPending || !formData.pet_name || !formData.animal_type || !!formSuccess}
                       className="px-4 py-2 bg-primary hover:bg-primary/95 text-white text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-sm disabled:opacity-55"
                     >
                       {createListingMutation.isPending && <Spinner size="sm" />}
@@ -338,13 +437,12 @@ export const Rehoming = () => {
             <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur flex items-center justify-center p-4 overflow-y-auto">
               <div className="bg-card border border-border rounded-2xl w-full max-w-lg p-6 space-y-5 animate-fade-in-up text-left relative max-h-[90vh] overflow-y-auto">
                 
-                {/* Details Header */}
                 <div className="flex gap-4 items-start border-b border-border/60 pb-3">
                   <div className="w-16 h-16 rounded-xl bg-muted overflow-hidden flex-shrink-0">
-                    {selectedListing.pet_details?.photo_url ? (
+                    {selectedListing.photo_url ? (
                       <img
-                        src={selectedListing.pet_details.photo_url}
-                        alt={selectedListing.pet_details.name}
+                        src={selectedListing.photo_url}
+                        alt={selectedListing.pet_name}
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -356,12 +454,10 @@ export const Rehoming = () => {
 
                   <div>
                     <h3 className="text-lg font-bold text-foreground">
-                      {language === 'bn'
-                        ? (selectedListing.pet_details.name_bn || selectedListing.pet_details.name)
-                        : selectedListing.pet_details.name}
+                      {selectedListing.pet_name}
                     </h3>
                     <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                      {selectedListing.pet_details.breed} • {selectedListing.pet_details.age} {language === 'bn' ? 'বছর' : 'years'}
+                      {selectedListing.breed} • {selectedListing.age ? `${selectedListing.age} ${language === 'bn' ? 'বছর' : 'years'}` : ''}
                     </p>
                   </div>
                 </div>

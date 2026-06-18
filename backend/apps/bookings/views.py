@@ -22,7 +22,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     serializer_class = BookingSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['status', 'booking_date']
+    filterset_fields = ['status', 'booking_date', 'provider']
     ordering_fields = ['booking_date', 'created_at']
     ordering = ['-booking_date', '-created_at']
 

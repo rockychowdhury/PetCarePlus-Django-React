@@ -8,24 +8,17 @@ export const ListingCard = ({ listing }) => {
 
   const {
     id,
-    pet_details,
-    reason,
-    status,
-  } = listing
-
-  if (!pet_details) return null
-
-  const {
-    name,
-    name_bn,
+    pet_name,
     animal_type_details,
     breed,
     age,
     gender,
     photo_url,
-  } = pet_details
+    reason,
+    status,
+  } = listing
 
-  const petName = language === 'bn' ? (name_bn || name) : name
+  const petNameDisplay = pet_name
 
   // Status badges
   const getStatusBadge = () => {
@@ -60,7 +53,7 @@ export const ListingCard = ({ listing }) => {
         {photo_url ? (
           <img
             src={photo_url}
-            alt={petName}
+            alt={petNameDisplay}
             className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
@@ -87,7 +80,7 @@ export const ListingCard = ({ listing }) => {
           {/* Header Name & Breed */}
           <div>
             <h4 className="text-base sm:text-lg font-bold text-foreground truncate">
-              {petName}
+              {petNameDisplay}
             </h4>
             <p className="text-xs text-muted-foreground font-semibold">
               {breed || (language === 'bn' ? 'মিশ্র জাত' : 'Mixed Breed')}
@@ -98,9 +91,13 @@ export const ListingCard = ({ listing }) => {
           <div className="flex gap-4 text-xs text-muted-foreground font-medium pt-1">
             <span className="flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5 text-primary" />
-              <span>
-                {age} {language === 'bn' ? 'বছর' : `${age > 1 ? 'years' : 'year'}`}
-              </span>
+              {age ? (
+                <span>
+                  {age} {language === 'bn' ? 'বছর' : `${age > 1 ? 'years' : 'year'}`}
+                </span>
+              ) : (
+                <span>{language === 'bn' ? 'অজানা' : 'Unknown'}</span>
+              )}
             </span>
             <span className="flex items-center gap-1">
               <BadgeCheck className="w-3.5 h-3.5 text-primary" />

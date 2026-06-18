@@ -68,7 +68,6 @@ INSTALLED_APPS = [
     'apps.bookings',
     'apps.reviews',
     'apps.ai_assistant',
-    'apps.pets',
     'apps.rehoming',
     'apps.notifications',
     'apps.locations',

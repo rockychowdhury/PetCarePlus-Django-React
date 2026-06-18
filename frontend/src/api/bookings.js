@@ -20,4 +20,15 @@ export const bookingsApi = {
     const response = await client.patch(`/bookings/${id}/`, { status })
     return response.data
   },
+
+  /**
+   * Get user's completed bookings for a specific provider.
+   * Used by the review dialog to find reviewable bookings.
+   */
+  getCompletedBookingsForProvider: async (providerId) => {
+    const response = await client.get('/bookings/', {
+      params: { provider: providerId, status: 'completed' }
+    })
+    return response.data
+  },
 }

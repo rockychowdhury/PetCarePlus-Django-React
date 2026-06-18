@@ -156,26 +156,26 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
                         output_field=models.FloatField()
                     )
                     radial_qs = radial_qs.annotate(distance=distance_expr).filter(distance__lte=15.0)
-                    if radial_qs.count() < 3:
+                    if radial_qs.count() < 1:
                         exact_match_found = False
                         resolved_level = 'fallback'
                 except (ValueError, TypeError):
                     exact_match_found = False
                     resolved_level = 'fallback'
             elif union_val:
-                if base_qs.filter(user__union__iexact=union_val).count() < 3:
+                if base_qs.filter(user__union__iexact=union_val).count() < 1:
                     exact_match_found = False
                     resolved_level = 'fallback'
             elif upazila_val:
-                if base_qs.filter(upazila__iexact=upazila_val).count() < 3:
+                if base_qs.filter(upazila__iexact=upazila_val).count() < 1:
                     exact_match_found = False
                     resolved_level = 'fallback'
             elif district_val:
-                if base_qs.filter(district__iexact=district_val).count() < 3:
+                if base_qs.filter(district__iexact=district_val).count() < 1:
                     exact_match_found = False
                     resolved_level = 'fallback'
             elif division_val:
-                if base_qs.filter(division__iexact=division_val).count() < 3:
+                if base_qs.filter(division__iexact=division_val).count() < 1:
                     exact_match_found = False
                     resolved_level = 'fallback'
 
@@ -208,6 +208,26 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         
         # Default created profiles are unverified until checked by admin
         serializer.save(user=user, is_verified=False)
+
+    from rest_framework.decorators import action
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+        """
+        Returns the service provider profile of the currently authenticated user,
+        even if it's unverified.
+        """
+        user = request.user
+        if user.role != 'provider':
+            raise PermissionDenied("Only providers can access this endpoint.")
+            
+        try:
+            # We don't filter by is_verified here so providers can see their own unverified profile
+            profile = ServiceProvider.objects.get(user=user)
+            serializer = self.get_serializer(profile)
+            return Response(serializer.data)
+        except ServiceProvider.DoesNotExist:
+            return Response({'detail': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 class ProviderServiceViewSet(viewsets.ModelViewSet):

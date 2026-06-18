@@ -11,10 +11,10 @@ class RehomingApplicationInline(admin.TabularInline):
 
 @admin.register(RehomingListing)
 class RehomingListingAdmin(admin.ModelAdmin):
-    list_display = ('pet', 'owner', 'status', 'created_at')
-    list_filter = ('status',)
-    search_fields = ('pet__name', 'owner__email', 'reason')
-    autocomplete_fields = ['pet', 'owner']
+    list_display = ('pet_name', 'animal_type', 'owner', 'status', 'created_at')
+    list_filter = ('status', 'animal_type')
+    search_fields = ('pet_name', 'owner__email', 'reason')
+    autocomplete_fields = ['owner', 'animal_type']
     inlines = [RehomingApplicationInline]
 
 
@@ -22,5 +22,5 @@ class RehomingListingAdmin(admin.ModelAdmin):
 class RehomingApplicationAdmin(admin.ModelAdmin):
     list_display = ('applicant', 'listing', 'status', 'created_at')
     list_filter = ('status',)
-    search_fields = ('applicant__email', 'listing__pet__name', 'message')
+    search_fields = ('applicant__email', 'listing__pet_name', 'message')
     autocomplete_fields = ['listing', 'applicant']

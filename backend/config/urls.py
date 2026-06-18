@@ -22,7 +22,6 @@ urlpatterns = [
     path('api/v1/bookings/', include('apps.bookings.urls')),
     path('api/v1/reviews/', include('apps.reviews.urls')),
     path('api/v1/ai/', include('apps.ai_assistant.urls')),
-    path('api/v1/pets/', include('apps.pets.urls')),
     path('api/v1/rehoming/', include('apps.rehoming.urls')),
     path('api/v1/notifications/', include('apps.notifications.urls')),
     path('api/v1/locations/', include('apps.locations.urls')),

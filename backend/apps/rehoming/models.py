@@ -21,16 +21,46 @@ class RehomingListing(models.Model):
         ADOPTED = 'adopted', 'Adopted'
         WITHDRAWN = 'withdrawn', 'Withdrawn'
 
-    pet = models.OneToOneField(
-        'pets.Pet',
-        on_delete=models.CASCADE,
-        related_name='rehoming_listing'
-    )
+    class Gender(models.TextChoices):
+        MALE = 'male', 'Male'
+        FEMALE = 'female', 'Female'
+        UNKNOWN = 'unknown', 'Unknown'
+
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='rehoming_listings'
     )
+    animal_type = models.ForeignKey(
+        'animals.AnimalType',
+        on_delete=models.PROTECT,
+        related_name='rehoming_listings',
+        help_text='Must be a companion animal (cat, dog)'
+    )
+
+    # Pet Identity
+    pet_name = models.CharField(max_length=100)
+    breed = models.CharField(max_length=100, blank=True)
+    gender = models.CharField(
+        max_length=10,
+        choices=Gender.choices,
+        default=Gender.UNKNOWN
+    )
+    birth_date = models.DateField(null=True, blank=True)
+    description = models.TextField(max_length=1000, blank=True)
+
+    # Physical & Health
+    weight_kg = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+    spayed_neutered = models.BooleanField(default=False)
+    vaccinated = models.BooleanField(default=False)
+
+    # Media
+    photo_url = models.URLField(max_length=500, blank=True)
 
     reason = models.TextField(help_text='Reason for rehoming')
     status = models.CharField(
@@ -48,14 +78,14 @@ class RehomingListing(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f'Rehoming: {self.pet.name} ({self.status})'
+        return f'Rehoming: {self.pet_name} ({self.status})'
 
     def clean(self):
-        """Validate that the pet's animal type supports rehoming (cat/dog only)."""
+        """Validate that the animal type supports rehoming (cat/dog only)."""
         from django.core.exceptions import ValidationError
-        if self.pet and not self.pet.animal_type.supports_rehoming:
+        if self.animal_type and not self.animal_type.supports_rehoming:
             raise ValidationError(
-                f'{self.pet.animal_type.name_en} cannot be listed for rehoming. '
+                f'{self.animal_type.name_en} cannot be listed for rehoming. '
                 'Only cats and dogs are eligible.'
             )
 
@@ -107,4 +137,4 @@ class RehomingApplication(models.Model):
         unique_together = ('listing', 'applicant')
 
     def __str__(self):
-        return f'Application: {self.applicant.email} → {self.listing.pet.name}'
+        return f'Application: {self.applicant.email} → {self.listing.pet_name}'

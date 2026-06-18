@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useLanguage } from '../../hooks/useLanguage'
 import { authApi } from '../../api/auth'
-import { Menu, X, Globe, User, LogOut, Calendar, Heart, Info, PhoneCall } from 'lucide-react'
+import { Menu, X, Globe, LogOut, LayoutDashboard, Heart, Info, PhoneCall, Bot } from 'lucide-react'
 
 export const Navbar = () => {
   const { language, setLanguage, t } = useLanguage()
@@ -32,6 +32,7 @@ export const Navbar = () => {
 
   const navItems = [
     { name: t('nav.home'), path: '/' },
+    { name: 'AI Assistant', path: '/ai-assistant' },
     { name: t('nav.guidelines'), path: '/guidelines' },
     { name: t('nav.vaccination'), path: '/vaccination' },
     { name: t('nav.providers'), path: '/providers' },
@@ -91,18 +92,12 @@ export const Navbar = () => {
             {token && user ? (
               <div className="flex items-center space-x-1">
                 <Link
-                  to="/bookings"
-                  className={`p-2 text-muted-foreground hover:text-foreground rounded-lg transition-colors border border-transparent hover:border-border hover:bg-muted/30 flex items-center gap-1`}
-                  title={t('nav.bookings')}
+                  to="/dashboard"
+                  className={`p-2 text-primary hover:text-primary-dark rounded-lg transition-colors border border-primary/20 hover:border-primary/50 hover:bg-primary/10 flex items-center gap-1.5`}
+                  title="Dashboard"
                 >
-                  <Calendar className="w-4.5 h-4.5" />
-                </Link>
-                <Link
-                  to="/profile"
-                  className={`p-2 text-muted-foreground hover:text-foreground rounded-lg transition-colors border border-transparent hover:border-border hover:bg-muted/30 flex items-center gap-1`}
-                  title={t('nav.profile')}
-                >
-                  <User className="w-4.5 h-4.5" />
+                  <LayoutDashboard className="w-4.5 h-4.5" />
+                  <span className="text-sm font-bold hidden lg:block">Dashboard</span>
                 </Link>
                 <button
                   onClick={handleLogout}
@@ -176,7 +171,7 @@ export const Navbar = () => {
               <div className="space-y-1">
                 <div className="flex items-center gap-3 px-3 py-2">
                   <div className="bg-primary/10 text-primary p-2 rounded-full">
-                    <User className="w-5 h-5" />
+                    <LayoutDashboard className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="text-sm font-bold text-foreground">{user.name}</div>
@@ -187,21 +182,12 @@ export const Navbar = () => {
                 </div>
 
                 <Link
-                  to="/bookings"
+                  to="/dashboard"
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 text-base font-semibold text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted/50 transition-colors"
+                  className="flex items-center gap-3 px-3 py-2.5 text-base font-semibold text-primary hover:text-primary-dark rounded-lg hover:bg-primary/10 transition-colors"
                 >
-                  <Calendar className="w-5 h-5" />
-                  {t('nav.bookings')}
-                </Link>
-
-                <Link
-                  to="/profile"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 text-base font-semibold text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <User className="w-5 h-5" />
-                  {t('nav.profile')}
+                  <LayoutDashboard className="w-5 h-5" />
+                  Dashboard
                 </Link>
 
                 <button

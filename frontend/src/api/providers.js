@@ -11,6 +11,11 @@ export const providersApi = {
     return response.data
   },
 
+  getMyProviderProfile: async () => {
+    const response = await client.get('/providers/me/')
+    return response.data
+  },
+
   registerProvider: async (providerData) => {
     const response = await client.post('/providers/', providerData)
     return response.data
@@ -28,6 +33,16 @@ export const providersApi = {
 
   addProviderService: async (providerId, serviceData) => {
     const response = await client.post(`/providers/${providerId}/services/`, serviceData)
+    return response.data
+  },
+
+  updateProviderService: async (providerId, serviceId, serviceData) => {
+    const response = await client.patch(`/providers/${providerId}/services/${serviceId}/`, serviceData)
+    return response.data
+  },
+
+  deleteProviderService: async (providerId, serviceId) => {
+    const response = await client.delete(`/providers/${providerId}/services/${serviceId}/`)
     return response.data
   },
 

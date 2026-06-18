@@ -45,8 +45,8 @@ class ReviewSerializer(serializers.ModelSerializer):
                 {'booking': "Reviews can only be submitted for completed appointments."}
             )
 
-        # 3. Duplicate check
-        if hasattr(booking, 'review'):
+        # 3. Duplicate check — use database query for reliability
+        if Review.objects.filter(booking=booking).exists():
             raise serializers.ValidationError(
                 {'booking': "A review has already been submitted for this appointment."}
             )

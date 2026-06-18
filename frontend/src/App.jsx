@@ -15,10 +15,16 @@ const Providers = lazy(() => import('./pages/Providers'))
 const ProviderDetail = lazy(() => import('./pages/ProviderDetail'))
 const AIAssistant = lazy(() => import('./pages/AIAssistant'))
 const Rehoming = lazy(() => import('./pages/Rehoming'))
-const Bookings = lazy(() => import('./pages/Bookings'))
-const Profile = lazy(() => import('./pages/Profile'))
 const Login = lazy(() => import('./pages/auth/Login'))
 const Register = lazy(() => import('./pages/auth/Register'))
+
+// Dashboard
+const DashboardLayout = lazy(() => import('./components/layout/DashboardLayout'))
+const DashboardSettings = lazy(() => import('./pages/dashboard/DashboardSettings'))
+const DashboardBookings = lazy(() => import('./pages/dashboard/DashboardBookings'))
+const DashboardRehoming = lazy(() => import('./pages/dashboard/DashboardRehoming'))
+const DashboardProviderProfile = lazy(() => import('./pages/dashboard/DashboardProviderProfile'))
+const DashboardProviderServices = lazy(() => import('./pages/dashboard/DashboardProviderServices'))
 
 // Route Guard: restricts access to logged-in users only
 const ProtectedRoute = ({ children }) => {
@@ -29,7 +35,7 @@ const ProtectedRoute = ({ children }) => {
 // Route Guard: restricts logged-in users from hitting login/register
 const AnonymousRoute = ({ children }) => {
   const token = useAuthStore((state) => state.token)
-  return !token ? children : <Navigate to="/profile" replace />
+  return !token ? children : <Navigate to="/dashboard" replace />
 }
 
 export const App = () => {
@@ -129,23 +135,22 @@ export const App = () => {
             }
           />
 
-          {/* Secure Authenticated Routes */}
+          {/* Secure Authenticated Routes - Dashboard */}
           <Route
-            path="/bookings"
+            path="/dashboard"
             element={
               <ProtectedRoute>
-                <Bookings />
+                <DashboardLayout />
               </ProtectedRoute>
             }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
+          >
+            <Route index element={<Navigate to="bookings" replace />} />
+            <Route path="settings" element={<DashboardSettings />} />
+            <Route path="bookings" element={<DashboardBookings />} />
+            <Route path="rehoming" element={<DashboardRehoming />} />
+            <Route path="provider-profile" element={<DashboardProviderProfile />} />
+            <Route path="services" element={<DashboardProviderServices />} />
+          </Route>
 
           {/* Wildcard Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -79,28 +79,57 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         first_name = name_parts[0]
         last_name = name_parts[1] if len(name_parts) > 1 else ''
 
-        # Generate random password
-        import secrets
-        import string
-        alphabet = string.ascii_letters + string.digits
-        password = ''.join(secrets.choice(alphabet) for _ in range(8))
+        role = validated_data.get('role', 'pet_owner')
+        is_provider = role == 'provider'
 
         # Create user
-        user = User.objects.create_user(
+        user = User.objects.create(
             email=validated_data['email'],
-            password=password,
             first_name=first_name,
             last_name=last_name,
             phone_number=validated_data['phone'],
-            role=validated_data.get('role', 'pet_owner')
+            role=role,
+            is_active=not is_provider  # Provider accounts start as inactive
         )
 
-        # Send welcome email containing credentials
         from django.core.mail import send_mail
         from django.conf import settings
 
-        subject = 'Welcome to PetCarePlus / পেটকেয়ারপ্লাসে আপনাকে স্বাগতম!'
-        message = f"""Hi {validated_data['name']},
+        if is_provider:
+            # Set unusable password for providers until admin verifies
+            user.set_unusable_password()
+            user.save()
+
+            # Send pending approval email
+            subject = 'Pending Approval: PetCarePlus / অনুমোদনের অপেক্ষায়'
+            message = f"""Hi {validated_data['name']},
+
+Your provider account has been successfully created but is currently pending approval.
+আপনার সেবাদাতা অ্যাকাউন্টটি সফলভাবে তৈরি করা হয়েছে তবে এটি বর্তমানে অনুমোদনের অপেক্ষায় রয়েছে।
+
+Please contact your nearest Department of Livestock Services officer to verify your profile.
+আপনার প্রোফাইল যাচাই করার জন্য অনুগ্রহ করে আপনার নিকটস্থ প্রাণিসম্পদ অধিদপ্তরের কর্মকর্তার সাথে যোগাযোগ করুন।
+
+Once verified, you will receive another email with your login password.
+যাচাইকরণ সম্পন্ন হলে, আপনি লগইন পাসওয়ার্ডসহ আরেকটি ইমেইল পাবেন।
+
+Best regards,
+PetCarePlus Team
+পেটকেয়ারপ্লাস টিম
+"""
+        else:
+            # Generate random password for regular users
+            import secrets
+            import string
+            alphabet = string.ascii_letters + string.digits
+            password = ''.join(secrets.choice(alphabet) for _ in range(8))
+            
+            user.set_password(password)
+            user.save()
+
+            # Send welcome email containing credentials
+            subject = 'Welcome to PetCarePlus / পেটকেয়ারপ্লাসে আপনাকে স্বাগতম!'
+            message = f"""Hi {validated_data['name']},
 
 Welcome to PetCarePlus! Your account has been successfully created.
 পেটকেয়ারপ্লাসে আপনাকে স্বাগতম! আপনার অ্যাকাউন্টটি সফলভাবে তৈরি করা হয়েছে।
@@ -120,6 +149,7 @@ Best regards,
 PetCarePlus Team
 পেটকেয়ারপ্লাস টিম
 """
+
         send_mail(
             subject,
             message,

@@ -7,7 +7,6 @@ Validates rehoming capability (cat/dog only) and ownership logic.
 
 from rest_framework import serializers
 from apps.rehoming.models import RehomingListing, RehomingApplication
-from apps.pets.serializers import PetSerializer
 
 
 class RehomingListingSerializer(serializers.ModelSerializer):
@@ -15,36 +14,32 @@ class RehomingListingSerializer(serializers.ModelSerializer):
     Serializer for RehomingListing.
     Validates pet ownership and rehoming support flags (cat/dog only).
     """
-    pet_details = PetSerializer(source='pet', read_only=True)
+    animal_type_details = serializers.SerializerMethodField()
     owner_name = serializers.CharField(source='owner.full_name', read_only=True)
     owner_email = serializers.EmailField(source='owner.email', read_only=True)
 
     class Meta:
         model = RehomingListing
         fields = [
-            'id', 'pet', 'pet_details', 'owner', 'owner_name', 'owner_email',
-            'reason', 'status', 'created_at', 'updated_at'
+            'id', 'animal_type', 'animal_type_details', 'pet_name', 'breed', 'gender',
+            'birth_date', 'description', 'weight_kg', 'spayed_neutered', 'vaccinated', 'photo_url',
+            'owner', 'owner_name', 'owner_email', 'reason', 'status', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'owner', 'status', 'created_at', 'updated_at']
 
-    def validate_pet(self, value):
-        request = self.context.get('request')
+    def get_animal_type_details(self, obj):
+        from apps.animals.serializers import AnimalTypeSerializer
+        if obj.animal_type:
+            return AnimalTypeSerializer(obj.animal_type, context=self.context).data
+        return None
 
-        # 1. Ownership check
-        if request and request.user and value.owner != request.user:
-            raise serializers.ValidationError("The selected pet does not belong to your account.")
-
-        # 2. Category check (supports_rehoming = cat/dog only)
-        if not value.animal_type.supports_rehoming:
+    def validate_animal_type(self, value):
+        # Category check (supports_rehoming = cat/dog only)
+        if not value.supports_rehoming:
             raise serializers.ValidationError(
-                f"'{value.animal_type.name_en}' cannot be listed for rehoming. "
+                f"'{value.name_en}' cannot be listed for rehoming. "
                 f"Only cats and dogs are eligible."
             )
-
-        # 3. Uniqueness check
-        if RehomingListing.objects.filter(pet=value).exists():
-            raise serializers.ValidationError("This pet is already listed for rehoming.")
-
         return value
 
 

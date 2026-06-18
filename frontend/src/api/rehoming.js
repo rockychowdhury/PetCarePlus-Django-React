@@ -6,6 +6,11 @@ export const rehomingApi = {
     return response.data
   },
 
+  getMyListings: async () => {
+    const response = await client.get('/rehoming/mine/')
+    return response.data
+  },
+
   getListingDetail: async (id) => {
     const response = await client.get(`/rehoming/${id}/`)
     return response.data

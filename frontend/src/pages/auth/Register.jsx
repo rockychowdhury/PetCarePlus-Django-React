@@ -55,18 +55,34 @@ export const Register = () => {
               {language === 'bn' ? 'নিবন্ধন সফল হয়েছে!' : 'Registration Successful!'}
             </h2>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              {language === 'bn' ? (
-                <>
-                  লগইন পাসওয়ার্ড সহ একটি স্বাগতম ইমেইল{' '}
-                  <strong className="text-primary">{email}</strong> ঠিকানায় পাঠানো হয়েছে।
-                  অনুগ্রহ করে আপনার ইনবক্স চেক করুন।
-                </>
+              {role === 'provider' ? (
+                language === 'bn' ? (
+                  <>
+                    আপনার সেবাদাতা অ্যাকাউন্টটি সফলভাবে তৈরি করা হয়েছে তবে এটি বর্তমানে অনুমোদনের অপেক্ষায় রয়েছে। 
+                    অনুগ্রহ করে যাচাইকরণের জন্য আপনার নিকটস্থ প্রাণিসম্পদ অধিদপ্তরের কর্মকর্তার সাথে যোগাযোগ করুন।
+                    যাচাইকরণ সম্পন্ন হলে, আপনি লগইন পাসওয়ার্ডসহ একটি ইমেইল পাবেন।
+                  </>
+                ) : (
+                  <>
+                    Your provider account has been successfully created but is currently pending approval.
+                    Please contact your nearest Department of Livestock Services officer to verify your profile.
+                    Once verified, you will receive an email with your login password.
+                  </>
+                )
               ) : (
-                <>
-                  A welcome email with your password has been sent to{' '}
-                  <strong className="text-primary">{email}</strong>.
-                  Please check your inbox.
-                </>
+                language === 'bn' ? (
+                  <>
+                    লগইন পাসওয়ার্ড সহ একটি স্বাগতম ইমেইল{' '}
+                    <strong className="text-primary">{email}</strong> ঠিকানায় পাঠানো হয়েছে।
+                    অনুগ্রহ করে আপনার ইনবক্স চেক করুন।
+                  </>
+                ) : (
+                  <>
+                    A welcome email with your password has been sent to{' '}
+                    <strong className="text-primary">{email}</strong>.
+                    Please check your inbox.
+                  </>
+                )
               )}
             </p>
           </div>

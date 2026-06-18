@@ -52,6 +52,15 @@ class RehomingListingViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+    from rest_framework.decorators import action
+    @action(detail=False, methods=['get'])
+    def mine(self, request):
+        """Returns all rehoming listings created by the current user (including adopted/cancelled)."""
+        qs = RehomingListing.objects.filter(owner=request.user).order_by('-created_at')
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+
+
 
 class RehomingApplicationViewSet(viewsets.ModelViewSet):
     """
