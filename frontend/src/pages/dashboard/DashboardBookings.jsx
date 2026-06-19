@@ -146,13 +146,13 @@ const DashboardBookings = () => {
 
   const getStatusBadge = (status) => {
     const styles = {
-      pending: 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-300',
-      confirmed: 'bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300',
-      completed: 'bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-300',
-      cancelled: 'bg-rose-100 text-rose-800 border border-rose-200 dark:bg-rose-900/30 dark:border-rose-800 dark:text-rose-300',
+      pending: 'bg-[#FFF3CD] text-[#d39e00] dark:bg-amber-900/30 dark:text-amber-300',
+      confirmed: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
+      completed: 'bg-[#d4edda] text-[#155724] dark:bg-emerald-900/30 dark:text-emerald-300',
+      cancelled: 'bg-[#F8D7DA] text-[#721C24] dark:bg-rose-900/30 dark:text-rose-300',
     }
     return (
-      <span className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest shadow-sm ${styles[status] || styles.pending}`}>
+      <span className={`px-4 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest ${styles[status] || styles.pending}`}>
         {t(`bookings.status.${status}`)}
       </span>
     )
@@ -170,18 +170,16 @@ const DashboardBookings = () => {
             {isProvider ? t('bookings.provider_bookings') : t('bookings.my_bookings')}
           </h2>
           <p className="text-sm text-muted-foreground mt-2 max-w-xl">
-            {language === 'bn' 
-              ? 'আপনার সমস্ত অ্যাপয়েন্টমেন্ট পরিচালনা করুন। আজকের, আগামী দিনের এবং অতীতের বুকিংগুলো সহজেই ট্র্যাক করুন।'
-              : 'Manage all your appointments. Easily track today’s, upcoming, and past bookings in one place.'}
+            Manage all your appointments. Easily track today’s, upcoming, and past bookings in one place.
           </p>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-border/80 px-2 overflow-x-auto no-scrollbar">
-        <TabButton id="today" label={language === 'bn' ? 'আজকের' : 'Today'} count={todayBookings.length} colorClass="bg-rose-100 text-rose-700" />
-        <TabButton id="upcoming" label={language === 'bn' ? 'আসন্ন' : 'Upcoming'} count={upcomingBookings.length} colorClass="bg-blue-100 text-blue-700" />
-        <TabButton id="history" label={language === 'bn' ? 'অতীতের' : 'History'} count={historyBookings.length} colorClass="bg-emerald-100 text-emerald-700" />
+        <TabButton id="today" label="Today" count={todayBookings.length} colorClass="bg-rose-100 text-rose-700" />
+        <TabButton id="upcoming" label="Upcoming" count={upcomingBookings.length} colorClass="bg-blue-100 text-blue-700" />
+        <TabButton id="history" label="History" count={historyBookings.length} colorClass="bg-emerald-100 text-emerald-700" />
       </div>
 
       {/* Content */}
@@ -194,70 +192,68 @@ const DashboardBookings = () => {
               <Calendar className="w-8 h-8 text-muted-foreground/50" />
             </div>
             <h3 className="text-lg font-extrabold text-foreground mb-1">
-              {language === 'bn' ? 'কোনো বুকিং পাওয়া যায়নি' : 'No bookings found'}
+              No bookings found
             </h3>
             <p className="text-sm text-muted-foreground">
-              {language === 'bn' 
-                ? 'এই বিভাগে আপনার কোনো অ্যাপয়েন্টমেন্ট নেই।' 
-                : 'You have no appointments in this category.'}
+              You have no appointments in this category.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 animate-fade-in">
             {currentBookings.map((booking) => {
-              const serviceName = language === 'bn' ? (booking.service_details?.name_bn || booking.service_details?.name) : booking.service_details?.name
+              const serviceName = booking.service_details?.name || 'Service'
               const providerName = booking.provider_details?.business_name || 'Service Provider'
               const clientName = booking.user_details?.name || booking.user_details?.email
               
               return (
-                <div key={booking.id} className="bg-card border border-border/60 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow group flex flex-col justify-between">
-                  <div className="space-y-5">
+                <div key={booking.id} className="bg-white dark:bg-card border border-border/30 rounded-[20px] p-5 transition-shadow group flex flex-col justify-between">
+                  <div>
                     {/* Top Row: Date & Status */}
-                    <div className="flex justify-between items-center border-b border-border/50 pb-4">
+                    <div className="flex justify-between items-center border-b border-border/30 pb-4 mb-4">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2.5 rounded-2xl flex items-center justify-center ${activeTab === 'today' ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600'}`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${activeTab === 'today' ? 'bg-rose-50 text-rose-500' : 'bg-[#f1f3f5] text-[#748ffc] dark:bg-indigo-900/30'}`}>
                           {activeTab === 'history' ? <CheckCircle2 className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
                         </div>
                         <div>
                           <p className="text-sm font-extrabold text-foreground">{booking.booking_date}</p>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{booking.booking_time || 'TBD'}</p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{booking.booking_time || 'TBD'}</p>
                         </div>
                       </div>
                       {getStatusBadge(booking.status)}
                     </div>
 
                     {/* Middle Row: Service & Person Details */}
-                    <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between">
-                      <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between mb-2">
+                      <div className="space-y-1.5 flex-1 min-w-0">
                         <h3 className="font-extrabold text-lg text-foreground truncate">{serviceName}</h3>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground font-semibold">
+                        <div className="flex items-center gap-2 text-sm text-pcp-green font-bold">
                           {isProvider ? (
-                            <><User className="w-4 h-4 text-indigo-500" /> <span className="truncate">{clientName}</span></>
+                            <><User className="w-4 h-4" /> <span className="truncate">{clientName}</span></>
                           ) : (
-                            <><Briefcase className="w-4 h-4 text-emerald-500" /> <span className="truncate">{providerName}</span></>
+                            <><Briefcase className="w-4 h-4" /> <span className="truncate">{providerName}</span></>
                           )}
                         </div>
                       </div>
-                      <div className="shrink-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-1 bg-muted/30 p-3 rounded-2xl border border-border/50">
-                        <span className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-widest">
-                          {language === 'bn' ? 'ফি' : 'Fee'}
+                      <div className="shrink-0 flex flex-col items-end justify-center gap-0.5 bg-slate-50 dark:bg-muted/20 px-4 py-3 rounded-[16px] border border-slate-100 dark:border-border/40">
+                        <span className="text-[9px] font-extrabold text-slate-400 dark:text-muted-foreground uppercase tracking-widest">
+                          FEE
                         </span>
-                        <span className="font-extrabold text-lg text-pcp-green">
-                          ৳{booking.service_details?.price || '0'}
+                        <span className="font-extrabold text-lg text-[#1b5e20] dark:text-pcp-green">
+                          ৳{booking.service_details?.price || '0.00'}
                         </span>
                       </div>
                     </div>
 
                     {/* Notes */}
                     {booking.notes && (
-                      <div className="bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-400 p-3 rounded-xl text-sm italic font-medium border border-amber-100 dark:border-amber-900/50">
+                      <div className="bg-[#FFF8E6] dark:bg-amber-950/20 text-[#A67C00] dark:text-amber-400 px-4 py-3.5 rounded-xl text-sm italic font-medium border border-[#FFE8A1] dark:border-amber-900/50 mt-4">
                         "{booking.notes}"
                       </div>
                     )}
                   </div>
 
                   {/* Action Bar */}
-                  <div className="mt-6 pt-4 border-t border-border/50 flex flex-wrap gap-2 justify-end">
+                  <div className="mt-5 pt-4 border-t border-border/30 flex flex-wrap gap-2 justify-end">
                     {isProvider ? (
                       // Provider Actions
                       <>
@@ -282,10 +278,10 @@ const DashboardBookings = () => {
                         {['pending', 'confirmed'].includes(booking.status) && (
                           <button
                             onClick={() => handleStatusChange(booking.id, 'cancelled')}
-                            className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-1.5"
+                            className="px-4 py-1.5 bg-[#FFF0F3] hover:bg-rose-100 text-[#e03131] border border-rose-100 dark:border-rose-900 dark:bg-rose-950/30 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
                           >
                             <X className="w-3.5 h-3.5" />
-                            {t('bookings.actions.cancel')}
+                            Cancel
                           </button>
                         )}
                       </>
@@ -295,10 +291,10 @@ const DashboardBookings = () => {
                         {['pending', 'confirmed'].includes(booking.status) && (
                           <button
                             onClick={() => handleStatusChange(booking.id, 'cancelled')}
-                            className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-1.5"
+                            className="px-4 py-1.5 bg-[#FFF0F3] hover:bg-rose-100 text-[#e03131] border border-rose-100 dark:border-rose-900 dark:bg-rose-950/30 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
                           >
                             <X className="w-3.5 h-3.5" />
-                            {t('bookings.actions.cancel')}
+                            Cancel
                           </button>
                         )}
                         {booking.status === 'completed' && !booking.has_review && (
