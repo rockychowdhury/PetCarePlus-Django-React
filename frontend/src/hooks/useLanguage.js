@@ -1,10 +1,20 @@
 import { useAuthStore } from '../store/authStore'
+import { useLocation } from 'react-router-dom'
 import bnTranslations from '../i18n/bn.json'
 import enTranslations from '../i18n/en.json'
 
 export const useLanguage = () => {
-  const language = useAuthStore((state) => state.language)
+  let language = useAuthStore((state) => state.language)
   const setLanguage = useAuthStore((state) => state.setLanguage)
+
+  try {
+    const location = useLocation()
+    if (location.pathname.startsWith('/dashboard')) {
+      language = 'en' // Force English in dashboard
+    }
+  } catch (e) {
+    // Ignore if not in router context
+  }
 
   const translations = language === 'bn' ? bnTranslations : enTranslations
 
