@@ -1,15 +1,19 @@
 import React from 'react'
-import { Link, useLocation, Outlet, Navigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, Outlet, Navigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useLanguage } from '../../hooks/useLanguage'
 import { LayoutDashboard, Calendar, Settings, Heart, Briefcase, PlusCircle, Activity } from 'lucide-react'
-import Navbar from '../layout/Navbar'
-import Footer from '../layout/Footer'
 
 const DashboardLayout = () => {
-  const { user, token } = useAuthStore()
+  const { user, token, logout } = useAuthStore()
   const { language, t } = useLanguage()
   const location = useLocation()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
 
   // Protect Dashboard: redirect to login if no token
   if (!token) {
@@ -78,12 +82,16 @@ const DashboardLayout = () => {
       <div className="flex-1 flex flex-col md:flex-row w-full overflow-hidden">
         {/* Sidebar */}
         <aside className="w-full md:w-72 bg-pcp-surface/40 dark:bg-pcp-surface/10 border-r border-border flex flex-col flex-shrink-0 z-10 shadow-sm overflow-y-auto">
-          <div className="hidden md:flex items-center gap-4 px-6 py-6 border-b border-border/50">
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white text-lg font-extrabold shadow-sm">
-              {user?.name?.charAt(0) || user?.first_name?.charAt(0) || 'U'}
+          <div className="p-4 border-b border-border/50 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shrink-0 shadow-sm overflow-hidden">
+              {user?.photo_url ? (
+                <img src={user?.photo_url} alt={user?.name || user?.full_name || 'User'} className="w-full h-full object-cover" />
+              ) : (
+                (user?.name || user?.full_name || 'U').charAt(0).toUpperCase()
+              )}
             </div>
-            <div className="overflow-hidden text-left">
-              <h3 className="font-bold text-base text-foreground truncate">{user?.name || user?.first_name}</h3>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-extrabold text-foreground truncate">{user?.name || user?.full_name}</h3>
               <p className="text-xs font-semibold text-pcp-green uppercase tracking-wider truncate mt-0.5">{t(`profile.roles.${role}`)}</p>
             </div>
           </div>
@@ -110,7 +118,7 @@ const DashboardLayout = () => {
             })}
           </nav>
 
-          <div className="p-4 mt-auto border-t border-border/50">
+          <div className="p-4 mt-auto border-t border-border/50 space-y-1">
             <Link
               to="/"
               className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-pcp-surface transition-all group"
@@ -120,6 +128,15 @@ const DashboardLayout = () => {
               </svg>
               {language === 'bn' ? 'হোমে ফিরে যান' : 'Back to Home'}
             </Link>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all group"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              {language === 'bn' ? 'লগআউট' : 'Logout'}
+            </button>
           </div>
         </aside>
 
