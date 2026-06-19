@@ -38,7 +38,19 @@ export const ApplicationForm = ({ listingId, ownerName, adopterName, adopterCont
       }, 2000)
     },
     onError: (err) => {
-      setErrorText(err.response?.data?.detail || err.response?.data?.message || t('common.error'))
+      const data = err.response?.data
+      let errMsg = t('common.error')
+      if (data) {
+        if (data.non_field_errors?.length) errMsg = data.non_field_errors[0]
+        else if (data.detail) errMsg = data.detail
+        else if (data.message) errMsg = data.message
+        else if (typeof data === 'object') {
+          const firstVal = Object.values(data)[0]
+          if (Array.isArray(firstVal)) errMsg = firstVal[0]
+          else if (typeof firstVal === 'string') errMsg = firstVal
+        }
+      }
+      setErrorText(errMsg)
     },
   })
 

@@ -55,6 +55,7 @@ class ServiceProviderSerializer(BilingualMixin, serializers.ModelSerializer):
     user_email = serializers.EmailField(source='user.email', read_only=True)
     user_name = serializers.CharField(source='user.full_name', read_only=True)
     distance = serializers.FloatField(read_only=True, required=False)
+    is_favorite = serializers.SerializerMethodField()
 
     class Meta:
         model = ServiceProvider
@@ -63,7 +64,7 @@ class ServiceProviderSerializer(BilingualMixin, serializers.ModelSerializer):
             'provider_type', 'is_government_vet', 'division', 'district', 'upazila', 'latitude', 'longitude', 'phone', 'email',
             'is_verified', 'is_active', 'avg_rating', 'total_reviews', 'services',
             'supported_animal_types', 'animal_type_ids', 'created_at', 'updated_at',
-            'description_en', 'description_bn', 'distance'
+            'description_en', 'description_bn', 'distance', 'is_favorite'
         ]
         read_only_fields = [
             'id', 'user', 'is_verified', 'avg_rating', 'total_reviews',
@@ -72,6 +73,12 @@ class ServiceProviderSerializer(BilingualMixin, serializers.ModelSerializer):
 
     def get_description(self, obj):
         return self.get_bilingual_field(obj, 'description')
+
+    def get_is_favorite(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.favorited_by.filter(user=request.user).exists()
+        return False
 
     def get_supported_animal_types(self, obj):
         # Retrieve mapped bilingual animal types

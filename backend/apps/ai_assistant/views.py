@@ -180,6 +180,16 @@ class AIChatView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+class AISessionListView(generics.ListAPIView):
+    """
+    GET endpoint to retrieve a user's historical sessions.
+    """
+    serializer_class = AISessionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return AISession.objects.filter(user=self.request.user).order_by('-created_at')
+
 class AISessionDetailView(generics.RetrieveAPIView):
     """
     GET endpoint to retrieve historical session details.

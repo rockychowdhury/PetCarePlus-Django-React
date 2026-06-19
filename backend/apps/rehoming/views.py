@@ -167,11 +167,6 @@ class RehomingApplicationViewSet(viewsets.ModelViewSet):
 
                 # 4. Reject all other applications for this listing
                 listing.applications.exclude(id=instance.id).update(status=RehomingApplication.Status.REJECTED)
-
-                # 5. Transfer pet ownership to the approved applicant
-                pet = listing.pet
-                pet.owner = instance.applicant
-                pet.save()
                 return
 
         serializer.save()

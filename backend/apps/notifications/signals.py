@@ -63,8 +63,8 @@ def on_application_saved(sender, instance, created, **kwargs):
             notification_type=Notification.NotificationType.APPLICATION,
             title_en="New Adoption Application",
             title_bn="নতুন দত্তক নেওয়ার আবেদন",
-            message_en=f"You have received a new adoption application for {instance.listing.pet.name}.",
-            message_bn=f"আপনি {instance.listing.pet.name} এর জন্য একটি নতুন দত্তক নেওয়ার আবেদন পেয়েছেন।",
+            message_en=f"You have received a new adoption application for {instance.listing.pet_name}.",
+            message_bn=f"আপনি {instance.listing.pet_name} এর জন্য একটি নতুন দত্তক নেওয়ার আবেদন পেয়েছেন।",
             link=f"/rehoming/"
         )
     else:
@@ -75,8 +75,8 @@ def on_application_saved(sender, instance, created, **kwargs):
             notification_type=Notification.NotificationType.APPLICATION,
             title_en=f"Adoption Application {instance.status.capitalize()}",
             title_bn=f"দত্তক নেওয়ার আবেদন {status_bn}",
-            message_en=f"Your adoption application for {instance.listing.pet.name} has been {instance.status}.",
-            message_bn=f"{instance.listing.pet.name} এর জন্য আপনার দত্তক নেওয়ার আবেদনটি {status_bn} করা হয়েছে।",
+            message_en=f"Your adoption application for {instance.listing.pet_name} has been {instance.status}.",
+            message_bn=f"{instance.listing.pet_name} এর জন্য আপনার দত্তক নেওয়ার আবেদনটি {status_bn} করা হয়েছে।",
             link=f"/rehoming/"
         )
 

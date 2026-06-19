@@ -35,6 +35,16 @@ const DashboardLayout = () => {
         path: '/dashboard/rehoming',
         icon: <LayoutDashboard className="w-5 h-5" />
       })
+      links.push({
+        name: language === 'bn' ? 'প্রিয় সেবাদাতা' : 'Favorite Providers',
+        path: '/dashboard/favorites',
+        icon: <Heart className="w-5 h-5" />
+      })
+      links.push({
+        name: language === 'bn' ? 'এআই সেশন' : 'AI Sessions',
+        path: '/dashboard/ai-sessions',
+        icon: <Activity className="w-5 h-5" />
+      })
     }
 
     if (role === 'provider') {
@@ -46,7 +56,7 @@ const DashboardLayout = () => {
       links.push({
         name: language === 'bn' ? 'আমার সেবাসমূহ' : 'My Services',
         path: '/dashboard/services',
-        icon: <Activity className="w-5 h-5" />
+        icon: <PlusCircle className="w-5 h-5" />
       })
     }
 
@@ -63,36 +73,38 @@ const DashboardLayout = () => {
   const links = getSidebarLinks()
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col h-screen overflow-hidden bg-background">
       <Navbar />
       
-      <div className="flex-1 flex flex-col md:flex-row max-w-7xl mx-auto w-full">
+      <div className="flex-1 flex flex-col md:flex-row w-full overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-full md:w-64 bg-card border-r border-border flex-shrink-0 p-4 space-y-4">
-          <div className="hidden md:flex items-center gap-3 px-2 py-3 border-b border-border/50">
-            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
+        <aside className="w-full md:w-72 bg-card border-r border-border flex flex-col flex-shrink-0 z-10 shadow-sm overflow-y-auto">
+          <div className="hidden md:flex items-center gap-4 px-6 py-6 border-b border-border/50">
+            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white text-lg font-extrabold shadow-sm">
               {user?.name?.charAt(0) || user?.first_name?.charAt(0) || 'U'}
             </div>
             <div className="overflow-hidden text-left">
-              <h3 className="font-bold text-sm text-foreground truncate">{user?.name || user?.first_name}</h3>
-              <p className="text-xs text-muted-foreground capitalize truncate">{t(`profile.roles.${role}`)}</p>
+              <h3 className="font-bold text-base text-foreground truncate">{user?.name || user?.first_name}</h3>
+              <p className="text-xs font-semibold text-pcp-green uppercase tracking-wider truncate mt-0.5">{t(`profile.roles.${role}`)}</p>
             </div>
           </div>
 
-          <nav className="flex flex-row md:flex-col gap-2 overflow-x-auto no-scrollbar pb-2 md:pb-0">
+          <nav className="flex-1 px-4 py-6 flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-visible no-scrollbar">
             {links.map((link) => {
               const isActive = location.pathname.startsWith(link.path)
               return (
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${
+                  className={`flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-semibold transition-all whitespace-nowrap group ${
                     isActive
-                      ? 'bg-primary text-white shadow-sm'
+                      ? 'bg-gradient-to-r from-indigo-500/10 to-purple-500/10 text-indigo-700 dark:text-indigo-400 dark:from-indigo-900/40 dark:to-purple-900/40'
                       : 'text-muted-foreground hover:bg-pcp-surface hover:text-foreground'
                   }`}
                 >
-                  {link.icon}
+                  <div className={`transition-colors ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-muted-foreground group-hover:text-foreground'}`}>
+                    {link.icon}
+                  </div>
                   <span>{link.name}</span>
                 </Link>
               )
@@ -100,13 +112,13 @@ const DashboardLayout = () => {
           </nav>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-pcp-surface/20 min-w-0">
-          <Outlet />
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-y-auto bg-pcp-surface/20 min-w-0 p-4 sm:p-6 lg:p-8">
+          <div className="max-w-6xl mx-auto w-full">
+            <Outlet />
+          </div>
         </main>
       </div>
-
-      <Footer />
     </div>
   )
 }

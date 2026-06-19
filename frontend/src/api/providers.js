@@ -16,6 +16,16 @@ export const providersApi = {
     return response.data
   },
 
+  getFavorites: async (params) => {
+    const response = await client.get('/providers/favorites/', { params })
+    return response.data
+  },
+
+  toggleFavorite: async (id) => {
+    const response = await client.post(`/providers/${id}/toggle_favorite/`)
+    return response.data
+  },
+
   registerProvider: async (providerData) => {
     const response = await client.post('/providers/', providerData)
     return response.data

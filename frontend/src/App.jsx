@@ -24,6 +24,8 @@ const DashboardLayout = lazy(() => import('./components/layout/DashboardLayout')
 const DashboardSettings = lazy(() => import('./pages/dashboard/DashboardSettings'))
 const DashboardBookings = lazy(() => import('./pages/dashboard/DashboardBookings'))
 const DashboardRehoming = lazy(() => import('./pages/dashboard/DashboardRehoming'))
+const DashboardFavorites = lazy(() => import('./pages/dashboard/DashboardFavorites'))
+const DashboardAISessions = lazy(() => import('./pages/dashboard/DashboardAISessions'))
 const DashboardProviderProfile = lazy(() => import('./pages/dashboard/DashboardProviderProfile'))
 const DashboardProviderServices = lazy(() => import('./pages/dashboard/DashboardProviderServices'))
 
@@ -150,6 +152,8 @@ export const App = () => {
             <Route path="settings" element={<DashboardSettings />} />
             <Route path="bookings" element={<DashboardBookings />} />
             <Route path="rehoming" element={<DashboardRehoming />} />
+            <Route path="favorites" element={<DashboardFavorites />} />
+            <Route path="ai-sessions" element={<DashboardAISessions />} />
             <Route path="provider-profile" element={<DashboardProviderProfile />} />
             <Route path="services" element={<DashboardProviderServices />} />
           </Route>

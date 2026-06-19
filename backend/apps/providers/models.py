@@ -161,3 +161,27 @@ class ProviderAnimalType(models.Model):
 
     def __str__(self):
         return f'{self.provider.business_name} → {self.animal_type.name_en}'
+
+class FavoriteProvider(models.Model):
+    """
+    Users can favorite specific service providers to access them easily from their dashboard.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='favorite_providers'
+    )
+    provider = models.ForeignKey(
+        ServiceProvider,
+        on_delete=models.CASCADE,
+        related_name='favorited_by'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Favorite Provider'
+        verbose_name_plural = 'Favorite Providers'
+        unique_together = ('user', 'provider')
+
+    def __str__(self):
+        return f'{self.user.email} -> {self.provider.business_name}'
