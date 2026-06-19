@@ -24,7 +24,7 @@ class RehomingListingSerializer(serializers.ModelSerializer):
             'id', 'animal_type', 'animal_type_details', 'pet_name', 'breed', 'gender',
             'age', 'description', 'weight_kg', 'spayed_neutered', 'vaccinated', 'photo_url',
             'district', 'latitude', 'longitude', 'adopter_requirements',
-            'owner', 'owner_name', 'owner_email', 'reason', 'status', 'created_at', 'updated_at'
+            'owner', 'owner_name', 'owner_email', 'reason', 'status', 'policy_accepted', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'owner', 'status', 'created_at', 'updated_at']
 

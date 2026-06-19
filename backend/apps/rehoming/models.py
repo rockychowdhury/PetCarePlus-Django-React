@@ -99,6 +99,11 @@ class RehomingListing(models.Model):
         choices=Status.choices,
         default=Status.ACTIVE
     )
+    
+    policy_accepted = models.BooleanField(
+        default=False,
+        help_text='User agreed to safety and responsibility guidelines'
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

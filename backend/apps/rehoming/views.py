@@ -6,6 +6,7 @@ Includes cascade regional scoping for active listings and adoption transfer tran
 """
 
 from rest_framework import viewsets, permissions, filters, status
+from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.db.models import Q, F
 from django_filters.rest_framework import DjangoFilterBackend

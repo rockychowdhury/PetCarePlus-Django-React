@@ -74,11 +74,10 @@ const DashboardLayout = () => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
-      <Navbar />
       
       <div className="flex-1 flex flex-col md:flex-row w-full overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-full md:w-72 bg-card border-r border-border flex flex-col flex-shrink-0 z-10 shadow-sm overflow-y-auto">
+        <aside className="w-full md:w-72 bg-pcp-surface/40 dark:bg-pcp-surface/10 border-r border-border flex flex-col flex-shrink-0 z-10 shadow-sm overflow-y-auto">
           <div className="hidden md:flex items-center gap-4 px-6 py-6 border-b border-border/50">
             <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white text-lg font-extrabold shadow-sm">
               {user?.name?.charAt(0) || user?.first_name?.charAt(0) || 'U'}
@@ -110,6 +109,18 @@ const DashboardLayout = () => {
               )
             })}
           </nav>
+
+          <div className="p-4 mt-auto border-t border-border/50">
+            <Link
+              to="/"
+              className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-pcp-surface transition-all group"
+            >
+              <svg className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              {language === 'bn' ? 'হোমে ফিরে যান' : 'Back to Home'}
+            </Link>
+          </div>
         </aside>
 
         {/* Main Content Area */}
