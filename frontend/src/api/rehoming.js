@@ -40,4 +40,9 @@ export const rehomingApi = {
     const response = await client.patch(`/rehoming/applications/${id}/`, { status })
     return response.data
   },
+
+  deleteApplication: async (id) => {
+    const response = await client.delete(`/rehoming/applications/${id}/`)
+    return response.data
+  },
 }

@@ -17,7 +17,7 @@ import { Heart, Plus, Mail, CheckCircle, AlertCircle, Info, Trash2, Search, Comp
 export const Rehoming = () => {
   const { language, t } = useLanguage()
   const queryClient = useQueryClient()
-  const { user, token } = useAuthStore()
+  const { user } = useAuthStore()
 
   // Modal / Form States
   const [createFormOpen, setCreateFormOpen] = useState(false)
@@ -46,6 +46,7 @@ export const Rehoming = () => {
     queryFn: () => rehomingApi.getListings(),
   })
   let listings = listingsResponse?.results || []
+  listings = listings.filter(l => l.status === 'active')
 
   // Apply local filtering for Animal Type and Search
   if (selectedAnimalId !== 'all') {
@@ -129,7 +130,7 @@ export const Rehoming = () => {
     }
   }
 
-  const canPostListing = token && user?.role === 'pet_owner'
+  const canPostListing = user && user?.role === 'pet_owner'
 
   const { district: storeDist, upazila: storeUpz, union: storeUnion } = useLocationStore()
   let locationText = language === 'bn' ? 'বাংলাদেশ (সব)' : 'Bangladesh (All)'
@@ -191,7 +192,7 @@ export const Rehoming = () => {
                 <Heart className="w-4 h-4" />
                 <span>{language === 'bn' ? 'সব তালিকা' : 'All Pets'}</span>
               </button>
-              {token && (
+              {user && (
                 <Link
                   to="/dashboard/rehoming"
                   className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold rounded-xl border bg-card border-border/80 text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-all shadow-sm"

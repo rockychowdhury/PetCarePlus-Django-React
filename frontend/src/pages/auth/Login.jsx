@@ -24,10 +24,10 @@ export const Login = () => {
       setSuccessText('লগইন সফল হয়েছে! ড্যাশবোর্ডে প্রবেশ করা হচ্ছে...')
       
       // Save to Zustand store
-      login(data.user, data.access)
+      login(data.user)
       
       setTimeout(() => {
-        navigate('/profile')
+        navigate('/dashboard')
       }, 1500)
     },
     onError: (err) => {

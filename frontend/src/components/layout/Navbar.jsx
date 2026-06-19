@@ -7,7 +7,7 @@ import { Menu, X, Languages, LogOut, LayoutGrid, Heart, Info, PhoneCall, Bot, Ca
 
 export const Navbar = () => {
   const { language, setLanguage, t } = useLanguage()
-  const { user, logout, token } = useAuthStore()
+  const { user, logout } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
   const [isOpen, setIsOpen] = useState(false)
@@ -27,7 +27,7 @@ export const Navbar = () => {
   const handleLanguageToggle = async () => {
     const nextLang = language === 'bn' ? 'en' : 'bn'
     setLanguage(nextLang)
-    if (token && user) {
+    if (user) {
       try {
         await authApi.updateMe({ preferred_language: nextLang })
       } catch (err) {
@@ -98,7 +98,7 @@ export const Navbar = () => {
               </span>
             </button>
 
-            {token && user ? (
+            {user ? (
               <div className="relative flex items-center" ref={userMenuRef}>
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -205,7 +205,7 @@ export const Navbar = () => {
           </div>
 
           <div className="pt-4 pb-4 border-t border-border px-4 space-y-2">
-            {token && user ? (
+            {user ? (
               <div className="space-y-1">
                 <div className="flex items-center gap-3 px-3 py-2">
                   <div className="bg-primary/10 text-primary p-2 rounded-full">

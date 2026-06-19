@@ -40,7 +40,7 @@ export const ProviderDetail = () => {
   const navigate = useNavigate()
   const { language, t, tField } = useLanguage()
   const queryClient = useQueryClient()
-  const { user, token } = useAuthStore()
+  const { user } = useAuthStore()
 
   // Map Refs
   const mapContainerRef = useRef(null)
@@ -222,7 +222,7 @@ export const ProviderDetail = () => {
   // --- Computed Values ---
   const ratingValue = parseFloat(provider.avg_rating) || 0.0
   const providerDesc = tField(provider, 'description')
-  const showBookingForm = token && (user?.role === 'pet_owner' || user?.role === 'farmer')
+  const showBookingForm = user && (user?.role === 'pet_owner' || user?.role === 'farmer')
   const reviewsList = Array.isArray(reviews) ? reviews : reviews?.results ?? []
   const existingReviewBookingIds = reviewsList.map((r) => r.booking)
 
@@ -500,7 +500,7 @@ export const ProviderDetail = () => {
                       </h3>
 
                       {/* Write Review Button */}
-                      {token && (user?.role === 'pet_owner' || user?.role === 'farmer') && (
+                      {user && (user?.role === 'pet_owner' || user?.role === 'farmer') && (
                         <button
                           onClick={() => setIsReviewDialogOpen(true)}
                           className="inline-flex items-center gap-1.5 text-xs font-bold text-pcp-green hover:text-white bg-pcp-green/10 hover:bg-pcp-green px-3.5 py-2 rounded-xl transition-all"
@@ -564,7 +564,7 @@ export const ProviderDetail = () => {
                         <p className="text-xs md:text-sm font-semibold text-muted-foreground">
                           {t('providers.no_reviews')}
                         </p>
-                        {token && (user?.role === 'pet_owner' || user?.role === 'farmer') && (
+                        {user && (user?.role === 'pet_owner' || user?.role === 'farmer') && (
                           <button
                             onClick={() => setIsReviewDialogOpen(true)}
                             className="mt-3 text-xs font-bold text-pcp-green hover:underline"
@@ -801,7 +801,7 @@ export const ProviderDetail = () => {
                 ) : (
                   <div className="text-center py-6 px-4 bg-pcp-surface/40 dark:bg-pcp-green/5 rounded-xl border border-dashed border-pcp-border/80 dark:border-white/5 space-y-4">
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      {token
+                      {user
                         ? language === 'bn'
                           ? 'পশু চিকিৎসক বা সেবা প্রদানকারীরা নিজের পেজে বুক করতে পারবেন না।'
                           : 'Service providers cannot book appointments on their own profile.'
@@ -809,7 +809,7 @@ export const ProviderDetail = () => {
                           ? 'সেবা বুক করতে অনুগ্রহ করে পেটকেয়ার অ্যাকাউন্ট লগইন বা নিবন্ধন করুন।'
                           : 'Please login or register to book an appointment with this provider.'}
                     </p>
-                    {!token && (
+                    {!user && (
                       <div className="flex gap-2 justify-center">
                         <Link
                           to="/login"

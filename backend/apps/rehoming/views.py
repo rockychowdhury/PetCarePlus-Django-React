@@ -19,6 +19,9 @@ from apps.rehoming.serializers import (
     RehomingApplicationSerializer,
 )
 
+from apps.rehoming.tasks import calculate_ai_score_task
+from django_q.tasks import async_task
+
 
 class RehomingListingViewSet(viewsets.ModelViewSet):
     """
@@ -124,7 +127,7 @@ class RehomingApplicationViewSet(viewsets.ModelViewSet):
         return [permissions.IsAuthenticated()]
 
     def perform_create(self, serializer):
-        from apps.ai_assistant.gemini import analyze_adoption_application
+
         
         # Build context for AI evaluation
         listing = serializer.validated_data.get('listing')
@@ -137,14 +140,19 @@ class RehomingApplicationViewSet(viewsets.ModelViewSet):
             f"Adopter Requirements: {listing.adopter_requirements}\n"
         )
         
-        # Analyze and score
-        score = analyze_adoption_application(listing_details, message)
-
-        # Auto-bind applicant and save
-        serializer.save(
+        # Save without AI score initially to prevent blocking the HTTP response
+        application = serializer.save(
             applicant=self.request.user, 
             status=RehomingApplication.Status.PENDING,
-            ai_score=score
+            ai_score=None
+        )
+
+        # Trigger AI analysis as a background task
+        async_task(
+            calculate_ai_score_task,
+            application.id,
+            listing_details,
+            message
         )
 
     def perform_update(self, serializer):

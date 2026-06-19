@@ -5,7 +5,7 @@ import { useLocationStore } from '../store/locationStore'
 
 export const useLocalProviders = (filters = {}) => {
   const user = useAuthStore((state) => state.user)
-  const isAuthenticated = !!useAuthStore((state) => state.token)
+  const isAuthenticated = !!useAuthStore((state) => state.user)
 
   const {
     division: storeDiv,

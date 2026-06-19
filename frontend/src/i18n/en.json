@@ -152,8 +152,10 @@
     },
     "status_app": {
       "pending": "Pending",
+      "reviewed": "Reviewed",
       "approved": "Approved",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
     },
     "no_listings": "No active rehoming listings found in your area."
   },

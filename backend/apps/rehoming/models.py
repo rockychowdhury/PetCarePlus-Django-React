@@ -133,8 +133,10 @@ class RehomingApplication(models.Model):
 
     class Status(models.TextChoices):
         PENDING = 'pending', 'Pending'
+        REVIEWED = 'reviewed', 'Reviewed'
         APPROVED = 'approved', 'Approved'
         REJECTED = 'rejected', 'Rejected'
+        CANCELLED = 'cancelled', 'Cancelled'
 
     listing = models.ForeignKey(
         RehomingListing,

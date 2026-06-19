@@ -25,7 +25,6 @@ import {
 export const Providers = () => {
   const { language, t } = useLanguage()
   const user = useAuthStore((state) => state.user)
-  const token = useAuthStore((state) => state.token)
 
   // Location store
   const {

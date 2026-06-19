@@ -32,32 +32,40 @@ const DashboardProviderServices = lazy(() => import('./pages/dashboard/Dashboard
 
 // Route Guard: restricts access to logged-in users only
 const ProtectedRoute = ({ children }) => {
-  const token = useAuthStore((state) => state.token)
-  return token ? children : <Navigate to="/login" replace />
+  const user = useAuthStore((state) => state.user)
+  return user ? children : <Navigate to="/login" replace />
 }
 
 // Route Guard: restricts logged-in users from hitting login/register
 const AnonymousRoute = ({ children }) => {
-  const token = useAuthStore((state) => state.token)
-  return !token ? children : <Navigate to="/dashboard" replace />
+  const user = useAuthStore((state) => state.user)
+  return !user ? children : <Navigate to="/dashboard" replace />
 }
 
-// Global Auth Observer to keep local state synced with backend
-const AuthObserver = () => {
-  const { token, user, setUser, logout } = useAuthStore()
+// Global Auth Provider to keep local state synced with backend and block UI until initialized
+const AuthProvider = ({ children }) => {
+  const { user, isInitializing, setUser, setInitializing, logout } = useAuthStore()
 
   useEffect(() => {
-    if (token && !user) {
-      authApi.getMe()
-        .then(data => setUser(data))
-        .catch(err => {
-          console.error("AuthObserver error:", err)
-          logout() // clear invalid token
-        })
-    }
-  }, [token, user, setUser, logout])
+    // Attempt to fetch profile on load. Cookies are handled securely by the browser.
+    authApi.getMe()
+      .then(data => setUser(data))
+      .catch(err => {
+        console.warn("Auth initialization failed (no active session):", err)
+        setInitializing(false)
+        if (user) logout()
+      })
+  }, [])
 
-  return null
+  if (isInitializing) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Spinner size="lg" />
+      </div>
+    )
+  }
+
+  return children
 }
 
 export const App = () => {
@@ -120,68 +128,69 @@ export const App = () => {
   }, [division, setLocation, language])
   return (
     <BrowserRouter>
-      <AuthObserver />
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center min-h-screen bg-background">
-            <Spinner size="lg" />
-          </div>
-        }
-      >
-        <Routes>
-          {/* Public Content Routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/guidelines" element={<Guidelines />} />
-          <Route path="/guidelines/:id" element={<GuidelineDetail />} />
-          <Route path="/vaccination" element={<Vaccination />} />
-          <Route path="/resources" element={<GovtResources />} />
-          <Route path="/providers" element={<Providers />} />
-          <Route path="/providers/:id" element={<ProviderDetail />} />
-          <Route path="/ai-assistant" element={<AIAssistant />} />
-          <Route path="/rehoming" element={<Rehoming />} />
-          <Route path="/rehoming/:id" element={<RehomingDetail />} />
+      <AuthProvider>
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center min-h-screen bg-background">
+              <Spinner size="lg" />
+            </div>
+          }
+        >
+          <Routes>
+            {/* Public Content Routes */}
+            <Route path="/" element={<Home />} />
+            <Route path="/guidelines" element={<Guidelines />} />
+            <Route path="/guidelines/:id" element={<GuidelineDetail />} />
+            <Route path="/vaccination" element={<Vaccination />} />
+            <Route path="/resources" element={<GovtResources />} />
+            <Route path="/providers" element={<Providers />} />
+            <Route path="/providers/:id" element={<ProviderDetail />} />
+            <Route path="/ai-assistant" element={<AIAssistant />} />
+            <Route path="/rehoming" element={<Rehoming />} />
+            <Route path="/rehoming/:id" element={<RehomingDetail />} />
 
-          {/* Anonymous Auth Routes */}
-          <Route
-            path="/login"
-            element={
-              <AnonymousRoute>
-                <Login />
-              </AnonymousRoute>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <AnonymousRoute>
-                <Register />
-              </AnonymousRoute>
-            }
-          />
+            {/* Anonymous Auth Routes */}
+            <Route
+              path="/login"
+              element={
+                <AnonymousRoute>
+                  <Login />
+                </AnonymousRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <AnonymousRoute>
+                  <Register />
+                </AnonymousRoute>
+              }
+            />
 
-          {/* Secure Authenticated Routes - Dashboard */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="bookings" replace />} />
-            <Route path="settings" element={<DashboardSettings />} />
-            <Route path="bookings" element={<DashboardBookings />} />
-            <Route path="rehoming" element={<DashboardRehoming />} />
-            <Route path="favorites" element={<DashboardFavorites />} />
-            <Route path="ai-sessions" element={<DashboardAISessions />} />
-            <Route path="provider-profile" element={<DashboardProviderProfile />} />
-            <Route path="services" element={<DashboardProviderServices />} />
-          </Route>
+            {/* Secure Authenticated Routes - Dashboard */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="bookings" replace />} />
+              <Route path="settings" element={<DashboardSettings />} />
+              <Route path="bookings" element={<DashboardBookings />} />
+              <Route path="rehoming" element={<DashboardRehoming />} />
+              <Route path="favorites" element={<DashboardFavorites />} />
+              <Route path="ai-sessions" element={<DashboardAISessions />} />
+              <Route path="provider-profile" element={<DashboardProviderProfile />} />
+              <Route path="services" element={<DashboardProviderServices />} />
+            </Route>
 
-          {/* Wildcard Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
+            {/* Wildcard Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </AuthProvider>
     </BrowserRouter>
   )
 }

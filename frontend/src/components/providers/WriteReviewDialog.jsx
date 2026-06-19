@@ -21,7 +21,7 @@ import toast from 'react-hot-toast'
  */
 export const WriteReviewDialog = ({ isOpen, onClose, providerId, providerName, existingReviewBookingIds = [] }) => {
   const { language } = useLanguage()
-  const { token } = useAuthStore()
+  const { user } = useAuthStore()
   const queryClient = useQueryClient()
 
   const [selectedBookingId, setSelectedBookingId] = useState('')
@@ -33,7 +33,7 @@ export const WriteReviewDialog = ({ isOpen, onClose, providerId, providerName, e
   const { data: completedBookings, isLoading: isLoadingBookings } = useQuery({
     queryKey: ['completedBookings', providerId],
     queryFn: () => bookingsApi.getCompletedBookingsForProvider(providerId),
-    enabled: isOpen && !!token && !!providerId,
+    enabled: isOpen && !!user && !!providerId,
     select: (data) => {
       const results = Array.isArray(data) ? data : data?.results ?? []
       // Filter out bookings that already have reviews

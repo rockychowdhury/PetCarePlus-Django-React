@@ -25,7 +25,7 @@ export const RehomingDetail = () => {
   const navigate = useNavigate()
   const { language, t } = useLanguage()
   const queryClient = useQueryClient()
-  const { user, token } = useAuthStore()
+  const { user } = useAuthStore()
 
   // Fetch listing detail
   const { data: listing, isLoading, error } = useQuery({
@@ -35,16 +35,19 @@ export const RehomingDetail = () => {
   })
 
   // Fetch applications if owner
-  const isOwner = token && user?.id === listing?.owner
+  const isOwner = user && user?.id === listing?.owner
   const { data: applicationsResponse } = useQuery({
     queryKey: ['rehomingApplications'],
     queryFn: () => rehomingApi.getApplications(),
-    enabled: !!token,
+    enabled: !!user,
   })
   const applications = Array.isArray(applicationsResponse) 
     ? applicationsResponse 
     : (applicationsResponse?.results || [])
   const listingApplications = applications.filter((app) => app.listing === parseInt(id))
+  
+  // Application submitted by the current user
+  const myApplication = !isOwner ? listingApplications.find((app) => app.applicant === user?.id) : null
 
   // Mutation to update application status (Approve/Reject)
   const updateAppStatusMutation = useMutation({
@@ -53,6 +56,19 @@ export const RehomingDetail = () => {
       queryClient.invalidateQueries(['rehomingApplications'])
       queryClient.invalidateQueries(['rehomingListing', id])
       toast.success(language === 'bn' ? 'আবেদন আপডেট করা হয়েছে' : 'Application updated')
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.detail || t('common.error'))
+    },
+  })
+
+  // Mutation to cancel an application
+  const cancelAppMutation = useMutation({
+    mutationFn: (appId) => rehomingApi.deleteApplication(appId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['rehomingApplications'])
+      queryClient.invalidateQueries(['rehomingListing', id])
+      toast.success(language === 'bn' ? 'আবেদন বাতিল করা হয়েছে' : 'Application cancelled')
     },
     onError: (err) => {
       toast.error(err.response?.data?.detail || t('common.error'))
@@ -297,12 +313,12 @@ export const RehomingDetail = () => {
                               <span className="font-bold text-foreground">
                                 {app.applicant_details?.name || app.applicant_details?.email}
                               </span>
-                              <div className="flex items-center gap-2">
-                                {app.ai_score !== null && app.ai_score !== undefined && (
-                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${app.ai_score >= 8 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : app.ai_score >= 5 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'}`}>
-                                    AI Score: {app.ai_score}/10
-                                  </span>
-                                )}
+                                <div className="flex items-center gap-2">
+                                  {isOwner && app.ai_score !== null && app.ai_score !== undefined && (
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${app.ai_score >= 8 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : app.ai_score >= 5 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'}`}>
+                                      AI Score: {app.ai_score}/10
+                                    </span>
+                                  )}
                                 <span className="text-[10px] text-muted-foreground">{app.applicant_details?.phone || ''}</span>
                               </div>
                             </div>
@@ -338,7 +354,42 @@ export const RehomingDetail = () => {
                       </div>
                     )}
                   </div>
-                ) : token ? (
+                ) : myApplication ? (
+                  <div className="bg-pcp-surface border border-border rounded-xl p-5 shadow-sm space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-bold text-foreground">
+                        {language === 'bn' ? 'আপনার আবেদন জমা দেওয়া হয়েছে' : 'Your Application'}
+                      </h3>
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                        myApplication.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 
+                        myApplication.status === 'rejected' ? 'bg-rose-100 text-rose-700' : 
+                        'bg-amber-100 text-amber-700'
+                      }`}>
+                        {t(`rehoming.status_app.${myApplication.status}`)}
+                      </span>
+                    </div>
+                    
+                    <div className="p-3 bg-muted/40 rounded-lg text-xs text-muted-foreground italic border border-border/50">
+                      "{myApplication.message}"
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
+                      <span>
+                        {language === 'bn' ? 'তারিখ: ' : 'Applied on: '}
+                        {new Date(myApplication.created_at).toLocaleDateString(language === 'bn' ? 'bn-BD' : 'en-US')}
+                      </span>
+                      {myApplication.status === 'pending' && (
+                        <button 
+                          onClick={() => cancelAppMutation.mutate(myApplication.id)}
+                          disabled={cancelAppMutation.isPending}
+                          className="text-rose-500 font-bold hover:text-rose-600 transition-colors disabled:opacity-50"
+                        >
+                          {language === 'bn' ? 'বাতিল করুন' : 'Cancel Application'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : user ? (
                   <div>
                     <ApplicationForm
                       listingId={listing.id}
@@ -346,7 +397,9 @@ export const RehomingDetail = () => {
                       adopterName={user?.name || user?.email || ''}
                       adopterContact={[user?.phone, user?.email].filter(Boolean).join(', ')}
                       onCancel={() => {}}
-                      onSuccess={() => {}}
+                      onSuccess={() => {
+                        queryClient.invalidateQueries(['rehomingApplications'])
+                      }}
                     />
                   </div>
                 ) : (

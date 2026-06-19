@@ -38,20 +38,40 @@ class LoginView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
         if response.status_code == 200:
-            # Extract refresh token from response
-            refresh_token = response.data.pop('refresh', None)
-            if refresh_token:
-                # Set refresh token in httpOnly cookie
-                # secure=True in production, or if DEBUG is False
-                is_secure = not settings.DEBUG
+            access_token = response.data.get('access')
+            refresh_token = response.data.get('refresh')
+            
+            jwt_settings = getattr(settings, 'SIMPLE_JWT', {})
+            access_cookie = jwt_settings.get('AUTH_COOKIE', 'access_token')
+            refresh_cookie = jwt_settings.get('AUTH_COOKIE_REFRESH', 'refresh_token')
+            is_secure = jwt_settings.get('AUTH_COOKIE_SECURE', not settings.DEBUG)
+            httponly = jwt_settings.get('AUTH_COOKIE_HTTP_ONLY', True)
+            samesite = jwt_settings.get('AUTH_COOKIE_SAMESITE', 'Lax')
+            
+            if access_token:
                 response.set_cookie(
-                    key='refresh_token',
-                    value=refresh_token,
-                    httponly=True,
+                    key=access_cookie,
+                    value=access_token,
+                    httponly=httponly,
                     secure=is_secure,
-                    samesite='Lax',
-                    max_age=7 * 24 * 60 * 60,  # 7 days
+                    samesite=samesite,
+                    max_age=int(jwt_settings.get('ACCESS_TOKEN_LIFETIME').total_seconds()),
                 )
+            if refresh_token:
+                response.set_cookie(
+                    key=refresh_cookie,
+                    value=refresh_token,
+                    httponly=httponly,
+                    secure=is_secure,
+                    samesite=samesite,
+                    max_age=int(jwt_settings.get('REFRESH_TOKEN_LIFETIME').total_seconds()),
+                )
+                
+            # Remove from JSON payload for security
+            if 'access' in response.data:
+                del response.data['access']
+            if 'refresh' in response.data:
+                del response.data['refresh']
         return response
 
 
@@ -63,8 +83,12 @@ class CustomTokenRefreshView(TokenRefreshView):
     """
 
     def post(self, request, *args, **kwargs):
+        jwt_settings = getattr(settings, 'SIMPLE_JWT', {})
+        refresh_cookie = jwt_settings.get('AUTH_COOKIE_REFRESH', 'refresh_token')
+        access_cookie = jwt_settings.get('AUTH_COOKIE', 'access_token')
+        
         # Retrieve the refresh token from httpOnly cookie if not in POST request data
-        refresh_token = request.COOKIES.get('refresh_token')
+        refresh_token = request.COOKIES.get(refresh_cookie)
         
         if refresh_token and 'refresh' not in request.data:
             # Mutate request data to include the token for standard serializer validation
@@ -82,17 +106,33 @@ class CustomTokenRefreshView(TokenRefreshView):
         # Formulate response
         response = Response(serializer.validated_data, status=status.HTTP_200_OK)
 
-        # Handle potential rotated refresh token
-        new_refresh = serializer.validated_data.get('refresh')
-        if new_refresh:
-            is_secure = not settings.DEBUG
+        is_secure = jwt_settings.get('AUTH_COOKIE_SECURE', not settings.DEBUG)
+        httponly = jwt_settings.get('AUTH_COOKIE_HTTP_ONLY', True)
+        samesite = jwt_settings.get('AUTH_COOKIE_SAMESITE', 'Lax')
+
+        # Handle new access token
+        new_access = response.data.get('access')
+        if new_access:
             response.set_cookie(
-                key='refresh_token',
-                value=new_refresh,
-                httponly=True,
+                key=access_cookie,
+                value=new_access,
+                httponly=httponly,
                 secure=is_secure,
-                samesite='Lax',
-                max_age=7 * 24 * 60 * 60,
+                samesite=samesite,
+                max_age=int(jwt_settings.get('ACCESS_TOKEN_LIFETIME').total_seconds()),
+            )
+            del response.data['access']
+
+        # Handle potential rotated refresh token
+        new_refresh = response.data.get('refresh')
+        if new_refresh:
+            response.set_cookie(
+                key=refresh_cookie,
+                value=new_refresh,
+                httponly=httponly,
+                secure=is_secure,
+                samesite=samesite,
+                max_age=int(jwt_settings.get('REFRESH_TOKEN_LIFETIME').total_seconds()),
             )
             # Remove from JSON payload for security
             del response.data['refresh']
@@ -111,7 +151,12 @@ class LogoutView(APIView):
             {'message': 'Successfully logged out.'},
             status=status.HTTP_200_OK
         )
-        response.delete_cookie('refresh_token')
+        jwt_settings = getattr(settings, 'SIMPLE_JWT', {})
+        access_cookie = jwt_settings.get('AUTH_COOKIE', 'access_token')
+        refresh_cookie = jwt_settings.get('AUTH_COOKIE_REFRESH', 'refresh_token')
+        
+        response.delete_cookie(access_cookie)
+        response.delete_cookie(refresh_cookie)
         return response
 
 

@@ -8,7 +8,7 @@ import { MapPin, Sparkles, Stethoscope, CheckCircle2, ChevronRight, Compass } fr
 
 export const HeroSection = ({ onScrollToProviders, onScrollToAI }) => {
   const { language, t } = useLanguage()
-  const { user, token, setUser } = useAuthStore()
+  const { user, setUser } = useAuthStore()
   
   // Location store
   const {
@@ -25,7 +25,7 @@ export const HeroSection = ({ onScrollToProviders, onScrollToAI }) => {
 
   // Sync state with active location values
   useEffect(() => {
-    if (token && user) {
+    if (user) {
       setSelectedDivision(user.division || '')
       setSelectedDistrict(user.district || '')
       setUpazilaInput(user.upazila || '')
@@ -34,7 +34,7 @@ export const HeroSection = ({ onScrollToProviders, onScrollToAI }) => {
       setSelectedDistrict(anonDistrict || '')
       setUpazilaInput(anonUpazila || '')
     }
-  }, [user, token, anonDivision, anonDistrict, anonUpazila])
+  }, [user, anonDivision, anonDistrict, anonUpazila])
 
   const handleDivisionChange = (e) => {
     const div = e.target.value
@@ -56,7 +56,7 @@ export const HeroSection = ({ onScrollToProviders, onScrollToAI }) => {
   }
 
   const updateLocationState = async (division, district, upazila) => {
-    if (token && user) {
+    if (user) {
       try {
         const updatedUser = await authApi.updateMe({ division, district, upazila })
         setUser(updatedUser)

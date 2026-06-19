@@ -4,20 +4,22 @@ import { useAuthStore } from '../../store/authStore'
 import { useLanguage } from '../../hooks/useLanguage'
 import { LayoutDashboard, Calendar, Settings, Heart, Briefcase, PlusCircle, Activity } from 'lucide-react'
 
+import { authApi } from '../../api/auth'
+
 const DashboardLayout = () => {
-  const { user, token, logout } = useAuthStore()
+  const { user, logout } = useAuthStore()
   const { language, t } = useLanguage()
   const location = useLocation()
   const navigate = useNavigate()
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await authApi.logout()
+    } catch (e) {
+      console.error('Logout API failed:', e)
+    }
     logout()
-    navigate('/')
-  }
-
-  // Protect Dashboard: redirect to login if no token
-  if (!token) {
-    return <Navigate to="/login" replace />
+    navigate('/login')
   }
 
   const role = user?.role || 'pet_owner'

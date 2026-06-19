@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'apps.rehoming',
     'apps.notifications',
     'apps.locations',
+    'django_q',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -113,7 +114,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'apps.accounts.authentication.CookieJWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
@@ -143,6 +144,12 @@ SIMPLE_JWT = {
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_COOKIE': 'access_token',
+    'AUTH_COOKIE_REFRESH': 'refresh_token',
+    'AUTH_COOKIE_SECURE': get_env('AUTH_COOKIE_SECURE', default=False, cast=bool),
+    'AUTH_COOKIE_HTTP_ONLY': True,
+    'AUTH_COOKIE_PATH': '/',
+    'AUTH_COOKIE_SAMESITE': 'Lax',
     'TOKEN_OBTAIN_SERIALIZER': 'apps.accounts.serializers.CustomTokenObtainPairSerializer',
 }
 
@@ -212,3 +219,17 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # ──────────────────────────────────────────────
 
 FRONTEND_URL = get_env('FRONTEND_URL', default='http://localhost:5173')
+
+# Django Q2 Settings
+Q_CLUSTER = {
+    'name': 'petcareplus',
+    'workers': 2,
+    'recycle': 50,
+    'timeout': 60,
+    'compress': True,
+    'save_limit': 250,
+    'queue_limit': 500,
+    'cpu_affinity': 1,
+    'label': 'Django Q',
+    'orm': 'default'
+}
