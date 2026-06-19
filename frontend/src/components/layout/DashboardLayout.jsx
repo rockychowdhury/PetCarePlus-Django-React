@@ -118,19 +118,6 @@ const DashboardLayout = () => {
                 </Link>
               )
             })}
-            <Link
-              to="/dashboard/favorites"
-              className={`flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-semibold transition-all whitespace-nowrap group ${
-                location.pathname === '/dashboard/favorites'
-                  ? 'bg-gradient-to-r from-indigo-500/10 to-purple-500/10 text-indigo-700 dark:text-indigo-400 dark:from-indigo-900/40 dark:to-purple-900/40'
-                  : 'text-muted-foreground hover:bg-pcp-surface hover:text-foreground'
-              }`}
-            >
-              <div className={`transition-colors ${location.pathname === '/dashboard/favorites' ? 'text-indigo-600 dark:text-indigo-400' : 'text-muted-foreground group-hover:text-foreground'}`}>
-                <Heart className="w-5 h-5" />
-              </div>
-              <span>{language === 'bn' ? 'ফেভারিট সেবাদাতা' : 'Favorite Providers'}</span>
-            </Link>
           </nav>
 
           <div className="p-4 mt-auto border-t border-border/50 space-y-1">

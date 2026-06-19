@@ -34,8 +34,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['user'] = {
             'id': user.id,
             'email': user.email,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
             'full_name': user.full_name,
             'name': user.full_name,  # Compatibility key
             'phone_number': user.phone_number,
@@ -74,19 +72,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        # Split name into first and last name
-        name_parts = validated_data['name'].strip().split(' ', 1)
-        first_name = name_parts[0]
-        last_name = name_parts[1] if len(name_parts) > 1 else ''
-
+        name = validated_data['name'].strip()
         role = validated_data.get('role', 'pet_owner')
         is_provider = role == 'provider'
 
         # Create user
         user = User.objects.create(
             email=validated_data['email'],
-            first_name=first_name,
-            last_name=last_name,
+            full_name=name,
             phone_number=validated_data['phone'],
             role=role,
             is_active=not is_provider  # Provider accounts start as inactive
@@ -174,7 +167,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'email', 'first_name', 'last_name', 'full_name',
+            'id', 'email', 'full_name',
             'phone_number', 'photo_url', 'bio',
             'division', 'district', 'upazila', 'union', 'latitude', 'longitude',
             'preferred_language', 'role', 'date_joined',
@@ -185,14 +178,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         name = validated_data.pop('name', None)
         phone = validated_data.pop('phone', None)
+        photo_url = validated_data.pop('photo_url', None)
 
         if name is not None:
-            name_parts = name.strip().split(' ', 1)
-            instance.first_name = name_parts[0]
-            instance.last_name = name_parts[1] if len(name_parts) > 1 else ''
+            instance.full_name = name
 
         if phone is not None:
             instance.phone_number = phone
+            
+        if photo_url is not None:
+            instance.photo_url = photo_url
 
         return super().update(instance, validated_data)
 

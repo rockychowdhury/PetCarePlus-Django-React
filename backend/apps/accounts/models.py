@@ -74,8 +74,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     # ── Identity ──────────────────────────────
     email = models.EmailField(unique=True)
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
+    full_name = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=15, blank=True)
     photo_url = models.URLField(max_length=500, blank=True)
     bio = models.TextField(max_length=500, blank=True)
@@ -140,7 +139,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name']
+    REQUIRED_FIELDS = ['full_name']
 
     class Meta:
         verbose_name = 'User'
@@ -149,10 +148,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f'{self.email} ({self.role})'
-
-    @property
-    def full_name(self):
-        return f'{self.first_name} {self.last_name}'.strip()
 
     @property
     def has_location(self):

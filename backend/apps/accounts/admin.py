@@ -5,21 +5,21 @@ from .models import User
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ('email', 'first_name', 'last_name', 'role', 'division', 'district')
-    list_filter = ('role', 'is_active', 'division', 'district', 'preferred_language')
-    search_fields = ('email', 'first_name', 'last_name', 'phone_number')
+    list_display = ('email', 'full_name', 'role', 'division', 'district')
+    list_filter = ('role', 'is_staff', 'is_active', 'division')
+    search_fields = ('email', 'full_name', 'phone_number')
     ordering = ('-date_joined',)
 
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Personal Info', {'fields': ('first_name', 'last_name', 'phone_number', 'bio', 'photo_url')}),
-        ('Location', {'fields': ('division', 'district', 'upazila')}),
-        ('Role & Language', {'fields': ('role', 'preferred_language')}),
-        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
+        ('Personal Info', {'fields': ('full_name', 'phone_number', 'bio', 'photo_url')}),
+        ('Location', {'fields': ('division', 'district', 'upazila', 'union', 'latitude', 'longitude')}),
+        ('Permissions', {'fields': ('role', 'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password', 'first_name', 'last_name', 'role'),
+            'fields': ('email', 'password', 'full_name', 'role'),
         }),
     )
