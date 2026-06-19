@@ -161,9 +161,15 @@ class RehomingApplicationViewSet(viewsets.ModelViewSet):
         new_status = self.request.data.get('status')
 
         if new_status and new_status != instance.status:
-            # 1. Authorisation: only listing owner or admin can approve/reject
-            if instance.listing.owner != user and user.role != 'admin':
-                raise PermissionDenied("Only the pet owner can approve or reject adoption applications.")
+            # 1. Authorisation:
+            if new_status == RehomingApplication.Status.CANCELLED:
+                # Only applicant can cancel
+                if instance.applicant != user and user.role != 'admin':
+                    raise PermissionDenied("Only the applicant can withdraw this application.")
+            else:
+                # Only listing owner or admin can approve/reject/review
+                if instance.listing.owner != user and user.role != 'admin':
+                    raise PermissionDenied("Only the pet owner can update adoption applications.")
 
             if new_status == RehomingApplication.Status.APPROVED:
                 # 2. Approve this application
@@ -177,5 +183,9 @@ class RehomingApplicationViewSet(viewsets.ModelViewSet):
                 # 4. Reject all other applications for this listing
                 listing.applications.exclude(id=instance.id).update(status=RehomingApplication.Status.REJECTED)
                 return
+                
+            # If not approved, simply update the status (since status is read_only in serializer fields)
+            serializer.save(status=new_status)
+            return
 
         serializer.save()

@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { rehomingApi } from '../../api/rehoming'
 import { useLanguage } from '../../hooks/useLanguage'
@@ -355,7 +356,7 @@ const DashboardRehoming = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {mySentApps.map((app) => (
                 <div key={app.id} className="bg-card border border-border/80 rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between">
                   <div className="space-y-4">
@@ -377,20 +378,22 @@ const DashboardRehoming = () => {
                           </p>
                         </div>
                       </div>
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        app.status === 'approved' ? 'bg-emerald-100 text-emerald-800' :
-                        app.status === 'pending' ? 'bg-amber-100 text-amber-800' :
-                        'bg-rose-100 text-rose-800'
+                      <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                        app.status === 'approved' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                        app.status === 'pending' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
+                        'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
                       }`}>
-                        {t(`rehoming.status.${app.status}`)}
+                        {t(`rehoming.status_app.${app.status}`)}
                       </span>
                     </div>
 
-                    <div className="bg-pcp-surface/50 p-3 rounded-xl">
-                      <p className="text-xs font-bold text-muted-foreground mb-1">
+                    <div className="bg-pcp-surface rounded-lg p-4 relative text-sm font-medium">
+                      <span className="text-muted-foreground font-normal block mb-3 border-b border-border/40 pb-2">
                         {language === 'bn' ? 'আপনার মেসেজ:' : 'Your Message:'}
-                      </p>
-                      <p className="text-sm text-foreground/90 italic line-clamp-3">"{app.message}"</p>
+                      </span>
+                      <div className="whitespace-pre-wrap font-sans text-foreground/90 leading-relaxed">
+                        {formatEmailText(app.message)}
+                      </div>
                     </div>
                   </div>
 
@@ -413,8 +416,8 @@ const DashboardRehoming = () => {
       )}
 
       {/* Modals */}
-      {approvalModalAppId && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+      {approvalModalAppId && createPortal(
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-card border border-border rounded-3xl w-full max-w-lg p-6 space-y-5 animate-fade-in-up text-left shadow-xl">
             <h3 className="text-xl font-bold text-foreground border-b border-border/50 pb-3 flex items-center gap-2">
               <AlertCircle className="w-6 h-6 text-amber-500" />
@@ -457,12 +460,13 @@ const DashboardRehoming = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Generic Confirm Modal */}
-      {confirmDialog.isOpen && (
-        <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+      {confirmDialog.isOpen && createPortal(
+        <div className="fixed inset-0 z-[110] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-card border border-border rounded-3xl w-full max-w-xs p-6 shadow-xl animate-fade-in-up text-center relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-rose-500"></div>
             <div className="w-14 h-14 rounded-full bg-rose-50 dark:bg-rose-900/30 text-rose-500 mx-auto flex items-center justify-center mb-4">
@@ -488,7 +492,8 @@ const DashboardRehoming = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       </div>
