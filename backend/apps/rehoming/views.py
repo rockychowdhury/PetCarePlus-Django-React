@@ -76,8 +76,8 @@ class RehomingListingViewSet(viewsets.ModelViewSet):
 
         # 3. Scoped cascade logic for local network match (fallback)
         if not district and not (lat and lng) and user and user.is_authenticated and user.district:
-            # We now use the 'district' directly on the RehomingListing
-            return get_local_queryset(qs, user, location_field_prefix='')
+            # We use 'owner__' so we can query both district and division securely via the User model
+            return get_local_queryset(qs, user, location_field_prefix='owner__')
 
         return qs
 

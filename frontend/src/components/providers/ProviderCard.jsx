@@ -3,12 +3,16 @@ import { Link } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useLocationStore } from '../../store/locationStore'
 import { useLanguage } from '../../hooks/useLanguage'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { providersApi } from '../../api/providers'
+import toast from 'react-hot-toast'
 import { Star, MapPin, Heart, Phone } from 'lucide-react'
 import { getAnimalIcon } from '../../utils/animals'
 
 export const ProviderCard = ({ provider }) => {
   const { language, t } = useLanguage()
   const user = useAuthStore((state) => state.user)
+  const queryClient = useQueryClient()
   
   // Anonymous selected location
   const anonDivision = useLocationStore((state) => state.division)
@@ -28,9 +32,31 @@ export const ProviderCard = ({ provider }) => {
     supported_animal_types = [],
     phone,
     email,
+    is_favorite,
   } = provider
 
   const ratingValue = parseFloat(avg_rating) || 0.0
+
+  // Mutation to toggle favorite status
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: () => providersApi.toggleFavorite(id),
+    onSuccess: (data) => {
+      // Invalidate queries to refresh favorite states globally
+      queryClient.invalidateQueries(['providers'])
+      queryClient.invalidateQueries(['favoriteProviders'])
+      queryClient.invalidateQueries(['provider', id])
+      
+      const isAdded = data.status === 'added'
+      toast.success(
+        isAdded 
+          ? (language === 'bn' ? 'ফেভারিটে যোগ করা হয়েছে!' : 'Added to favorites!')
+          : (language === 'bn' ? 'ফেভারিট থেকে রিমুভ করা হয়েছে।' : 'Removed from favorites.')
+      )
+    },
+    onError: () => {
+      toast.error(language === 'bn' ? 'অনুগ্রহ করে লগইন করুন।' : 'Please log in to save favorites.')
+    }
+  })
 
   // Calculate distance cascade labelling
   const currentDistrict = user?.district || anonDistrict
@@ -86,8 +112,24 @@ export const ProviderCard = ({ provider }) => {
         </div>
         
         {/* Floating Heart / Save Icon */}
-        <button className="absolute top-2.5 right-2.5 p-2 rounded-full bg-white/30 hover:bg-white/50 backdrop-blur-md transition-colors border border-white/40">
-          <Heart className="w-3.5 h-3.5 text-white drop-shadow-sm" />
+        <button 
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            toggleFavoriteMutation.mutate()
+          }}
+          disabled={toggleFavoriteMutation.isPending}
+          className={`absolute top-2.5 right-2.5 p-2 rounded-full backdrop-blur-md transition-all border shadow-sm ${
+            is_favorite 
+              ? 'bg-rose-500/20 hover:bg-rose-500/30 border-rose-500/50' 
+              : 'bg-white/30 hover:bg-white/50 border-white/40'
+          }`}
+        >
+          <Heart 
+            className={`w-3.5 h-3.5 drop-shadow-sm transition-colors ${
+              is_favorite ? 'fill-rose-500 text-rose-500' : 'text-white'
+            }`} 
+          />
         </button>
 
         {/* Rating Floating Over Image (Bottom Right) */}

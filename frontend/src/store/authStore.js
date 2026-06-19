@@ -22,7 +22,6 @@ export const useAuthStore = create(
     {
       name: 'petcareplus-auth', // local storage key
       partialize: (state) => ({ 
-        user: state.user, 
         token: state.token, 
         language: state.language 
       }),

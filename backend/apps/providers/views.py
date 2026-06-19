@@ -42,6 +42,10 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         if user and user.is_authenticated and user.role == 'admin':
             return ServiceProvider.objects.all()
 
+        # For detail views (retrieve, toggle_favorite), don't restrict by location cascade
+        if getattr(self, 'action', None) != 'list':
+            return ServiceProvider.objects.filter(is_verified=True, is_active=True)
+
         provider_type = self.request.query_params.get('provider_type')
         animal_type_id = self.request.query_params.get('animal_type')
 
@@ -197,6 +201,8 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
+        if self.action in ['toggle_favorite', 'favorites']:
+            return [permissions.IsAuthenticated()]
         return [permissions.IsAuthenticated(), IsOwnerOrAdmin()]
 
     def perform_create(self, serializer):

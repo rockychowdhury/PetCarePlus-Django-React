@@ -2,6 +2,7 @@ import React, { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import { useLocationStore } from './store/locationStore'
+import { authApi } from './api/auth'
 import Spinner from './components/ui/Spinner'
 import toast from 'react-hot-toast'
 
@@ -39,6 +40,24 @@ const ProtectedRoute = ({ children }) => {
 const AnonymousRoute = ({ children }) => {
   const token = useAuthStore((state) => state.token)
   return !token ? children : <Navigate to="/dashboard" replace />
+}
+
+// Global Auth Observer to keep local state synced with backend
+const AuthObserver = () => {
+  const { token, user, setUser, logout } = useAuthStore()
+
+  useEffect(() => {
+    if (token && !user) {
+      authApi.getMe()
+        .then(data => setUser(data))
+        .catch(err => {
+          console.error("AuthObserver error:", err)
+          logout() // clear invalid token
+        })
+    }
+  }, [token, user, setUser, logout])
+
+  return null
 }
 
 export const App = () => {
@@ -101,6 +120,7 @@ export const App = () => {
   }, [division, setLocation, language])
   return (
     <BrowserRouter>
+      <AuthObserver />
       <Suspense
         fallback={
           <div className="flex items-center justify-center min-h-screen bg-background">
