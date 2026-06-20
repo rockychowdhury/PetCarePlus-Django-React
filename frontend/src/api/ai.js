@@ -1,13 +1,8 @@
 import client from './client'
 
 export const aiApi = {
-  createSession: async (animalTypeId) => {
-    const response = await client.post('/ai/sessions/chat/', { animal_type_id: animalTypeId })
-    return response.data
-  },
-
-  sendChatMessage: async (sessionId, message, language = 'bn') => {
-    const response = await client.post(`/ai/sessions/chat/`, { session_id: sessionId, message, language })
+  diagnose: async (payload) => {
+    const response = await client.post('/ai/diagnose/', payload)
     return response.data
   },
 
@@ -16,7 +11,7 @@ export const aiApi = {
     return response.data
   },
 
-  getSessionSummary: async (sessionId) => {
+  getSessionDetail: async (sessionId) => {
     const response = await client.get(`/ai/sessions/${sessionId}/`)
     return response.data
   },

@@ -1,10 +1,10 @@
 import React from 'react'
-import AIChatWidget from '../ai/AIChatWidget'
+import { Link } from 'react-router-dom'
 import { useLanguage } from '../../hooks/useLanguage'
-import { Sparkles, ShieldAlert, HeartHandshake, Zap, Info, ShieldCheck, HelpCircle } from 'lucide-react'
+import { Sparkles, ShieldAlert, HeartHandshake, Zap, Info, ShieldCheck, ArrowRight, Stethoscope, Brain, MapPin } from 'lucide-react'
 
 export const AIPreviewSection = () => {
-  const { language, t } = useLanguage()
+  const { language } = useLanguage()
 
   return (
     <section className="py-16 bg-gradient-to-br from-pcp-green-bg via-background to-pcp-green-bg/30 border-b border-pcp-green-light/20 relative overflow-hidden">
@@ -28,75 +28,71 @@ export const AIPreviewSection = () => {
 
             <h2 className="text-2xl md:text-4xl font-extrabold text-pcp-text-primary tracking-tight leading-snug">
               {language === 'bn'
-                ? 'স্মার্ট ভেটেরিনারি এআই সহকারীর সাথে কথা বলুন'
-                : 'Consult Our Intelligent AI Vet Assistant'}
+                ? 'এআই পশু চিকিৎসা সহকারী'
+                : 'AI Veterinary Diagnostic Assistant'}
             </h2>
 
             <p className="text-xs md:text-sm text-pcp-text-secondary leading-relaxed font-semibold">
               {language === 'bn'
-                ? 'আপনার পশু অসুস্থ বা আচরণে অস্বাভাবিকতা দেখাচ্ছে? লক্ষণগুলো চ্যাটে লিখুন। আমাদের এআই লক্ষণ বিশ্লেষণ করে তাৎক্ষণিক সমাধান এবং নিকটস্থ ডাক্তারের হদিস দেবে।'
-                : 'Is your pet or farm animal acting strange? Just describe the symptoms. Our customized Gemini AI asks clarifying questions, assesses condition severity, and suggest matching local doctors.'}
+                ? 'আপনার পশু অসুস্থ বা আচরণে অস্বাভাবিকতা দেখাচ্ছে? সমস্যা বিস্তারিত লিখুন। এআই একবারেই রোগ নির্ণয়, চিকিৎসা পরামর্শ, সতর্কতা সংকেত, নিকটতম ডাক্তার ও প্রাসঙ্গিক তথ্য প্রদান করবে।'
+                : 'Is your pet or farm animal acting strange? Describe the problem once and get a full diagnostic — diagnosis, care advice, warning signs, local provider suggestions, and related resources — all in one go.'}
             </p>
 
             {/* Platform Feature Curation Guide Card */}
             <div className="p-4 bg-card border border-primary/10 rounded-2xl shadow-sm text-left space-y-4">
               <h4 className="text-xs font-extrabold text-primary flex items-center gap-1.5 uppercase tracking-wider">
                 <Info className="w-3.5 h-3.5 text-pcp-green-accent" />
-                {language === 'bn' ? 'ব্যবহার নির্দেশিকা ও এআই নিয়মসমূহ' : 'AI Operational Rules & Guide'}
+                {language === 'bn' ? 'কী কী পাবেন' : 'What You\'ll Get'}
               </h4>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] sm:text-xs">
-                {/* Rule 1: Diagnostic and Urgency */}
                 <div className="space-y-1">
                   <span className="font-extrabold text-pcp-text-primary block">
-                    {language === 'bn' ? '১. রোগ ও সতর্কতা নির্ণয়' : '1. Diagnosis & Urgency'}
+                    {language === 'bn' ? '১. রোগ নির্ণয় ও পরামর্শ' : '1. Diagnosis & Care Advice'}
                   </span>
                   <p className="text-pcp-text-muted leading-relaxed">
                     {language === 'bn' 
-                      ? 'এআই ৪টি ধাপে সতর্কতা স্তর নির্ধারণ করে: Mild (মৃদু), Moderate (মাঝারি), Severe (মারাত্মক), এবং Critical (জরুরি)।'
-                      : 'Categorizes symptom severity into 4 distinct urgency tiers: Mild, Moderate, Severe, and Critical.'}
+                      ? 'সম্ভাব্য রোগ, প্রাথমিক চিকিৎসা, এবং যত্নের বিস্তারিত নির্দেশনা।'
+                      : 'Possible diseases, first aid steps, and detailed care instructions.'}
                   </p>
                 </div>
 
-                {/* Rule 2: Doctor recommendations */}
                 <div className="space-y-1">
                   <span className="font-extrabold text-pcp-text-primary block">
-                    {language === 'bn' ? '২. লোকাল ডাক্তার ম্যাপিং' : '2. Ranked Doctor Routing'}
+                    {language === 'bn' ? '২. সতর্কতা ও আশার সংকেত' : '2. Warning & Hope Signs'}
                   </span>
                   <p className="text-pcp-text-muted leading-relaxed">
                     {language === 'bn' 
-                      ? 'রোগের ধরনের সাথে মিলিয়ে আপনার জেলার শ্রেষ্ঠ রেটযুক্ত ডাক্তারদের স্বয়ংক্রিয় তালিকা প্রদান করবে।'
-                      : 'Weighted ranking algorithm maps the AI summary to certified clinics in your district.'}
+                      ? 'কখন চিন্তিত হবেন, কখন নিরাপদ, এবং সুস্থতার লক্ষণ।'
+                      : 'When to worry, when it\'s safe, and recovery indicators.'}
                   </p>
                 </div>
 
-                {/* Rule 3: Rate limits */}
                 <div className="space-y-1">
                   <span className="font-extrabold text-pcp-text-primary block">
-                    {language === 'bn' ? '৩. গেস্ট ইউজার লিমিট' : '3. Anonymous Rate Limits'}
+                    {language === 'bn' ? '৩. নিকটস্থ ডাক্তার' : '3. Local Providers'}
                   </span>
                   <p className="text-pcp-text-muted leading-relaxed">
                     {language === 'bn' 
-                      ? 'নিবন্ধন ছাড়া ৩ বার চ্যাট করতে পারবেন। আনলিমিটেড আলাপ ও রিপোর্ট হিস্ট্রি সংরক্ষণ করতে দ্রুত লগইন করুন।'
-                      : 'Anonymous visitors have a strict limit of 3 turns per session. Log in to keep diagnostic history.'}
+                      ? 'আপনার এলাকার সেরা রেটিংযুক্ত পশু চিকিৎসকের স্বয়ংক্রিয় তালিকা।'
+                      : 'Auto-ranked veterinarians near your location based on ratings.'}
                   </p>
                 </div>
 
-                {/* Rule 4: Actionable Home Care */}
                 <div className="space-y-1">
                   <span className="font-extrabold text-pcp-text-primary block">
-                    {language === 'bn' ? '৪. তাৎক্ষণিক ফার্স্ট এইড' : '4. Immediate First Aid'}
+                    {language === 'bn' ? '৪. প্রাসঙ্গিক তথ্য' : '4. Related Resources'}
                   </span>
                   <p className="text-pcp-text-muted leading-relaxed">
                     {language === 'bn' 
-                      ? 'ডাক্তার আসার আগ পর্যন্ত বাড়িতে নিরাপদে কী খাওয়াবেন বা কী করবেন তার নিরাপদ পরামর্শ।'
-                      : 'Safe home remedies and nutritional recommendations you can safely perform right now.'}
+                      ? 'সম্পর্কিত গাইডলাইন, সরকারি তথ্য ও রিসোর্স।'
+                      : 'Related guidelines, government info, and educational resources.'}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Compact feature highlight bullets */}
+            {/* Feature highlights */}
             <div className="space-y-4 pt-2">
               <div className="flex gap-3 text-left">
                 <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-pcp-green-accent/15 text-primary flex items-center justify-center">
@@ -108,8 +104,8 @@ export const AIPreviewSection = () => {
                   </h4>
                   <p className="text-[11px] sm:text-xs text-pcp-text-secondary">
                     {language === 'bn'
-                      ? 'এআই রিপোর্টের সাথে সাথে লাল, হলুদ বা সবুজ রঙের ইন্ডিকেটর দিয়ে বিপদ পরিমাপ করে।'
-                      : 'Interactive color-coded UI badges instantly show whether an emergency clinic is needed.'}
+                      ? 'এআই রিপোর্টের সাথে লাল, হলুদ বা সবুজ রঙের ইন্ডিকেটর দিয়ে বিপদ পরিমাপ করে।'
+                      : 'Interactive color-coded badges instantly show whether an emergency clinic is needed.'}
                   </p>
                 </div>
               </div>
@@ -124,20 +120,64 @@ export const AIPreviewSection = () => {
                   </h4>
                   <p className="text-[11px] sm:text-xs text-pcp-text-secondary">
                     {language === 'bn'
-                      ? 'খামারির বোঝার সুবিধার্থে বাংলায় উত্তর লেখার দক্ষ প্রোগ্রামিং করা আছে।'
-                      : 'Optimized language modeling outputs guidance in native Bangla and English based on selection.'}
+                      ? 'খামারির বোঝার সুবিধার্থে বাংলায় উত্তর লেখার দক্ষ প্রোগ্রামিং করা আছে।'
+                      : 'Optimized language modeling outputs guidance in native Bangla and English.'}
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Side: Glassmorphic Embedded Widget Container */}
+          {/* Right Side: CTA Card linking to AI page */}
           <div className="lg:col-span-7 flex justify-center w-full max-w-lg mx-auto relative group">
-            {/* Soft backdrop glow behind chat widget */}
             <div className="absolute inset-0 bg-primary/5 rounded-3xl blur-xl group-hover:bg-primary/10 transition-all duration-500" />
             <div className="w-full relative z-10 border border-primary/20 rounded-3xl shadow-xl overflow-hidden bg-card/60 backdrop-blur-md">
-              <AIChatWidget isMini={true} />
+              <div className="p-8 md:p-10 text-center space-y-6">
+                {/* Animated icon */}
+                <div className="flex justify-center">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/15 to-accent/15 border border-primary/20 flex items-center justify-center relative">
+                    <Brain className="w-10 h-10 text-primary" />
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-accent rounded-full flex items-center justify-center">
+                      <Sparkles className="w-3 h-3 text-white fill-current" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-lg md:text-xl font-extrabold text-foreground">
+                    {language === 'bn' ? 'এখনই আপনার পশুর সমস্যা বিশ্লেষণ করুন' : 'Analyze Your Animal\'s Problem Now'}
+                  </h3>
+                  <p className="text-xs md:text-sm text-muted-foreground leading-relaxed max-w-sm mx-auto">
+                    {language === 'bn'
+                      ? 'শুধু সমস্যা লিখুন — এআই একবারেই সম্পূর্ণ রোগ নির্ণয় রিপোর্ট, ডাক্তার সাজেশন ও প্রাসঙ্গিক তথ্য দেবে।'
+                      : 'Just describe the problem — AI will provide a complete diagnostic report, doctor suggestions, and relevant resources in one go.'}
+                  </p>
+                </div>
+
+                {/* Quick feature badges */}
+                <div className="flex flex-wrap justify-center gap-2">
+                  {[
+                    { icon: <Stethoscope className="w-3 h-3" />, label: language === 'bn' ? 'রোগ নির্ণয়' : 'Diagnosis' },
+                    { icon: <ShieldAlert className="w-3 h-3" />, label: language === 'bn' ? 'সতর্কতা' : 'Warnings' },
+                    { icon: <MapPin className="w-3 h-3" />, label: language === 'bn' ? 'ডাক্তার খুঁজুন' : 'Find Doctors' },
+                    { icon: <ShieldCheck className="w-3 h-3" />, label: language === 'bn' ? 'আশার সংকেত' : 'Hope Signs' },
+                  ].map((badge, idx) => (
+                    <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/8 text-primary text-[10px] font-bold border border-primary/15">
+                      {badge.icon}
+                      {badge.label}
+                    </span>
+                  ))}
+                </div>
+
+                <Link
+                  to="/ai-assistant"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/95 hover:to-primary/85 text-white text-sm font-extrabold rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-[0.98]"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>{language === 'bn' ? 'এআই সহকারী ব্যবহার করুন' : 'Use AI Assistant'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
             </div>
           </div>
         </div>

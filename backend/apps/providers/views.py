@@ -205,8 +205,6 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
-        if self.action in ['toggle_favorite', 'favorites']:
-            return [permissions.IsAuthenticated()]
         return [permissions.IsAuthenticated(), IsOwnerOrAdmin()]
 
     def perform_create(self, serializer):
@@ -238,28 +236,7 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         except ServiceProvider.DoesNotExist:
             return Response({'detail': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
-    def toggle_favorite(self, request, pk=None):
-        provider = self.get_object()
-        from apps.providers.models import FavoriteProvider
-        fav, created = FavoriteProvider.objects.get_or_create(user=request.user, provider=provider)
-        if not created:
-            fav.delete()
-            return Response({'status': 'removed'}, status=status.HTTP_200_OK)
-        return Response({'status': 'added'}, status=status.HTTP_201_CREATED)
 
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
-    def favorites(self, request):
-        from apps.providers.models import FavoriteProvider
-        fav_providers = ServiceProvider.objects.filter(favorited_by__user=request.user).order_by('-favorited_by__created_at')
-        
-        page = self.paginate_queryset(fav_providers)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(fav_providers, many=True)
-        return Response({'results': serializer.data})
 
 
 

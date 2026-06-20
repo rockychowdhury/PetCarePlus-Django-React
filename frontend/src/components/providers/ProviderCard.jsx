@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { providersApi } from '../../api/providers'
 import toast from 'react-hot-toast'
 import { Star, MapPin, Heart, Phone, Sparkles } from 'lucide-react'
+import { savedApi } from '../../api/saved'
 import { getAnimalIcon } from '../../utils/animals'
 
 export const ProviderCard = ({ provider }) => {
@@ -39,14 +40,15 @@ export const ProviderCard = ({ provider }) => {
 
   // Mutation to toggle favorite status
   const toggleFavoriteMutation = useMutation({
-    mutationFn: () => providersApi.toggleFavorite(id),
+    mutationFn: () => savedApi.toggleSavedItem('serviceprovider', id),
     onSuccess: (data) => {
       // Invalidate queries to refresh favorite states globally
       queryClient.invalidateQueries(['providers'])
       queryClient.invalidateQueries(['favoriteProviders'])
       queryClient.invalidateQueries(['provider', id])
+      queryClient.invalidateQueries(['savedItems'])
       
-      const isAdded = data.status === 'added'
+      const isAdded = data?.status === 'added'
       toast.success(
         isAdded 
           ? (language === 'bn' ? 'ফেভারিটে যোগ করা হয়েছে!' : 'Added to favorites!')

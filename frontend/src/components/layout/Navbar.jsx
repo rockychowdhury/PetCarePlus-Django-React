@@ -36,7 +36,12 @@ export const Navbar = () => {
     }
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await authApi.logout()
+    } catch (e) {
+      console.error('Logout API failed:', e)
+    }
     logout()
     navigate('/')
     setIsOpen(false)

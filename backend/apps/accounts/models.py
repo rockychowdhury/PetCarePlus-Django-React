@@ -8,6 +8,7 @@ bilingual language preference, and simplified role system.
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.conf import settings
 
 
 # ──────────────────────────────────────────────
@@ -206,3 +207,28 @@ PetCarePlus Team
         
         super().save(*args, **kwargs)
 
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
+
+class SavedItem(models.Model):
+    """
+    Generic model to store user's saved items (e.g., Favorite Providers, Saved Resources).
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='saved_items'
+    )
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Saved Item'
+        verbose_name_plural = 'Saved Items'
+        unique_together = ('user', 'content_type', 'object_id')
+
+    def __str__(self):
+        return f'{self.user.email} saved {self.content_object}'

@@ -49,7 +49,7 @@ export const GovtResources = () => {
   const { data: response, isLoading } = useQuery({
     queryKey: ['resourcesList', selectedDistrict],
     queryFn: () =>
-      resourcesApi.getGovtResources({
+      resourcesApi.getResources({
         district: selectedDistrict || undefined,
       }),
   })

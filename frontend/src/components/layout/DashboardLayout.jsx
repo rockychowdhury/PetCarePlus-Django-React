@@ -2,7 +2,7 @@ import React from 'react'
 import { Link, useLocation, useNavigate, Outlet, Navigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useLanguage } from '../../hooks/useLanguage'
-import { LayoutDashboard, Calendar, Settings, Heart, Briefcase, PlusCircle, Activity } from 'lucide-react'
+import { LayoutDashboard, Calendar, Settings, Heart, Briefcase, PlusCircle, Activity, Bookmark } from 'lucide-react'
 
 import { authApi } from '../../api/auth'
 
@@ -42,9 +42,9 @@ const DashboardLayout = () => {
         icon: <LayoutDashboard className="w-5 h-5" />
       })
       links.push({
-        name: language === 'bn' ? 'প্রিয় সেবাদাতা' : 'Favorite Providers',
+        name: language === 'bn' ? 'সংরক্ষিত আইটেম' : 'Saved Items',
         path: '/dashboard/favorites',
-        icon: <Heart className="w-5 h-5" />
+        icon: <Bookmark className="w-5 h-5" />
       })
       links.push({
         name: language === 'bn' ? 'এআই সেশন' : 'AI Sessions',

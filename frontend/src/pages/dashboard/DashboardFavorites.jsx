@@ -1,21 +1,23 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { providersApi } from '../../api/providers'
+import { savedApi } from '../../api/saved'
 import { useLanguage } from '../../hooks/useLanguage'
 import Spinner from '../../components/ui/Spinner'
 import ProviderCard from '../../components/providers/ProviderCard'
-import { Heart, SearchX } from 'lucide-react'
+import GuidelineCard from '../../components/guidelines/GuidelineCard'
+import { Heart, SearchX, Bookmark } from 'lucide-react'
 
 const DashboardFavorites = () => {
   const { language, t } = useLanguage()
+  const [activeTab, setActiveTab] = useState('serviceprovider')
 
-  // Fetch Favorite Providers
-  const { data: favoritesData, isLoading } = useQuery({
-    queryKey: ['favoriteProviders'],
-    queryFn: () => providersApi.getFavorites(),
+  // Fetch Saved Items based on active tab
+  const { data: savedData, isLoading } = useQuery({
+    queryKey: ['savedItems', activeTab],
+    queryFn: () => savedApi.getSavedItems(activeTab),
   })
 
-  const favorites = favoritesData?.results || []
+  const items = savedData?.results || []
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -26,38 +28,66 @@ const DashboardFavorites = () => {
             <div className="p-2 bg-rose-50 dark:bg-rose-900/30 text-rose-500 rounded-xl">
               <Heart className="w-6 h-6 fill-current" />
             </div>
-            {language === 'bn' ? 'ফেভারিট সেবাদাতা' : 'Favorite Providers'}
+            {language === 'bn' ? 'সংরক্ষিত আইটেম' : 'Saved Items'}
           </h2>
           <p className="text-sm text-muted-foreground mt-2 max-w-xl">
             {language === 'bn' 
-              ? 'আপনার সংরক্ষিত এবং পছন্দের পশু চিকিৎসক ও সেবাদাতাদের তালিকা।'
-              : 'Your saved and favorite veterinarians and service providers.'}
+              ? 'আপনার সংরক্ষিত সেবাদাতা এবং প্রয়োজনীয় রিসোর্সগুলোর তালিকা।'
+              : 'Your saved service providers and essential resources.'}
           </p>
         </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex space-x-2 border-b border-border/40 pb-2">
+        <button
+          onClick={() => setActiveTab('serviceprovider')}
+          className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-t-xl transition-all ${
+            activeTab === 'serviceprovider'
+              ? 'text-primary border-b-2 border-primary bg-primary/5'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+          }`}
+        >
+          <Heart className="w-4 h-4" />
+          {language === 'bn' ? 'সেবাদাতা' : 'Providers'}
+        </button>
+        <button
+          onClick={() => setActiveTab('resource')}
+          className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-t-xl transition-all ${
+            activeTab === 'resource'
+              ? 'text-primary border-b-2 border-primary bg-primary/5'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+          }`}
+        >
+          <Bookmark className="w-4 h-4" />
+          {language === 'bn' ? 'রিসোর্স' : 'Resources'}
+        </button>
       </div>
 
       {/* Content */}
       <div className="pt-2">
         {isLoading ? (
           <Spinner className="py-24" />
-        ) : favorites.length === 0 ? (
+        ) : items.length === 0 ? (
           <div className="text-center py-24 px-4 bg-card rounded-3xl border border-dashed border-border/80 shadow-sm flex flex-col items-center justify-center animate-fade-in">
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
               <SearchX className="w-8 h-8 text-muted-foreground/50" />
             </div>
             <h3 className="text-lg font-extrabold text-foreground mb-1">
-              {language === 'bn' ? 'কোনো সেবাদাতা সংরক্ষিত নেই' : 'No saved providers yet'}
+              {language === 'bn' ? 'কোনো আইটেম সংরক্ষিত নেই' : 'No items saved yet'}
             </h3>
             <p className="text-sm text-muted-foreground max-w-sm">
               {language === 'bn' 
-                ? 'ডাক্তার বা সেবাদাতাদের প্রোফাইলে হার্ট আইকনে ক্লিক করে তাদের এখানে সংরক্ষণ করুন।' 
-                : 'Save doctors and service providers by clicking the heart icon on their profiles.'}
+                ? 'প্রোফাইল বা রিসোর্স কার্ডে হার্ট অথবা বুকমার্ক আইকনে ক্লিক করে সংরক্ষণ করুন।' 
+                : 'Save items by clicking the heart or bookmark icons on their cards.'}
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-fade-in">
-            {favorites.map((provider) => (
-              <ProviderCard key={provider.id} provider={provider} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
+            {items.map((item) => (
+              activeTab === 'serviceprovider' 
+                ? <ProviderCard key={item.id} provider={item} />
+                : <GuidelineCard key={item.id} guideline={item} />
             ))}
           </div>
         )}

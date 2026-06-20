@@ -154,9 +154,10 @@ class LogoutView(APIView):
         jwt_settings = getattr(settings, 'SIMPLE_JWT', {})
         access_cookie = jwt_settings.get('AUTH_COOKIE', 'access_token')
         refresh_cookie = jwt_settings.get('AUTH_COOKIE_REFRESH', 'refresh_token')
+        samesite = jwt_settings.get('AUTH_COOKIE_SAMESITE', 'Lax')
         
-        response.delete_cookie(access_cookie)
-        response.delete_cookie(refresh_cookie)
+        response.delete_cookie(access_cookie, samesite=samesite)
+        response.delete_cookie(refresh_cookie, samesite=samesite)
         return response
 
 
@@ -169,3 +170,94 @@ class ProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+from rest_framework import viewsets
+from apps.accounts.models import SavedItem
+from django.contrib.contenttypes.models import ContentType
+from django.apps import apps
+from rest_framework.decorators import action
+
+class SavedItemViewSet(viewsets.ViewSet):
+    """
+    ViewSet to manage user's saved items using GenericForeignKey.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def list(self, request):
+        model_type = request.query_params.get('model_type', 'serviceprovider')
+        if model_type == 'serviceprovider':
+            model = apps.get_model('providers', 'ServiceProvider')
+        elif model_type == 'resource':
+            model = apps.get_model('resources', 'Resource')
+        else:
+            return Response({'error': 'Invalid model_type'}, status=status.HTTP_400_BAD_REQUEST)
+
+        content_type = ContentType.objects.get_for_model(model)
+        saved_items = SavedItem.objects.filter(user=request.user, content_type=content_type).order_by('-created_at')
+        
+        object_ids = saved_items.values_list('object_id', flat=True)
+        objects_dict = {obj.id: obj for obj in model.objects.filter(id__in=object_ids)}
+        ordered_objects = [objects_dict[obj_id] for obj_id in object_ids if obj_id in objects_dict]
+        
+        if model_type == 'serviceprovider':
+            from apps.providers.serializers import ServiceProviderSerializer
+            serializer = ServiceProviderSerializer(ordered_objects, many=True)
+        elif model_type == 'resource':
+            from apps.resources.serializers import ResourceSerializer
+            serializer = ResourceSerializer(ordered_objects, many=True)
+        
+        return Response({'results': serializer.data})
+
+    @action(detail=False, methods=['post'])
+    def toggle(self, request):
+        model_type = request.data.get('model_type')
+        object_id = request.data.get('object_id')
+        
+        if not model_type or not object_id:
+            return Response({'error': 'model_type and object_id are required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        if model_type == 'serviceprovider':
+            model = apps.get_model('providers', 'ServiceProvider')
+        elif model_type == 'resource':
+            model = apps.get_model('resources', 'Resource')
+        else:
+            return Response({'error': 'Invalid model_type'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        content_type = ContentType.objects.get_for_model(model)
+        
+        saved_item, created = SavedItem.objects.get_or_create(
+            user=request.user,
+            content_type=content_type,
+            object_id=object_id
+        )
+        
+        if not created:
+            saved_item.delete()
+            return Response({'status': 'removed'}, status=status.HTTP_200_OK)
+            
+        return Response({'status': 'added'}, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'])
+    def check(self, request):
+        model_type = request.query_params.get('model_type')
+        object_id = request.query_params.get('object_id')
+        
+        if not model_type or not object_id:
+            return Response({'error': 'model_type and object_id are required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        if model_type == 'serviceprovider':
+            model = apps.get_model('providers', 'ServiceProvider')
+        elif model_type == 'resource':
+            model = apps.get_model('resources', 'Resource')
+        else:
+            return Response({'error': 'Invalid model_type'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        content_type = ContentType.objects.get_for_model(model)
+        
+        is_saved = SavedItem.objects.filter(
+            user=request.user,
+            content_type=content_type,
+            object_id=object_id
+        ).exists()
+        
+        return Response({'is_saved': is_saved})

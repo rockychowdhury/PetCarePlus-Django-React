@@ -28,11 +28,9 @@ class Resource(models.Model):
     title_en = models.CharField(max_length=200)
     title_bn = models.CharField(max_length=200)
 
-    # Optional Animal Type
-    animal_type = models.ForeignKey(
+    # Optional Animal Types
+    animal_types = models.ManyToManyField(
         AnimalType,
-        on_delete=models.SET_NULL,
-        null=True,
         blank=True,
         related_name='resources'
     )
@@ -57,6 +55,9 @@ class Resource(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['resource_type']),
+            models.Index(fields=['is_active']),
+            models.Index(fields=['title_en']),
+            models.Index(fields=['title_bn']),
         ]
 
     def __str__(self):

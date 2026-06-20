@@ -1,183 +1,303 @@
 """
 PetCarePlus v2 — AI Assistant Views
 
-API views for interacting with the AI diagnostic assistant.
-Manages session rate limiting, conversation saving, Urgency extraction,
-and regional provider match generation at session end.
+API views for the one-shot AI diagnostic endpoint, session management,
+text polishing, and provider suggestion generation.
 """
 
 from django.utils import timezone
-from django.db.models import F
+from django.db.models import Q
 from django.conf import settings
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import PermissionDenied, NotFound, ValidationError
 
-from common.permissions import IsOwnerOrAdmin
 from common.utils import get_local_providers
 from apps.animals.models import AnimalType
 from apps.providers.models import ServiceProvider
+from apps.resources.models import Resource
+from apps.resources.serializers import ResourceSerializer
 from apps.ai_assistant.models import AISession, AIProviderSuggestion
 from apps.ai_assistant.serializers import (
     AISessionSerializer,
-    AIChatSerializer,
+    AIDiagnoseInputSerializer,
+    AIProviderSuggestionSerializer,
 )
-from apps.ai_assistant.gemini import call_gemini
+from apps.ai_assistant.gemini_diagnose import diagnose_with_gemini
+from apps.providers.serializers import ServiceProviderSerializer
 
 
-def generate_provider_suggestions(session):
+class MockUser:
+    """Lightweight object carrying location attributes for provider matching."""
+    def __init__(self, division=None, district=None, upazila=None, union=None,
+                 latitude=None, longitude=None):
+        self.division = division
+        self.district = district
+        self.upazila = upazila
+        self.union = union
+        self.latitude = latitude
+        self.longitude = longitude
+
+
+def _score_and_rank_providers(providers_qs, max_count=5):
     """
-    Ranks and stores the top 3 service providers for the completed session
-    using a weighted score: (avg_rating * 0.6) + (is_verified * 0.3) + (normalized_reviews * 0.1)
+    Score and rank a provider queryset.
+    Returns list of dicts with provider data, rank, score, and bilingual reason.
     """
-    if not session.animal_type:
-        return
-
-    # 1. Fetch matching providers using cascade location scoping
-    if session.user:
-        providers_qs = get_local_providers(
-            user=session.user,
-            provider_type='vet',  # Default to veterinarians for care issues
-            animal_type_id=session.animal_type.id
-        )
-    else:
-        # Anonymous users: return all verified vets treating this animal type
-        providers_qs = ServiceProvider.objects.filter(
-            is_verified=True,
-            is_active=True,
-            provider_type='vet',
-            animal_types__animal_type=session.animal_type
-        )
-
-    # 2. Score and rank them
-    scored_providers = []
-    for provider in providers_qs[:10]:  # Limit pool to top 10 local matches
-        # Normalize reviews (cap at 50 for max score scaling)
+    scored = []
+    for provider in providers_qs[:15]:
         normalized_reviews = min(float(provider.total_reviews) / 50.0, 1.0)
-        
-        # Calculate weighted score
         score = (
             float(provider.avg_rating) * 0.6 +
             (0.3 if provider.is_verified else 0.0) +
             normalized_reviews * 0.1
         )
-        
-        scored_providers.append((provider, score))
+        scored.append((provider, score))
 
-    # Sort descending by score
-    scored_providers.sort(key=lambda x: x[1], reverse=True)
+    scored.sort(key=lambda x: x[1], reverse=True)
 
-    # 3. Create Suggestions in Database
-    for rank, (provider, score) in enumerate(scored_providers[:3], start=1):
+    results = []
+    for rank, (provider, score) in enumerate(scored[:max_count], start=1):
         reason_en = (
             f"Highly matching veterinarian in your area with a {provider.avg_rating} star rating "
             f"and {provider.total_reviews} verified reviews."
         )
         reason_bn = (
-            f"আপনার এলাকায় {provider.avg_rating} স্টার রেটিং এবং {provider.total_reviews} টি "
+            f"আপনার এলাকায় {provider.avg_rating} স্টার রেটিং এবং {provider.total_reviews} টি "
             f"ভেরিফাইড রিভিউ সহ অত্যন্ত উপযুক্ত পশু চিকিৎসক।"
         )
+        results.append({
+            'provider': provider,
+            'rank': rank,
+            'score': round(score, 3),
+            'reason_en': reason_en,
+            'reason_bn': reason_bn,
+        })
 
-        AIProviderSuggestion.objects.update_or_create(
-            session=session,
-            provider=provider,
-            defaults={
-                'rank': rank,
-                'score': score,
-                'reason_en': reason_en,
-                'reason_bn': reason_bn
-            }
-        )
+    return results
 
 
-class AIChatView(APIView):
+def _match_resources(animal_type, keywords, limit=6):
     """
-    POST endpoint for user-AI interactive diagnostic conversations.
-    Enforces a strict 3-turn rate limit for anonymous sessions.
+    Match resources from the database by animal type and keyword search.
+    """
+    qs = Resource.objects.filter(is_active=True)
+
+    if animal_type:
+        qs = qs.filter(
+            Q(animal_types=animal_type) | Q(animal_types__isnull=True)
+        ).distinct()
+
+    if keywords:
+        keyword_q = Q()
+        for kw in keywords[:5]:
+            keyword_q |= (
+                Q(title_en__icontains=kw) |
+                Q(title_bn__icontains=kw) |
+                Q(description_en__icontains=kw) |
+                Q(description_bn__icontains=kw)
+            )
+        keyword_matched = qs.filter(keyword_q).distinct()
+        if keyword_matched.exists():
+            return keyword_matched[:limit]
+
+    return qs[:limit]
+
+
+def _get_govt_vets(animal_type, division=None, district=None, latitude=None, longitude=None):
+    """
+    Get government veterinary officers near the user's location.
+    """
+    qs = ServiceProvider.objects.filter(
+        is_government_vet=True,
+        is_active=True,
+    )
+
+    if animal_type:
+        qs = qs.filter(
+            Q(animal_types__animal_type=animal_type) |
+            Q(animal_types__isnull=True)
+        ).distinct()
+
+    if district:
+        local = qs.filter(district__iexact=district)
+        if local.exists():
+            return local[:3]
+
+    if division:
+        regional = qs.filter(division__iexact=division)
+        if regional.exists():
+            return regional[:3]
+
+    return qs[:3]
+
+
+class AIDiagnoseView(APIView):
+    """
+    POST /api/v1/ai/diagnose/
+
+    One-shot AI diagnostic endpoint. Accepts animal type, problem description,
+    and optional location. Returns structured diagnosis with matched providers
+    and resources.
     """
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
-        serializer = AIChatSerializer(data=request.data)
+        serializer = AIDiagnoseInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        session_id = serializer.validated_data.get('session_id')
-        message = serializer.validated_data.get('message')
-        animal_type_id = serializer.validated_data.get('animal_type_id')
+        animal_type_id = serializer.validated_data['animal_type_id']
+        problem_description = serializer.validated_data['problem_description']
         preferred_language = serializer.validated_data.get('preferred_language', 'bn')
+        user_division = serializer.validated_data.get('user_division', '')
+        user_district = serializer.validated_data.get('user_district', '')
+        user_latitude = serializer.validated_data.get('user_latitude')
+        user_longitude = serializer.validated_data.get('user_longitude')
 
-        # 1. Fetch or create AISession
-        if session_id:
-            try:
-                session = AISession.objects.get(id=session_id)
-            except AISession.DoesNotExist:
-                raise NotFound("Specified AI Session not found.")
+        # 1. Validate animal type
+        try:
+            animal_type = AnimalType.objects.get(id=animal_type_id)
+        except AnimalType.DoesNotExist:
+            raise ValidationError({"animal_type_id": "Specified animal type does not exist."})
 
-            # Access controls
-            if session.user and session.user != request.user:
-                raise PermissionDenied("You do not have permission to access this session.")
-        else:
-            # For new session, animal_type_id is mandatory
-            if not animal_type_id:
-                raise ValidationError({"animal_type_id": "Required to initialize a new session."})
+        # 2. Resolve location from user profile or request
+        if request.user.is_authenticated and not user_division:
+            user_division = request.user.division or ''
+            user_district = request.user.district or ''
+            if not user_latitude:
+                user_latitude = getattr(request.user, 'latitude', None)
+                user_longitude = getattr(request.user, 'longitude', None)
 
-            try:
-                animal_type = AnimalType.objects.get(id=animal_type_id)
-            except AnimalType.DoesNotExist:
-                raise ValidationError({"animal_type_id": "Specified animal type does not exist."})
-
-            session = AISession.objects.create(
-                user=request.user if request.user.is_authenticated else None,
-                animal_type=animal_type,
-                conversation_history=[]
-            )
-
-        # 2. Rate limiting check for anonymous sessions (max 3 turns)
-        if not session.user and session.total_turns >= 3:
-            raise PermissionDenied(
-                "Guest session limit reached (3 turns). Please log in or register to continue."
-            )
-
-        # 3. Append user message to history
-        history = list(session.conversation_history)
-        history.append({"role": "user", "content": message})
-
-        # 4. Generate reply from Gemini
-        animal_name = session.animal_type.name_en if session.animal_type else "Pet"
-        gemini_result = call_gemini(
-            conversation_history=history,
+        # 3. Call Gemini
+        ai_result = diagnose_with_gemini(
+            animal_type_name=animal_type.name_en,
+            animal_category=animal_type.category,
+            problem_description=problem_description,
             preferred_language=preferred_language,
-            animal_type_name=animal_name
         )
 
-        reply_content = gemini_result.get('reply', '')
-        history.append({"role": "assistant", "content": reply_content})
+        # 4. Save to AISession
+        session = AISession.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            animal_type=animal_type,
+            conversation_history=[
+                {"role": "user", "content": problem_description},
+                {"role": "assistant", "content": str(ai_result)},
+            ],
+            total_turns=1,
+            ended_at=timezone.now(),
+        )
 
-        # Update turns
-        session.conversation_history = history
-        session.total_turns = F('total_turns') + 1
-        session.save()
-        session.refresh_from_db()
-
-        # 5. Handle diagnostic session completion
-        if gemini_result.get('session_complete', False):
-            session.ended_at = timezone.now()
-            session.urgency_level = gemini_result.get('urgency_level', 'monitor_at_home')
-            session.ai_diagnosis_summary = gemini_result.get('diagnosis_summary', '')
-            session.ai_care_advice = gemini_result.get('care_advice', '')
+        # Extract urgency and summaries for the session record
+        query_type = ai_result.get('query_type', 'disease')
+        if query_type == 'disease' and ai_result.get('urgency'):
+            session.urgency_level = ai_result['urgency'].get('level', 'monitor_at_home')
+            diagnosis_data = ai_result.get('diagnosis', {})
+            if diagnosis_data:
+                session.ai_diagnosis_summary = diagnosis_data.get('possible_problems', '')
+                session.ai_care_advice = diagnosis_data.get('what_owner_can_do', '')
             session.save()
 
-            # Rank and store suggested local providers
-            generate_provider_suggestions(session)
-            session.refresh_from_db()
+        # 5. Match providers
+        recommended_type = ai_result.get('recommended_provider_type', 'vet')
+        providers_data = []
 
-        # Return session details
-        response_serializer = AISessionSerializer(session, context={'request': request})
-        return Response({
-            'reply': reply_content,
-            'session': response_serializer.data
-        }, status=status.HTTP_200_OK)
+        location_user = MockUser(
+            division=user_division,
+            district=user_district,
+            latitude=user_latitude,
+            longitude=user_longitude,
+        )
+
+        if request.user.is_authenticated:
+            providers_qs = get_local_providers(
+                user=request.user,
+                provider_type=recommended_type,
+                animal_type_id=animal_type.id
+            )
+        elif user_division or user_district or user_latitude:
+            providers_qs = get_local_providers(
+                user=location_user,
+                provider_type=recommended_type,
+                animal_type_id=animal_type.id
+            )
+        else:
+            providers_qs = ServiceProvider.objects.filter(
+                is_verified=True,
+                is_active=True,
+                provider_type=recommended_type,
+                animal_types__animal_type=animal_type
+            ).order_by('-avg_rating')
+
+        ranked_providers = _score_and_rank_providers(providers_qs, max_count=5)
+
+        # Save suggestions to DB and serialize
+        for item in ranked_providers:
+            AIProviderSuggestion.objects.update_or_create(
+                session=session,
+                provider=item['provider'],
+                defaults={
+                    'rank': item['rank'],
+                    'score': item['score'],
+                    'reason_en': item['reason_en'],
+                    'reason_bn': item['reason_bn'],
+                }
+            )
+
+        providers_serialized = []
+        for item in ranked_providers:
+            provider_data = ServiceProviderSerializer(
+                item['provider'], context={'request': request}
+            ).data
+            providers_serialized.append({
+                'rank': item['rank'],
+                'score': item['score'],
+                'reason_en': item['reason_en'],
+                'reason_bn': item['reason_bn'],
+                'provider_details': provider_data,
+            })
+
+        # 6. Match resources
+        resource_keywords = ai_result.get('resource_keywords', [])
+        matched_resources = _match_resources(animal_type, resource_keywords)
+        resources_serialized = ResourceSerializer(
+            matched_resources, many=True, context={'request': request}
+        ).data
+
+        # 7. Get govt vets if needed
+        govt_vets_serialized = []
+        suggest_livestock_officer = ai_result.get('suggest_livestock_officer', False)
+        if suggest_livestock_officer:
+            govt_vets = _get_govt_vets(
+                animal_type,
+                division=user_division,
+                district=user_district,
+                latitude=user_latitude,
+                longitude=user_longitude,
+            )
+            govt_vets_serialized = ServiceProviderSerializer(
+                govt_vets, many=True, context={'request': request}
+            ).data
+
+        # 8. Build response
+        response_data = {
+            'session_id': session.id,
+            'query_type': query_type,
+            'ai_response': ai_result,
+            'providers': providers_serialized,
+            'resources': resources_serialized,
+            'govt_vets': govt_vets_serialized,
+            'animal_type': {
+                'id': animal_type.id,
+                'name_en': animal_type.name_en,
+                'name_bn': animal_type.name_bn,
+                'slug': animal_type.slug,
+                'category': animal_type.category,
+            }
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class AISessionListView(generics.ListAPIView):
@@ -188,7 +308,8 @@ class AISessionListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return AISession.objects.filter(user=self.request.user).order_by('-created_at')
+        return AISession.objects.filter(user=self.request.user).order_by('-started_at')
+
 
 class AISessionDetailView(generics.RetrieveAPIView):
     """
@@ -200,7 +321,6 @@ class AISessionDetailView(generics.RetrieveAPIView):
 
     def get_object(self):
         obj = super().get_object()
-        # Enforce that private (user-bound) sessions can only be read by their owner or admins
         if obj.user:
             if not self.request.user.is_authenticated:
                 raise PermissionDenied("Authentication required to view this session.")
@@ -208,9 +328,11 @@ class AISessionDetailView(generics.RetrieveAPIView):
                 raise PermissionDenied("You do not have permission to view this session.")
         return obj
 
+
 class AIPolishView(APIView):
     """
     POST endpoint to refine and polish user text using AI.
+    Used for rehoming application text polishing.
     """
     permission_classes = [permissions.IsAuthenticated]
 
