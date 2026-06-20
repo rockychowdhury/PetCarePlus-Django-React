@@ -9,6 +9,7 @@ class UserAdmin(BaseUserAdmin):
     list_filter = ('role', 'is_staff', 'is_active', 'division')
     search_fields = ('email', 'full_name', 'phone_number')
     ordering = ('-date_joined',)
+    readonly_fields = ('date_joined', 'last_login')
 
     fieldsets = (
         (None, {'fields': ('email', 'password')}),

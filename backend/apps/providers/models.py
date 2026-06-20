@@ -52,6 +52,7 @@ class ServiceProvider(models.Model):
     division = models.CharField(max_length=20, choices=DIVISION_CHOICES)
     district = models.CharField(max_length=50)
     upazila = models.CharField(max_length=50, blank=True)
+    union = models.CharField(max_length=50, blank=True)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 

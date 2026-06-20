@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { providersApi } from '../../api/providers'
 import { useLanguage } from '../../hooks/useLanguage'
@@ -228,7 +229,7 @@ const DashboardProviderServices = () => {
       </div>
 
       {/* Service Form Overlay Modal */}
-      {isFormOpen && (
+      {isFormOpen && createPortal(
         <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur flex items-center justify-center p-4">
           <div className="bg-card border border-border rounded-2xl w-full max-w-lg p-6 md:p-8 space-y-5 animate-fade-in-up text-left shadow-xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-foreground border-b border-border/50 pb-3">
@@ -359,7 +360,8 @@ const DashboardProviderServices = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
