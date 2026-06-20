@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { providersApi } from '../api/providers'
 import { bookingsApi } from '../api/bookings'
 import { useAuthStore } from '../store/authStore'
@@ -72,9 +72,18 @@ export const ProviderDetail = () => {
   })
 
   // Query provider reviews
-  const { data: reviews, isLoading: isLoadingReviews } = useQuery({
+  const { 
+    data: reviewsData, 
+    isLoading: isLoadingReviews,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteQuery({
     queryKey: ['providerReviews', id],
-    queryFn: () => providersApi.getReviews(id),
+    queryFn: ({ pageParam = 1 }) => providersApi.getReviews(id, { page: pageParam }),
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.next ? allPages.length + 1 : undefined
+    },
     enabled: !!id,
   })
 
@@ -147,9 +156,7 @@ export const ProviderDetail = () => {
     setBookingSuccess(false)
     
     let serviceToBook = selectedServiceId
-    if (provider.provider_type === 'vet') {
-      serviceToBook = services?.[0]?.id || null
-    } else if (!selectedServiceId) {
+    if (services?.length > 0 && !serviceToBook) {
       return
     }
 
@@ -157,7 +164,7 @@ export const ProviderDetail = () => {
 
     bookingMutation.mutate({
       provider: provider.id,
-      service: serviceToBook,
+      service: serviceToBook || null,
       animal_type: selectedAnimalTypeId || null,
       booking_date: bookingDate,
       booking_time: null,
@@ -223,7 +230,9 @@ export const ProviderDetail = () => {
   const ratingValue = parseFloat(provider.avg_rating) || 0.0
   const providerDesc = tField(provider, 'description')
   const showBookingForm = user && (user?.role === 'pet_owner' || user?.role === 'farmer')
-  const reviewsList = Array.isArray(reviews) ? reviews : reviews?.results ?? []
+  const reviewsList = Array.isArray(reviewsData?.pages) 
+    ? reviewsData.pages.flatMap(page => page.results || [])
+    : []
   const existingReviewBookingIds = reviewsList.map((r) => r.booking)
 
   let govVetLabel = null
@@ -447,37 +456,40 @@ export const ProviderDetail = () => {
                           return (
                             <div
                               key={service.id}
-                              className="p-4 bg-pcp-surface/20 dark:bg-pcp-green/5 border border-pcp-border/60 dark:border-pcp-green/15 rounded-2xl flex flex-col justify-between gap-3 hover:border-pcp-green/30 transition-all text-left group/service"
+                              className="group relative p-5 bg-white dark:bg-card border border-border/50 dark:border-border/30 rounded-3xl flex flex-col justify-between gap-4 transition-all duration-300 hover:shadow-xl hover:shadow-pcp-green/5 hover:-translate-y-1 hover:border-pcp-green/30 overflow-hidden"
                             >
-                              <div className="space-y-1">
-                                <h4 className="font-extrabold text-sm sm:text-base text-pcp-text-primary dark:text-foreground">
-                                  {name}
-                                </h4>
+                              {/* Decorative background element */}
+                              <div className="absolute -right-4 -top-4 w-24 h-24 bg-gradient-to-br from-pcp-green/10 to-transparent rounded-full blur-2xl pointer-events-none group-hover:from-pcp-green/20 transition-colors duration-500" />
+                              
+                              <div className="space-y-2 relative z-10">
+                                <div className="flex justify-between items-start gap-2">
+                                  <h4 className="font-extrabold text-base text-foreground leading-tight">
+                                    {name}
+                                  </h4>
+                                  <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-pcp-green/10 text-pcp-green text-[11px] font-extrabold shadow-sm border border-pcp-green/20 shrink-0">
+                                    ৳{parseFloat(service.price).toFixed(0)}
+                                  </span>
+                                </div>
                                 {desc && (
-                                  <p className="text-xs text-muted-foreground leading-relaxed">
+                                  <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
                                     {desc}
                                   </p>
                                 )}
                               </div>
 
-                              <div className="flex justify-between items-center pt-2 border-t border-pcp-border/20 dark:border-white/5 flex-shrink-0">
-                                <div className="flex items-center gap-3">
-                                  <span className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-                                    <Clock className="w-3.5 h-3.5 text-pcp-green dark:text-pcp-green-light shrink-0" />
-                                    <span>
-                                      {service.duration_minutes}{' '}
-                                      {language === 'bn' ? 'মিনিট' : 'mins'}
-                                    </span>
-                                  </span>
-                                  <span className="text-sm sm:text-base font-extrabold text-pcp-green dark:text-pcp-green-light">
-                                    ৳{parseFloat(service.price).toFixed(0)}
+                              <div className="flex justify-between items-end pt-3 border-t border-border/40 relative z-10 mt-auto">
+                                <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground bg-muted/30 px-2.5 py-1.5 rounded-lg border border-border/50">
+                                  <Clock className="w-3.5 h-3.5 text-pcp-green shrink-0" />
+                                  <span>
+                                    {service.duration_minutes}{' '}
+                                    {language === 'bn' ? 'মিনিট' : 'mins'}
                                   </span>
                                 </div>
 
                                 {showBookingForm && (
                                   <button
                                     onClick={() => handleBookThisService(service.id)}
-                                    className="opacity-0 group-hover/service:opacity-100 transition-opacity text-[10px] font-bold text-pcp-green hover:text-white bg-pcp-green/10 hover:bg-pcp-green px-3 py-1.5 rounded-lg"
+                                    className="px-4 py-2 rounded-xl text-xs font-bold text-pcp-green bg-pcp-green/5 border border-pcp-green/20 hover:bg-pcp-green hover:text-white transition-all shadow-sm active:scale-95"
                                   >
                                     {language === 'bn' ? 'বুক করুন' : 'Book'}
                                   </button>
@@ -574,12 +586,32 @@ export const ProviderDetail = () => {
                         )}
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {reviewsList.map((review) => (
-                          <div key={review.id} className="animate-fade-in-up">
-                            <ReviewCard review={review} />
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {reviewsList.map((review) => (
+                            <div key={review.id} className="animate-fade-in-up">
+                              <ReviewCard review={review} />
+                            </div>
+                          ))}
+                        </div>
+                        {hasNextPage && (
+                          <div className="flex justify-center pt-2">
+                            <button
+                              onClick={() => fetchNextPage()}
+                              disabled={isFetchingNextPage}
+                              className="px-6 py-2.5 rounded-full bg-pcp-green/10 text-pcp-green font-bold text-sm hover:bg-pcp-green/20 transition-colors disabled:opacity-50 flex items-center gap-2"
+                            >
+                              {isFetchingNextPage ? (
+                                <>
+                                  <Spinner size="sm" className="w-4 h-4" />
+                                  {language === 'bn' ? 'লোড হচ্ছে...' : 'Loading...'}
+                                </>
+                              ) : (
+                                language === 'bn' ? 'আরও দেখুন' : 'Load More'
+                              )}
+                            </button>
                           </div>
-                        ))}
+                        )}
                       </div>
                     )}
                   </div>
@@ -657,26 +689,40 @@ export const ProviderDetail = () => {
 
                 {showBookingForm ? (
                   <form onSubmit={handleBookingSubmit} className="space-y-4 text-left">
-                    {/* Select Service (Hidden for Vets) */}
-                    {provider.provider_type !== 'vet' && (
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-muted-foreground">
-                          {t('bookings.select_service')}
-                        </label>
-                        <Select value={selectedServiceId} onValueChange={setSelectedServiceId} required>
-                          <SelectTrigger className="w-full px-3 py-2.5 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:ring-1 focus:ring-primary/20 font-semibold dark:bg-background transition-colors h-auto">
-                            <SelectValue placeholder={`-- ${t('bookings.select_service')} --`} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {services?.map((service) => (
-                              <SelectItem key={service.id} value={String(service.id)} className="text-xs">
-                                {tField(service, 'name')} (৳{parseFloat(service.price).toFixed(0)})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                    {/* Select Service */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-muted-foreground flex justify-between">
+                        <span>{t('bookings.select_service')}</span>
+                        {services?.length > 0 && (
+                          <span className="text-[10px] font-normal italic opacity-70">
+                            {language === 'bn' ? '(আবশ্যক)' : '(Required)'}
+                          </span>
+                        )}
+                      </label>
+                      <Select 
+                        value={selectedServiceId} 
+                        onValueChange={setSelectedServiceId} 
+                        required={services?.length > 0}
+                        disabled={!services || services.length === 0}
+                      >
+                        <SelectTrigger className="w-full px-3 py-2.5 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:ring-1 focus:ring-primary/20 font-semibold dark:bg-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed h-auto">
+                          <SelectValue 
+                            placeholder={
+                              !services || services.length === 0 
+                                ? `-- ${language === 'bn' ? 'কোনো সার্ভিস পাওয়া যায়নি' : 'No services available'} --`
+                                : `-- ${t('bookings.select_service')} --`
+                            } 
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {services?.map((service) => (
+                            <SelectItem key={service.id} value={String(service.id)} className="text-xs">
+                              {tField(service, 'name')} (৳{parseFloat(service.price).toFixed(0)})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
                     {/* Select Animal Type */}
                     <div className="space-y-1.5">

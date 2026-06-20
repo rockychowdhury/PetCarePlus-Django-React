@@ -17,11 +17,12 @@ class ReviewSerializer(serializers.ModelSerializer):
     """
     reviewer_name = serializers.CharField(source='reviewer.full_name', read_only=True)
     reviewer_email = serializers.EmailField(source='reviewer.email', read_only=True)
+    reviewer_photo = serializers.URLField(source='reviewer.photo_url', read_only=True)
 
     class Meta:
         model = Review
         fields = [
-            'id', 'booking', 'reviewer', 'reviewer_name', 'reviewer_email',
+            'id', 'booking', 'reviewer', 'reviewer_name', 'reviewer_email', 'reviewer_photo',
             'provider', 'rating', 'comment', 'created_at'
         ]
         read_only_fields = ['id', 'reviewer', 'provider', 'created_at']

@@ -21,13 +21,15 @@ class BookingSerializer(serializers.ModelSerializer):
     provider_details = ServiceProviderSerializer(source='provider', read_only=True)
     service_details = ProviderServiceSerializer(source='service', read_only=True)
     animal_type_details = serializers.SerializerMethodField()
+    has_review = serializers.SerializerMethodField()
+    review_rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
         fields = [
             'id', 'user', 'user_email', 'user_name', 'provider', 'provider_details',
             'service', 'service_details', 'animal_type', 'animal_type_details', 'booking_date', 'booking_time',
-            'status', 'notes', 'created_at', 'updated_at'
+            'status', 'notes', 'has_review', 'review_rating', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'user', 'status', 'created_at', 'updated_at']
 
@@ -35,6 +37,14 @@ class BookingSerializer(serializers.ModelSerializer):
         from apps.animals.serializers import AnimalTypeSerializer
         if obj.animal_type:
             return AnimalTypeSerializer(obj.animal_type, context=self.context).data
+        return None
+
+    def get_has_review(self, obj):
+        return hasattr(obj, 'review')
+
+    def get_review_rating(self, obj):
+        if hasattr(obj, 'review'):
+            return obj.review.rating
         return None
 
     def validate(self, attrs):

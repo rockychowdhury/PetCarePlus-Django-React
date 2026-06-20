@@ -11,6 +11,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from common.permissions import IsOwnerOrAdmin
 from apps.reviews.models import Review
 from apps.reviews.serializers import ReviewSerializer
+from rest_framework.pagination import PageNumberPagination
+
+class ReviewPagination(PageNumberPagination):
+    page_size = 5
+    page_size_query_param = 'page_size'
+    max_page_size = 50
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -20,7 +26,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     restricts creation to authenticated customers and updates to the review author.
     """
     serializer_class = ReviewSerializer
-    pagination_class = None
+    pagination_class = ReviewPagination
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['provider', 'rating', 'reviewer']
     ordering_fields = ['created_at', 'rating']

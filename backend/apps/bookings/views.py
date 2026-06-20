@@ -72,5 +72,7 @@ class BookingViewSet(viewsets.ModelViewSet):
                     )
             else:
                 raise PermissionDenied("You do not have permission to modify this booking.")
-
-        serializer.save()
+            
+            serializer.save(status=new_status)
+        else:
+            serializer.save()

@@ -12,6 +12,13 @@ import {
   DialogTitle,
   DialogDescription,
 } from '../ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select'
 import { Star, Send, CheckCircle, AlertCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -19,21 +26,34 @@ import toast from 'react-hot-toast'
  * Dialog for submitting a review for a provider.
  * Only shows completed bookings that haven't been reviewed yet.
  */
-export const WriteReviewDialog = ({ isOpen, onClose, providerId, providerName, existingReviewBookingIds = [] }) => {
+export const WriteReviewDialog = ({ 
+  isOpen, 
+  onClose, 
+  providerId, 
+  providerName, 
+  existingReviewBookingIds = [],
+  preselectedBookingId = null,
+  onSuccessCallback
+}) => {
   const { language } = useLanguage()
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
 
-  const [selectedBookingId, setSelectedBookingId] = useState('')
+  const [selectedBookingId, setSelectedBookingId] = useState(preselectedBookingId || '')
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
   const [error, setError] = useState('')
 
-  // Fetch completed bookings for this provider
+  // Sync preselected
+  React.useEffect(() => {
+    if (preselectedBookingId) setSelectedBookingId(preselectedBookingId)
+  }, [preselectedBookingId])
+
+  // Fetch completed bookings for this provider (only if not preselected)
   const { data: completedBookings, isLoading: isLoadingBookings } = useQuery({
     queryKey: ['completedBookings', providerId],
     queryFn: () => bookingsApi.getCompletedBookingsForProvider(providerId),
-    enabled: isOpen && !!user && !!providerId,
+    enabled: isOpen && !!user && !!providerId && !preselectedBookingId,
     select: (data) => {
       const results = Array.isArray(data) ? data : data?.results ?? []
       // Filter out bookings that already have reviews
@@ -48,9 +68,12 @@ export const WriteReviewDialog = ({ isOpen, onClose, providerId, providerName, e
         language === 'bn' ? 'আপনার রিভিউ সফলভাবে জমা দেওয়া হয়েছে!' : 'Review submitted successfully!',
         { icon: '⭐' }
       )
-      queryClient.invalidateQueries(['providerReviews', String(providerId)])
-      queryClient.invalidateQueries(['providerDetail', String(providerId)])
-      queryClient.invalidateQueries(['completedBookings', providerId])
+      if (providerId) {
+        queryClient.invalidateQueries(['providerReviews', String(providerId)])
+        queryClient.invalidateQueries(['providerDetail', String(providerId)])
+        queryClient.invalidateQueries(['completedBookings', providerId])
+      }
+      if (onSuccessCallback) onSuccessCallback()
       handleReset()
       onClose()
     },
@@ -94,7 +117,7 @@ export const WriteReviewDialog = ({ isOpen, onClose, providerId, providerName, e
     }
   }
 
-  const hasReviewableBookings = completedBookings && completedBookings.length > 0
+  const hasReviewableBookings = preselectedBookingId ? true : (completedBookings && completedBookings.length > 0)
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -135,26 +158,25 @@ export const WriteReviewDialog = ({ isOpen, onClose, providerId, providerName, e
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5 pt-2">
             {/* Booking Selector */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-muted-foreground">
-                {language === 'bn' ? 'বুকিং নির্বাচন করুন' : 'Select Booking'}
-              </label>
-              <select
-                value={selectedBookingId}
-                onChange={(e) => setSelectedBookingId(e.target.value)}
-                required
-                className="w-full px-3 py-2.5 text-xs rounded-xl border border-border bg-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 font-semibold transition-colors"
-              >
-                <option value="">
-                  -- {language === 'bn' ? 'বুকিং নির্বাচন করুন' : 'Select a booking'} --
-                </option>
-                {completedBookings.map((booking) => (
-                  <option key={booking.id} value={booking.id}>
-                    {booking.service_details?.name_en || 'Service'} — {booking.booking_date}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {!preselectedBookingId && (
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-muted-foreground">
+                  {language === 'bn' ? 'বুকিং নির্বাচন করুন' : 'Select Booking'}
+                </label>
+                <Select value={selectedBookingId} onValueChange={setSelectedBookingId}>
+                  <SelectTrigger className="w-full text-xs rounded-xl font-semibold bg-background h-[42px]">
+                    <SelectValue placeholder={language === 'bn' ? '-- বুকিং নির্বাচন করুন --' : '-- Select a booking --'} />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {completedBookings?.map((booking) => (
+                      <SelectItem key={booking.id} value={String(booking.id)} className="text-xs font-semibold cursor-pointer py-2">
+                        {booking.service_details?.name_en || 'Service'} — {booking.booking_date}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Star Rating */}
             <div className="space-y-2">

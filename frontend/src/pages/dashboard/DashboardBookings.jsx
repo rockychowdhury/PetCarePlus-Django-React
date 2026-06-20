@@ -1,4 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
+import {
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { bookingsApi } from '../../api/bookings'
 import { providersApi } from '../../api/providers'
@@ -7,6 +13,7 @@ import { useLanguage } from '../../hooks/useLanguage'
 import Spinner from '../../components/ui/Spinner'
 import { Calendar, Clock, Check, X, Star, AlertCircle, CheckCircle, ChevronRight, User, Briefcase, ChevronDown, CheckCircle2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import WriteReviewDialog from '../../components/providers/WriteReviewDialog'
 
 const DashboardBookings = () => {
   const { language, t } = useLanguage()
@@ -14,13 +21,11 @@ const DashboardBookings = () => {
   const { user } = useAuthStore()
   const isProvider = user?.role === 'provider'
 
-  const [activeTab, setActiveTab] = useState('upcoming') // 'today', 'upcoming', 'history'
+  const [activeTab, setActiveTab] = useState('upcoming')
 
   // Review Modal State
   const [reviewBookingId, setReviewBookingId] = useState(null)
-  const [reviewRating, setReviewRating] = useState(5)
-  const [reviewComment, setReviewComment] = useState('')
-  const [reviewSuccess, setReviewSuccess] = useState(false)
+  const [confirmAction, setConfirmAction] = useState(null)
 
   // Query appointments
   const { data: bookings, isLoading } = useQuery({
@@ -28,51 +33,73 @@ const DashboardBookings = () => {
     queryFn: () => bookingsApi.getBookings(),
   })
 
-  const appointments = Array.isArray(bookings) 
-    ? bookings 
-    : (bookings?.results || [])
+  const appointments = useMemo(() => {
+    return Array.isArray(bookings) ? bookings : (bookings?.results || [])
+  }, [bookings])
 
-  // Categorize Bookings
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  // Memoize ALL heavy categorization + stats in a single useMemo
+  const { todayBookings, upcomingBookings, historyBookings, totalBookings, todayBookingsCount, completedCount, completionRate, avgBookings } = useMemo(() => {
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+    const nowTime = now.getTime()
 
-  const todayBookings = []
-  const upcomingBookings = []
-  const historyBookings = []
+    const todayArr = []
+    const upcomingArr = []
+    const historyArr = []
 
-  // Sort appointments so newest are first
-  const sortedAppointments = [...appointments].sort((a, b) => new Date(b.booking_date) - new Date(a.booking_date))
+    // Sort and categorize in one pass
+    const sorted = [...appointments].sort((a, b) => new Date(b.booking_date) - new Date(a.booking_date))
 
-  sortedAppointments.forEach(booking => {
-    if (!booking.booking_date) return
-    const bDate = new Date(booking.booking_date)
-    bDate.setHours(0, 0, 0, 0)
-    
-    // Status 'completed' or 'cancelled' usually means history regardless of date
-    if (booking.status === 'completed' || booking.status === 'cancelled') {
-      historyBookings.push(booking)
-    } else if (bDate.getTime() === today.getTime()) {
-      todayBookings.push(booking)
-    } else if (bDate.getTime() > today.getTime()) {
-      upcomingBookings.push(booking)
-    } else {
-      historyBookings.push(booking)
+    sorted.forEach(booking => {
+      if (!booking.booking_date) return
+      const bDate = new Date(booking.booking_date)
+      bDate.setHours(0, 0, 0, 0)
+      const bTime = bDate.getTime()
+
+      if (booking.status === 'completed' || booking.status === 'cancelled') {
+        historyArr.push(booking)
+      } else if (bTime === nowTime) {
+        todayArr.push(booking)
+      } else if (bTime > nowTime) {
+        upcomingArr.push(booking)
+      } else {
+        historyArr.push(booking)
+      }
+    })
+
+    const total = appointments.length
+    const completed = appointments.filter(b => b.status === 'completed').length
+    const rate = total > 0 ? Math.round((completed / total) * 100) : 0
+    const days = new Set(appointments.filter(b => b.booking_date).map(b => b.booking_date)).size
+    const avg = days > 0 ? (total / days).toFixed(1) : '0'
+
+    return {
+      todayBookings: todayArr,
+      upcomingBookings: upcomingArr,
+      historyBookings: historyArr,
+      totalBookings: total,
+      todayBookingsCount: todayArr.length,
+      completedCount: completed,
+      completionRate: rate,
+      avgBookings: avg,
     }
-  })
+  }, [appointments])
 
-  // Auto-switch to today if there are today bookings and it's the first load
+  // Auto-switch to today tab on first load only
+  const [hasAutoSwitched, setHasAutoSwitched] = useState(false)
   useEffect(() => {
-    if (todayBookings.length > 0 && activeTab !== 'today' && !sessionStorage.getItem('bookingTabSet')) {
+    if (!hasAutoSwitched && todayBookings.length > 0) {
       setActiveTab('today')
-      sessionStorage.setItem('bookingTabSet', 'true')
+      setHasAutoSwitched(true)
     }
-  }, [todayBookings.length, activeTab])
+  }, [hasAutoSwitched, todayBookings.length])
 
   // Mutation to update booking status
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }) => bookingsApi.updateBookingStatus(id, status),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries(['userBookings'])
+      queryClient.invalidateQueries({ queryKey: ['userBookings'] })
+      setConfirmAction(null)
       if (variables.status === 'confirmed') toast.success('Booking confirmed!')
       if (variables.status === 'completed') toast.success('Booking marked as completed!')
       if (variables.status === 'cancelled') toast.success('Booking cancelled.')
@@ -82,28 +109,13 @@ const DashboardBookings = () => {
     },
   })
 
-  // Mutation to submit a review
-  const reviewMutation = useMutation({
-    mutationFn: (data) => providersApi.createReview(data),
-    onSuccess: () => {
-      setReviewSuccess(true)
-      queryClient.invalidateQueries(['userBookings'])
-      toast.success('Review submitted successfully!')
-      setTimeout(() => {
-        setReviewSuccess(false)
-        setReviewBookingId(null)
-        setReviewRating(5)
-        setReviewComment('')
-      }, 2000)
-    },
-    onError: (err) => {
-      toast.error(err.response?.data?.detail || err.response?.data?.message || t('common.error'))
-    },
-  })
-
   const handleStatusChange = (bookingId, nextStatus) => {
-    if (window.confirm(language === 'bn' ? `আপনি কি অ্যাপয়েন্টমেন্টের স্ট্যাটাস পরিবর্তন করতে চান?` : `Are you sure you want to change this booking status?`)) {
-      updateStatusMutation.mutate({ id: bookingId, status: nextStatus })
+    setConfirmAction({ bookingId, nextStatus })
+  }
+
+  const confirmStatusChange = () => {
+    if (confirmAction) {
+      updateStatusMutation.mutate({ id: confirmAction.bookingId, status: confirmAction.nextStatus })
     }
   }
 
@@ -113,36 +125,15 @@ const DashboardBookings = () => {
       booking: reviewBookingId,
       rating: reviewRating,
       comment_en: reviewComment,
-      comment_bn: reviewComment, // For simplicity we pass the same to both fields 
+      comment_bn: reviewComment,
     })
   }
 
-  const getActiveBookings = () => {
+  const currentBookings = useMemo(() => {
     if (activeTab === 'today') return todayBookings
     if (activeTab === 'upcoming') return upcomingBookings
     return historyBookings
-  }
-
-  const currentBookings = getActiveBookings()
-
-  const TabButton = ({ id, label, count, colorClass }) => (
-    <button
-      onClick={() => setActiveTab(id)}
-      className={`relative px-5 py-3 text-sm font-extrabold transition-all duration-300 rounded-t-2xl flex items-center gap-2 ${
-        activeTab === id 
-          ? 'text-foreground bg-card shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.05)] border-t border-x border-border/80' 
-          : 'text-muted-foreground hover:text-foreground hover:bg-muted/30 border-t border-x border-transparent'
-      }`}
-    >
-      {label}
-      <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === id ? colorClass : 'bg-muted text-muted-foreground'}`}>
-        {count}
-      </span>
-      {activeTab === id && (
-        <div className="absolute -bottom-[1px] left-0 right-0 h-[2px] bg-card"></div>
-      )}
-    </button>
-  )
+  }, [activeTab, todayBookings, upcomingBookings, historyBookings])
 
   const getStatusBadge = (status) => {
     const styles = {
@@ -157,6 +148,134 @@ const DashboardBookings = () => {
       </span>
     )
   }
+
+  // TanStack Table setup for Providers
+  const columns = useMemo(() => [
+    {
+      accessorKey: 'booking_date',
+      header: language === 'bn' ? 'তারিখ ও সময়' : 'Date & Time',
+      cell: ({ row }) => (
+        <div className="flex flex-col">
+          <span className="font-extrabold text-foreground">{row.original.booking_date}</span>
+          <span className="text-xs text-muted-foreground font-bold">{row.original.booking_time || 'TBD'}</span>
+        </div>
+      ),
+    },
+    {
+      id: 'person',
+      header: isProvider ? (language === 'bn' ? 'কাস্টমার' : 'Customer') : (language === 'bn' ? 'প্রোভাইডার' : 'Provider'),
+      cell: ({ row }) => {
+        if (isProvider) {
+          const clientName = row.original.user_name || row.original.user_email || 'N/A'
+          return (
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-pcp-green/10 text-pcp-green flex items-center justify-center shrink-0">
+                <User className="w-4 h-4" />
+              </div>
+              <span className="font-extrabold text-sm text-foreground">{clientName}</span>
+            </div>
+          )
+        } else {
+          const providerName = row.original.provider_details?.business_name || 'N/A'
+          return (
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-pcp-green/10 text-pcp-green flex items-center justify-center shrink-0">
+                <Briefcase className="w-4 h-4" />
+              </div>
+              <span className="font-extrabold text-sm text-foreground truncate max-w-[120px]">{providerName}</span>
+            </div>
+          )
+        }
+      }
+    },
+    {
+      accessorKey: 'service',
+      header: language === 'bn' ? 'সার্ভিস' : 'Service',
+      cell: ({ row }) => {
+        const serviceName = row.original.service_details?.name || 'N/A'
+        const price = row.original.service_details?.price || '0.00'
+        return (
+          <div className="flex flex-col">
+            <span className="font-bold text-sm text-foreground line-clamp-1">{serviceName}</span>
+            <span className="text-xs text-pcp-green font-extrabold">৳{price}</span>
+          </div>
+        )
+      }
+    },
+    {
+      accessorKey: 'status',
+      header: language === 'bn' ? 'স্ট্যাটাস' : 'Status',
+      cell: ({ row }) => getStatusBadge(row.original.status)
+    },
+    {
+      id: 'actions',
+      header: language === 'bn' ? 'অ্যাকশন' : 'Actions',
+      cell: ({ row }) => {
+        const booking = row.original
+        return (
+          <div className="flex items-center gap-2">
+            {isProvider && booking.status === 'pending' && (
+              <button
+                onClick={() => handleStatusChange(booking.id, 'confirmed')}
+                className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-extrabold transition-colors flex items-center gap-1"
+              >
+                <Check className="w-3.5 h-3.5" />
+                {t('bookings.actions.confirm', 'Confirm')}
+              </button>
+            )}
+            {isProvider && booking.status === 'confirmed' && (
+              <button
+                onClick={() => handleStatusChange(booking.id, 'completed')}
+                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-extrabold transition-all shadow-sm flex items-center gap-1"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                {t('bookings.actions.complete', 'Complete')}
+              </button>
+            )}
+            {['pending', 'confirmed'].includes(booking.status) && (
+              <button
+                onClick={() => handleStatusChange(booking.id, 'cancelled')}
+                className="px-2 py-1.5 bg-[#FFF0F3] hover:bg-rose-100 text-[#e03131] border border-rose-100 dark:border-rose-900 dark:bg-rose-950/30 rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            {/* Write Review for Customers */}
+            {!isProvider && booking.status === 'completed' && !booking.has_review && (
+              <button
+                onClick={() => setReviewBookingId(booking.id)}
+                className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-amber-950 rounded-lg text-xs font-extrabold transition-all shadow-sm flex items-center gap-1 group whitespace-nowrap"
+              >
+                <Star className="w-3.5 h-3.5 fill-amber-950 group-hover:scale-110 transition-transform" />
+                {language === 'bn' ? 'রিভিউ দিন' : 'Write Review'}
+              </button>
+            )}
+
+            {/* Display Rating if Reviewed */}
+            {booking.status === 'completed' && booking.has_review && (
+              <div className="px-3 py-1.5 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 rounded-lg text-xs font-extrabold flex items-center gap-1 whitespace-nowrap">
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                {booking.review_rating ? `${booking.review_rating} / 5` : (language === 'bn' ? 'রিভিউড' : 'Reviewed')}
+              </div>
+            )}
+          </div>
+        )
+      }
+    }
+  ], [language])
+
+  const table = useReactTable({
+    data: currentBookings,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
+  })
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -175,11 +294,53 @@ const DashboardBookings = () => {
         </div>
       </div>
 
+      {/* Provider Stats */}
+      {isProvider && !isLoading && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in">
+          <div className="bg-card border border-border/60 p-4 md:p-5 rounded-2xl shadow-sm hover:border-primary/30 transition-colors">
+            <p className="text-[10px] md:text-xs text-muted-foreground font-extrabold uppercase tracking-widest">{language === 'bn' ? 'আজকের বুকিং' : 'Today\'s Bookings'}</p>
+            <p className="text-2xl md:text-3xl font-extrabold text-pcp-green mt-1">{todayBookingsCount}</p>
+          </div>
+          <div className="bg-card border border-border/60 p-4 md:p-5 rounded-2xl shadow-sm hover:border-primary/30 transition-colors">
+            <p className="text-[10px] md:text-xs text-muted-foreground font-extrabold uppercase tracking-widest">{language === 'bn' ? 'মোট বুকিং' : 'Total Bookings'}</p>
+            <p className="text-2xl md:text-3xl font-extrabold text-foreground mt-1">{totalBookings}</p>
+          </div>
+          <div className="bg-card border border-border/60 p-4 md:p-5 rounded-2xl shadow-sm hover:border-primary/30 transition-colors">
+            <p className="text-[10px] md:text-xs text-muted-foreground font-extrabold uppercase tracking-widest">{language === 'bn' ? 'দৈনিক গড় বুকিং' : 'Daily Avg Bookings'}</p>
+            <p className="text-2xl md:text-3xl font-extrabold text-foreground mt-1">{avgBookings}</p>
+          </div>
+          <div className="bg-card border border-border/60 p-4 md:p-5 rounded-2xl shadow-sm hover:border-primary/30 transition-colors">
+            <p className="text-[10px] md:text-xs text-muted-foreground font-extrabold uppercase tracking-widest">{language === 'bn' ? 'সম্পন্ন করার হার' : 'Completion Rate'}</p>
+            <p className="text-2xl md:text-3xl font-extrabold text-emerald-600 mt-1">{completionRate}%</p>
+          </div>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="flex gap-1 border-b border-border/80 px-2 overflow-x-auto no-scrollbar">
-        <TabButton id="today" label="Today" count={todayBookings.length} colorClass="bg-rose-100 text-rose-700" />
-        <TabButton id="upcoming" label="Upcoming" count={upcomingBookings.length} colorClass="bg-blue-100 text-blue-700" />
-        <TabButton id="history" label="History" count={historyBookings.length} colorClass="bg-emerald-100 text-emerald-700" />
+        {[
+          { id: 'today', label: language === 'bn' ? 'আজকে' : 'Today', count: todayBookings.length, colorClass: 'bg-rose-100 text-rose-700' },
+          { id: 'upcoming', label: language === 'bn' ? 'আসন্ন' : 'Upcoming', count: upcomingBookings.length, colorClass: 'bg-blue-100 text-blue-700' },
+          { id: 'history', label: language === 'bn' ? 'হিস্ট্রি' : 'History', count: historyBookings.length, colorClass: 'bg-emerald-100 text-emerald-700' },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`relative px-5 py-3 text-sm font-extrabold transition-all duration-300 rounded-t-2xl flex items-center gap-2 ${
+              activeTab === tab.id 
+                ? 'text-foreground bg-card shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.05)] border-t border-x border-border/80' 
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/30 border-t border-x border-transparent'
+            }`}
+          >
+            {tab.label}
+            <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === tab.id ? tab.colorClass : 'bg-muted text-muted-foreground'}`}>
+              {tab.count}
+            </span>
+            {activeTab === tab.id && (
+              <div className="absolute -bottom-[1px] left-0 right-0 h-[2px] bg-card"></div>
+            )}
+          </button>
+        ))}
       </div>
 
       {/* Content */}
@@ -199,199 +360,135 @@ const DashboardBookings = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 animate-fade-in">
-            {currentBookings.map((booking) => {
-              const serviceName = booking.service_details?.name || 'Service'
-              const providerName = booking.provider_details?.business_name || 'Service Provider'
-              const clientName = booking.user_details?.name || booking.user_details?.email
-              
-              return (
-                <div key={booking.id} className="bg-white dark:bg-card border border-border/30 rounded-[20px] p-5 transition-shadow group flex flex-col justify-between">
-                  <div>
-                    {/* Top Row: Date & Status */}
-                    <div className="flex justify-between items-center border-b border-border/30 pb-4 mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${activeTab === 'today' ? 'bg-rose-50 text-rose-500' : 'bg-[#f1f3f5] text-[#748ffc] dark:bg-indigo-900/30'}`}>
-                          {activeTab === 'history' ? <CheckCircle2 className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
-                        </div>
-                        <div>
-                          <p className="text-sm font-extrabold text-foreground">{booking.booking_date}</p>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{booking.booking_time || 'TBD'}</p>
-                        </div>
-                      </div>
-                      {getStatusBadge(booking.status)}
-                    </div>
-
-                    {/* Middle Row: Service & Person Details */}
-                    <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between mb-2">
-                      <div className="space-y-1.5 flex-1 min-w-0">
-                        <h3 className="font-extrabold text-lg text-foreground truncate">{serviceName}</h3>
-                        <div className="flex items-center gap-2 text-sm text-pcp-green font-bold">
-                          {isProvider ? (
-                            <><User className="w-4 h-4" /> <span className="truncate">{clientName}</span></>
-                          ) : (
-                            <><Briefcase className="w-4 h-4" /> <span className="truncate">{providerName}</span></>
+          <div className="bg-card border border-border/60 rounded-2xl shadow-sm overflow-hidden animate-fade-in">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  {table.getHeaderGroups().map(headerGroup => (
+                    <tr key={headerGroup.id} className="bg-muted/30 border-b border-border/60">
+                      {headerGroup.headers.map(header => (
+                        <th key={header.id} className="px-5 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
                           )}
-                        </div>
-                      </div>
-                      <div className="shrink-0 flex flex-col items-end justify-center gap-0.5 bg-slate-50 dark:bg-muted/20 px-4 py-3 rounded-[16px] border border-slate-100 dark:border-border/40">
-                        <span className="text-[9px] font-extrabold text-slate-400 dark:text-muted-foreground uppercase tracking-widest">
-                          FEE
-                        </span>
-                        <span className="font-extrabold text-lg text-[#1b5e20] dark:text-pcp-green">
-                          ৳{booking.service_details?.price || '0.00'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Notes */}
-                    {booking.notes && (
-                      <div className="bg-[#FFF8E6] dark:bg-amber-950/20 text-[#A67C00] dark:text-amber-400 px-4 py-3.5 rounded-xl text-sm italic font-medium border border-[#FFE8A1] dark:border-amber-900/50 mt-4">
-                        "{booking.notes}"
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Action Bar */}
-                  <div className="mt-5 pt-4 border-t border-border/30 flex flex-wrap gap-2 justify-end">
-                    {isProvider ? (
-                      // Provider Actions
-                      <>
-                        {booking.status === 'pending' && (
-                          <button
-                            onClick={() => handleStatusChange(booking.id, 'confirmed')}
-                            className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-1.5"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                            {t('bookings.actions.confirm')}
-                          </button>
-                        )}
-                        {booking.status === 'confirmed' && (
-                          <button
-                            onClick={() => handleStatusChange(booking.id, 'completed')}
-                            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            {t('bookings.actions.complete')}
-                          </button>
-                        )}
-                        {['pending', 'confirmed'].includes(booking.status) && (
-                          <button
-                            onClick={() => handleStatusChange(booking.id, 'cancelled')}
-                            className="px-4 py-1.5 bg-[#FFF0F3] hover:bg-rose-100 text-[#e03131] border border-rose-100 dark:border-rose-900 dark:bg-rose-950/30 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                            Cancel
-                          </button>
-                        )}
-                      </>
-                    ) : (
-                      // Customer Actions
-                      <>
-                        {['pending', 'confirmed'].includes(booking.status) && (
-                          <button
-                            onClick={() => handleStatusChange(booking.id, 'cancelled')}
-                            className="px-4 py-1.5 bg-[#FFF0F3] hover:bg-rose-100 text-[#e03131] border border-rose-100 dark:border-rose-900 dark:bg-rose-950/30 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                            Cancel
-                          </button>
-                        )}
-                        {booking.status === 'completed' && !booking.has_review && (
-                          <button
-                            onClick={() => setReviewBookingId(booking.id)}
-                            className="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-amber-950 rounded-xl text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5 group"
-                          >
-                            <Star className="w-3.5 h-3.5 fill-amber-950 group-hover:scale-110 transition-transform" />
-                            {language === 'bn' ? 'রিভিউ লিখুন' : 'Write Review'}
-                          </button>
-                        )}
-                        {booking.status === 'completed' && booking.has_review && (
-                          <div className="px-4 py-2 bg-muted/50 text-muted-foreground rounded-xl text-xs font-extrabold flex items-center gap-1.5">
-                            <Star className="w-3.5 h-3.5 fill-muted-foreground/30" />
-                            {language === 'bn' ? 'রিভিউ দেওয়া হয়েছে' : 'Reviewed'}
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
+                        </th>
+                      ))}
+                    </tr>
+                  ))}
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {table.getRowModel().rows.map(row => (
+                    <tr key={row.id} className="hover:bg-muted/10 transition-colors">
+                      {row.getVisibleCells().map(cell => (
+                        <td key={cell.id} className="px-5 py-4">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Table Pagination */}
+            <div className="p-4 border-t border-border/60 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <button
+                  className="px-3 py-1.5 border border-border rounded-lg text-sm font-bold disabled:opacity-50"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                >
+                  {language === 'bn' ? 'আগের' : 'Previous'}
+                </button>
+                <button
+                  className="px-3 py-1.5 border border-border rounded-lg text-sm font-bold disabled:opacity-50"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                >
+                  {language === 'bn' ? 'পরের' : 'Next'}
+                </button>
+              </div>
+              <span className="flex items-center gap-1 text-sm text-muted-foreground font-semibold">
+                <div>Page</div>
+                <strong>
+                  {table.getState().pagination.pageIndex + 1} of{' '}
+                  {table.getPageCount()}
+                </strong>
+              </span>
+            </div>
           </div>
         )}
       </div>
 
       {/* Review Modal */}
-      {reviewBookingId && (
-        <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-fade-in">
-          <div className="bg-card w-full max-w-md rounded-3xl shadow-xl border border-border/60 flex flex-col relative animate-scale-in overflow-hidden">
-            <div className="bg-gradient-to-r from-amber-400 to-orange-400 p-6 flex items-center justify-between">
-              <h3 className="text-xl font-extrabold text-amber-950 flex items-center gap-2">
-                <Star className="w-6 h-6 fill-amber-950" />
-                {language === 'bn' ? 'মতামত দিন' : 'Leave a Review'}
-              </h3>
-              <button 
-                onClick={() => setReviewBookingId(null)} 
-                className="p-1.5 rounded-full hover:bg-black/10 text-amber-950 transition-colors"
+      <WriteReviewDialog
+        isOpen={!!reviewBookingId}
+        onClose={() => setReviewBookingId(null)}
+        providerId={appointments.find(b => b.id === reviewBookingId)?.provider}
+        providerName={appointments.find(b => b.id === reviewBookingId)?.provider_details?.business_name || 'Provider'}
+        preselectedBookingId={reviewBookingId}
+        onSuccessCallback={() => queryClient.invalidateQueries({ queryKey: ['userBookings'] })}
+      />
+
+      {/* Status Change Confirmation Modal */}
+      {confirmAction && (
+        <div className="fixed inset-0 z-[60] backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-sm p-6 space-y-5 animate-fade-in-up text-center shadow-xl">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 ${
+              confirmAction.nextStatus === 'cancelled' 
+                ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-600' 
+                : confirmAction.nextStatus === 'completed'
+                  ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600'
+                  : 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600'
+            }`}>
+              {confirmAction.nextStatus === 'cancelled' 
+                ? <X className="w-6 h-6" /> 
+                : confirmAction.nextStatus === 'completed'
+                  ? <CheckCircle2 className="w-6 h-6" />
+                  : <Check className="w-6 h-6" />}
+            </div>
+            
+            <h3 className="text-xl font-extrabold text-foreground">
+              {language === 'bn' ? 'নিশ্চিত করুন' : 'Confirm Action'}
+            </h3>
+            
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {language === 'bn' 
+                ? `আপনি কি এই বুকিংটি "${confirmAction.nextStatus === 'confirmed' ? 'নিশ্চিত' : confirmAction.nextStatus === 'completed' ? 'সম্পন্ন' : 'বাতিল'}" হিসেবে চিহ্নিত করতে চান?`
+                : `Are you sure you want to mark this booking as "${confirmAction.nextStatus}"?`}
+            </p>
+
+            <div className="flex justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmAction(null)}
+                className="px-5 py-2.5 border border-border bg-card text-foreground text-sm font-semibold rounded-xl hover:bg-muted/50 transition-all active:scale-95"
               >
-                <X className="w-5 h-5" />
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={confirmStatusChange}
+                disabled={updateStatusMutation.isPending}
+                className={`px-5 py-2.5 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 disabled:opacity-55 ${
+                  confirmAction.nextStatus === 'cancelled'
+                    ? 'bg-rose-600 hover:bg-rose-700'
+                    : confirmAction.nextStatus === 'completed'
+                      ? 'bg-emerald-600 hover:bg-emerald-700'
+                      : 'bg-indigo-600 hover:bg-indigo-700'
+                }`}
+              >
+                {updateStatusMutation.isPending && <Spinner size="sm" />}
+                <span>
+                  {confirmAction.nextStatus === 'confirmed' 
+                    ? (language === 'bn' ? 'নিশ্চিত করুন' : 'Confirm')
+                    : confirmAction.nextStatus === 'completed' 
+                      ? (language === 'bn' ? 'সম্পন্ন করুন' : 'Complete')
+                      : (language === 'bn' ? 'বাতিল করুন' : 'Cancel Booking')}
+                </span>
               </button>
             </div>
-
-            <form onSubmit={handleReviewSubmit} className="p-6 space-y-6">
-              {/* Rating */}
-              <div className="space-y-3 flex flex-col items-center">
-                <label className="text-sm font-extrabold text-foreground">
-                  {language === 'bn' ? 'সেবাটি কেমন লেগেছে?' : 'How was the service?'}
-                </label>
-                <div className="flex gap-2 text-amber-400">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setReviewRating(star)}
-                      className="hover:scale-110 transition-transform focus:outline-none"
-                    >
-                      <Star className={`w-10 h-10 transition-colors ${star <= reviewRating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`} />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Comment */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                  {language === 'bn' ? 'আপনার অভিজ্ঞতা শেয়ার করুন' : 'Share your experience'}
-                </label>
-                <textarea
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                  required
-                  rows={4}
-                  placeholder={language === 'bn' ? 'যেমন: চমৎকার সেবা...' : 'e.g. Excellent service...'}
-                  className="w-full px-4 py-3 text-sm rounded-2xl border border-border bg-pcp-surface focus:outline-none focus:border-amber-400 font-semibold resize-none transition-colors"
-                />
-              </div>
-
-              {/* Success */}
-              {reviewSuccess && (
-                <div className="p-3 bg-emerald-50 text-emerald-800 rounded-xl text-sm font-bold flex gap-2 items-center border border-emerald-200 animate-fade-in-up">
-                  <CheckCircle2 className="w-5 h-5" />
-                  {language === 'bn' ? 'রিভিউ সফলভাবে পোস্ট করা হয়েছে!' : 'Review posted successfully!'}
-                </div>
-              )}
-
-              {/* Actions */}
-              <button
-                type="submit"
-                disabled={reviewMutation.isPending || reviewSuccess}
-                className="w-full py-3.5 bg-amber-400 hover:bg-amber-500 text-amber-950 font-extrabold rounded-xl transition-all shadow-sm disabled:opacity-50 disabled:hover:bg-amber-400 flex items-center justify-center gap-2"
-              >
-                {reviewMutation.isPending ? <Spinner size="sm" /> : (reviewSuccess ? <CheckCircle2 className="w-5 h-5" /> : null)}
-                {reviewSuccess ? (language === 'bn' ? 'ধন্যবাদ!' : 'Thank you!') : (language === 'bn' ? 'সাবমিট করুন' : 'Submit Review')}
-              </button>
-            </form>
           </div>
         </div>
       )}

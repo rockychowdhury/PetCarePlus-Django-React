@@ -56,8 +56,8 @@ export const providersApi = {
     return response.data
   },
 
-  getReviews: async (providerId) => {
-    const response = await client.get(`/providers/${providerId}/reviews/`)
+  getReviews: async (providerId, params) => {
+    const response = await client.get(`/providers/${providerId}/reviews/`, { params })
     return response.data
   },
 
