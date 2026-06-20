@@ -6,8 +6,8 @@ import { locationsApi } from '../../api/locations'
 import { useLanguage } from '../../hooks/useLanguage'
 import { BANGLADESH_GEOGRAPHY } from '../../utils/geo'
 import Spinner from '../../components/ui/Spinner'
+import { CustomSelect } from '../../components/common/CustomSelect'
 import { Briefcase, CheckCircle, AlertCircle, MapPin } from 'lucide-react'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
 
 const DashboardProviderProfile = () => {
   const { language, t } = useLanguage()
@@ -237,17 +237,17 @@ const DashboardProviderProfile = () => {
             <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300">
               {language === 'bn' ? 'সেবাদাতার ধরন' : 'Provider Type'}
             </label>
-            <Select value={providerType} onValueChange={setProviderType}>
-              <SelectTrigger className="w-full h-auto px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-[#f8f9fa] dark:bg-muted/50 focus:ring-0 focus:outline-none focus:border-pcp-green font-semibold">
-                <SelectValue placeholder="Select Provider Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="vet">{language === 'bn' ? 'ভেটেরিনারি ডাক্তার' : 'Veterinarian'}</SelectItem>
-                <SelectItem value="groomer">{language === 'bn' ? 'গ্রুমার' : 'Groomer'}</SelectItem>
-                <SelectItem value="trainer">{language === 'bn' ? 'ট্রেইনার' : 'Trainer'}</SelectItem>
-                <SelectItem value="sitter">{language === 'bn' ? 'সিটার / বোর্ডিং' : 'Pet Sitter/Boarding'}</SelectItem>
-              </SelectContent>
-            </Select>
+            <CustomSelect
+              value={providerType}
+              onChange={setProviderType}
+              options={[
+                { id: 'vet', label: language === 'bn' ? 'ভেটেরিনারি ডাক্তার' : 'Veterinarian' },
+                { id: 'groomer', label: language === 'bn' ? 'গ্রুমার' : 'Groomer' },
+                { id: 'trainer', label: language === 'bn' ? 'ট্রেইনার' : 'Trainer' },
+                { id: 'sitter', label: language === 'bn' ? 'সিটার / বোর্ডিং' : 'Pet Sitter/Boarding' }
+              ]}
+              placeholder="Select Provider Type"
+            />
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300">
@@ -351,67 +351,54 @@ const DashboardProviderProfile = () => {
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-extrabold text-slate-600 dark:text-slate-400">Division</label>
-              <Select value={div || undefined} onValueChange={(val) => { setDiv(val); setDist(''); setUpazila(''); setUnion('') }}>
-                <SelectTrigger className="w-full h-auto px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-[#f8f9fa] dark:bg-muted/50 focus:ring-0 focus:outline-none focus:border-pcp-green font-semibold">
-                  <SelectValue placeholder="-- Select Division --" />
-                </SelectTrigger>
-                <SelectContent>
-                  {!divisions?.length && div && (
-                    <SelectItem value={div}>{profile?.division || div}</SelectItem>
-                  )}
-                  {divisions?.map((d) => (
-                    <SelectItem key={d.id} value={d.name_en?.trim().toLowerCase()}>{language === 'bn' ? d.name_bn : d.name_en}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CustomSelect
+                value={div}
+                onChange={(val) => { setDiv(val === 'all' ? '' : val); setDist(''); setUpazila(''); setUnion('') }}
+                options={divisions?.length ? divisions.map(d => ({
+                  id: d.name_en?.trim().toLowerCase(),
+                  label: language === 'bn' ? d.name_bn : d.name_en
+                })) : (div ? [{ id: div, label: profile?.division || div }] : [])}
+                placeholder="-- Select Division --"
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-extrabold text-slate-600 dark:text-slate-400">District</label>
-              <Select value={dist || undefined} onValueChange={(val) => { setDist(val); setUpazila(''); setUnion('') }} disabled={!div}>
-                <SelectTrigger className="w-full h-auto px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-[#f8f9fa] dark:bg-muted/50 focus:ring-0 focus:outline-none focus:border-pcp-green font-semibold disabled:opacity-50">
-                  <SelectValue placeholder="-- District --" />
-                </SelectTrigger>
-                <SelectContent>
-                  {!districts?.length && dist && (
-                    <SelectItem value={dist}>{profile?.district || dist}</SelectItem>
-                  )}
-                  {districts?.map((d) => (
-                    <SelectItem key={d.id} value={d.name_en?.trim().toLowerCase()}>{language === 'bn' ? d.name_bn : d.name_en}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CustomSelect
+                value={dist}
+                onChange={(val) => { setDist(val === 'all' ? '' : val); setUpazila(''); setUnion('') }}
+                disabled={!div}
+                options={districts?.length ? districts.map(d => ({
+                  id: d.name_en?.trim().toLowerCase(),
+                  label: language === 'bn' ? d.name_bn : d.name_en
+                })) : (dist ? [{ id: dist, label: profile?.district || dist }] : [])}
+                placeholder="-- District --"
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-extrabold text-slate-600 dark:text-slate-400">Upazila</label>
-              <Select value={upazila || undefined} onValueChange={(val) => { setUpazila(val); setUnion('') }} disabled={!dist}>
-                <SelectTrigger className="w-full h-auto px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-[#f8f9fa] dark:bg-muted/50 focus:ring-0 focus:outline-none focus:border-pcp-green font-semibold disabled:opacity-50">
-                  <SelectValue placeholder="-- Upazila --" />
-                </SelectTrigger>
-                <SelectContent>
-                  {!upazilas?.length && upazila && (
-                    <SelectItem value={upazila}>{profile?.upazila || upazila}</SelectItem>
-                  )}
-                  {upazilas?.map((u) => (
-                    <SelectItem key={u.id} value={u.name_en?.trim().toLowerCase()}>{language === 'bn' ? u.name_bn : u.name_en}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CustomSelect
+                value={upazila}
+                onChange={(val) => { setUpazila(val === 'all' ? '' : val); setUnion('') }}
+                disabled={!dist}
+                options={upazilas?.length ? upazilas.map(u => ({
+                  id: u.name_en?.trim().toLowerCase(),
+                  label: language === 'bn' ? u.name_bn : u.name_en
+                })) : (upazila ? [{ id: upazila, label: profile?.upazila || upazila }] : [])}
+                placeholder="-- Upazila --"
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-extrabold text-slate-600 dark:text-slate-400">Union/Area</label>
-              <Select value={union || undefined} onValueChange={setUnion} disabled={!upazila}>
-                <SelectTrigger className="w-full h-auto px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-[#f8f9fa] dark:bg-muted/50 focus:ring-0 focus:outline-none focus:border-pcp-green font-semibold disabled:opacity-50">
-                  <SelectValue placeholder="-- Union --" />
-                </SelectTrigger>
-                <SelectContent>
-                  {!unionsList?.length && union && (
-                    <SelectItem value={union}>{profile?.union || union}</SelectItem>
-                  )}
-                  {unionsList?.map((u) => (
-                    <SelectItem key={u.id} value={u.name_en?.trim().toLowerCase()}>{language === 'bn' ? u.name_bn : u.name_en}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CustomSelect
+                value={union}
+                onChange={(val) => setUnion(val === 'all' ? '' : val)}
+                disabled={!upazila}
+                options={unionsList?.length ? unionsList.map(u => ({
+                  id: u.name_en?.trim().toLowerCase(),
+                  label: language === 'bn' ? u.name_bn : u.name_en
+                })) : (union ? [{ id: union, label: profile?.union || union }] : [])}
+                placeholder="-- Union --"
+              />
             </div>
             
             <div className="space-y-1.5">

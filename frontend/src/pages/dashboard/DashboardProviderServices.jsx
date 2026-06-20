@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { providersApi } from '../../api/providers'
 import { useLanguage } from '../../hooks/useLanguage'
 import Spinner from '../../components/ui/Spinner'
-import { Activity, Plus, Trash2, Edit, CheckCircle, AlertCircle } from 'lucide-react'
+import { Activity, Plus, Trash2, Edit, CheckCircle, AlertCircle, Clock, Tag } from 'lucide-react'
 
 const DashboardProviderServices = () => {
   const { language, t } = useLanguage()
@@ -13,6 +13,7 @@ const DashboardProviderServices = () => {
   // Form State
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null)
   
   const [nameEn, setNameEn] = useState('')
   const [nameBn, setNameBn] = useState('')
@@ -56,6 +57,7 @@ const DashboardProviderServices = () => {
     mutationFn: (serviceId) => providersApi.deleteProviderService(profile.id, serviceId),
     onSuccess: () => {
       queryClient.invalidateQueries(['providerServices', profile?.id])
+      setDeleteConfirmId(null)
     },
     onError: (err) => {
       alert(err.response?.data?.detail || err.response?.data?.message || t('common.error'))
@@ -125,8 +127,12 @@ const DashboardProviderServices = () => {
   }
 
   const handleDelete = (id) => {
-    if (window.confirm(language === 'bn' ? 'আপনি কি এই সার্ভিসটি মুছে ফেলতে চান?' : 'Are you sure you want to delete this service?')) {
-      deleteMutation.mutate(id)
+    setDeleteConfirmId(id)
+  }
+
+  const confirmDelete = () => {
+    if (deleteConfirmId) {
+      deleteMutation.mutate(deleteConfirmId)
     }
   }
 
@@ -158,7 +164,7 @@ const DashboardProviderServices = () => {
 
         <button
           onClick={() => openForm()}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-sm font-bold transition-all shadow-sm"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-pcp-green hover:bg-pcp-green/90 text-white rounded-xl text-sm font-bold transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
         >
           <Plus className="w-4 h-4" />
           <span>{language === 'bn' ? 'সার্ভিস যোগ করুন' : 'Add Service'}</span>
@@ -184,38 +190,40 @@ const DashboardProviderServices = () => {
               return (
                 <div
                   key={service.id}
-                  className="p-5 border border-border/80 bg-pcp-surface/20 rounded-xl flex flex-col justify-between gap-4 group hover:border-primary/50 transition-colors"
+                  className="p-5 border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/50 rounded-2xl flex flex-col justify-between gap-4 group hover:border-pcp-green/50 hover:shadow-md transition-all duration-300"
                 >
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-start">
-                      <h4 className="font-extrabold text-base text-foreground leading-snug">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-start gap-3">
+                      <h4 className="font-extrabold text-base text-slate-800 dark:text-slate-100 leading-snug group-hover:text-pcp-green transition-colors line-clamp-2">
                         {serviceName}
                       </h4>
-                      <span className="text-xs font-bold bg-muted text-muted-foreground px-2 py-0.5 rounded-full whitespace-nowrap">
+                      <span className="text-xs font-extrabold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 rounded-full whitespace-nowrap flex items-center gap-1 shadow-sm">
+                        <Tag className="w-3 h-3" />
                         ৳{service.price}
                       </span>
                     </div>
                     {service.duration_minutes && (
-                      <p className="text-xs text-muted-foreground font-semibold">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-slate-400" />
                         {service.duration_minutes} {language === 'bn' ? 'মিনিট' : 'minutes'}
                       </p>
                     )}
-                    <p className="text-sm text-foreground/80 mt-2 line-clamp-3">
+                    <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3 leading-relaxed">
                       {desc}
                     </p>
                   </div>
 
-                  <div className="flex justify-end gap-2 pt-3 border-t border-border/50">
+                  <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-700/50 mt-2">
                     <button
                       onClick={() => openForm(service)}
-                      className="p-2 text-muted-foreground hover:text-primary rounded-lg hover:bg-primary/10 transition-colors"
+                      className="p-2 text-slate-400 hover:text-pcp-green hover:bg-pcp-green/10 rounded-xl transition-all hover:scale-105 active:scale-95"
                       title={t('common.edit')}
                     >
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(service.id)}
-                      className="p-2 text-muted-foreground hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                      className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all hover:scale-105 active:scale-95"
                       title={t('common.delete')}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -359,6 +367,47 @@ const DashboardProviderServices = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && createPortal(
+        <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-sm p-6 space-y-5 animate-fade-in-up text-center shadow-xl">
+            <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-500/20 text-rose-600 flex items-center justify-center mx-auto mb-2">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            
+            <h3 className="text-xl font-extrabold text-foreground">
+              {language === 'bn' ? 'নিশ্চিত করুন' : 'Confirm Deletion'}
+            </h3>
+            
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {language === 'bn' 
+                ? 'আপনি কি নিশ্চিত যে আপনি এই সার্ভিসটি মুছে ফেলতে চান? এই কাজটি আর ফেরানো যাবে না।' 
+                : 'Are you sure you want to delete this service? This action cannot be undone.'}
+            </p>
+
+            <div className="flex justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmId(null)}
+                className="px-5 py-2.5 border border-border bg-card text-foreground text-sm font-semibold rounded-xl hover:bg-muted/50 transition-all active:scale-95"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={deleteMutation.isPending}
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 disabled:opacity-55"
+              >
+                {deleteMutation.isPending && <Spinner size="sm" />}
+                <span>{language === 'bn' ? 'মুছে ফেলুন' : 'Delete'}</span>
+              </button>
+            </div>
           </div>
         </div>,
         document.body
