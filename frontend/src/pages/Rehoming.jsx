@@ -19,24 +19,6 @@ export const Rehoming = () => {
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
 
-  // Modal / Form States
-  const [createFormOpen, setCreateFormOpen] = useState(false)
-  const [formData, setFormData] = useState({
-    pet_name: '',
-    animal_type: '',
-    breed: '',
-    gender: 'Unknown',
-    age: '',
-    weight_kg: '',
-    vaccinated: false,
-    spayed_neutered: false,
-    description: '',
-    reason: '',
-    adopter_requirements: '',
-  })
-  const [formError, setFormError] = useState('')
-  const [formSuccess, setFormSuccess] = useState(false)
-
   const [selectedAnimalId, setSelectedAnimalId] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -68,35 +50,6 @@ export const Rehoming = () => {
   const allAnimalTypes = Array.isArray(animalTypesData) ? animalTypesData : (animalTypesData?.results || [])
   const animalTypes = allAnimalTypes.filter(a => a.supports_rehoming)
 
-  // Mutation to create a rehoming listing
-  const createListingMutation = useMutation({
-    mutationFn: (data) => rehomingApi.createListing(data),
-    onSuccess: () => {
-      setFormSuccess(true)
-      setFormData({
-        pet_name: '',
-        animal_type: '',
-        breed: '',
-        gender: 'Unknown',
-        age: '',
-        weight_kg: '',
-        vaccinated: false,
-        spayed_neutered: false,
-        description: '',
-        reason: '',
-        adopter_requirements: '',
-      })
-      queryClient.invalidateQueries(['rehomingListings'])
-      setTimeout(() => {
-        setFormSuccess(false)
-        setCreateFormOpen(false)
-      }, 2000)
-    },
-    onError: (err) => {
-      setFormError(err.response?.data?.detail || err.response?.data?.message || t('common.error'))
-    },
-  })
-
   // Mutation to update application status (Approve/Reject)
   const updateAppStatusMutation = useMutation({
     mutationFn: ({ id, status }) => rehomingApi.updateApplicationStatus(id, status),
@@ -108,15 +61,6 @@ export const Rehoming = () => {
       alert(err.response?.data?.detail || t('common.error'))
     },
   })
-
-  const handleCreateSubmit = (e) => {
-    e.preventDefault()
-    setFormError('')
-    setFormSuccess(false)
-    if (!formData.pet_name || !formData.animal_type || !formData.reason.trim()) return
-
-    createListingMutation.mutate(formData)
-  }
 
   const handleApprove = (appId) => {
     if (window.confirm(language === 'bn' ? 'আপনি কি দত্তক অনুমোদন করতে চান? এটি পোষা প্রাণীটির মালিকানা হস্তান্তর করবে।' : 'Are you sure you want to approve this adoption? It will transfer pet ownership.')) {
@@ -163,13 +107,13 @@ export const Rehoming = () => {
                 <span className="max-w-[200px] truncate">{locationText}</span>
               </div>
               {canPostListing && (
-                <button
-                  onClick={() => setCreateFormOpen(true)}
+                <Link
+                  to="/dashboard/rehoming"
                   className="flex-shrink-0 px-5 py-2.5 bg-primary hover:bg-primary/95 text-white text-sm font-bold rounded-2xl shadow-sm flex items-center gap-1.5 transition-all"
                 >
                   <Plus className="w-4.5 h-4.5" />
                   <span>{t('rehoming.btn_post')}</span>
-                </button>
+                </Link>
               )}
             </div>
           </div>
@@ -262,199 +206,6 @@ export const Rehoming = () => {
               )}
             </div>
           </div>
-
-          {/* Create Post Dialog Overlay */}
-          {createFormOpen && (
-            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur flex items-center justify-center p-4">
-              <div className="bg-card border border-border rounded-2xl w-full max-w-md p-6 space-y-4 animate-fade-in-up text-left">
-                <h3 className="text-base sm:text-lg font-bold text-foreground">
-                  {t('rehoming.btn_post')}
-                </h3>
-
-                <form onSubmit={handleCreateSubmit} className="space-y-4">
-                  {/* Pet Name */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-muted-foreground">
-                      {language === 'bn' ? 'পোষা প্রাণীর নাম' : 'Pet Name'}
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.pet_name}
-                      onChange={(e) => setFormData({ ...formData, pet_name: e.target.value })}
-                      required
-                      placeholder={language === 'bn' ? 'যেমন: টমি' : 'e.g. Tommy'}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Select Animal Type */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-muted-foreground">
-                        {language === 'bn' ? 'প্রাণীর ধরন' : 'Animal Type'}
-                      </label>
-                      <select
-                        value={formData.animal_type}
-                        onChange={(e) => setFormData({ ...formData, animal_type: e.target.value })}
-                        required
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
-                      >
-                        <option value="">-- {language === 'bn' ? 'নির্বাচন করুন' : 'Select'} --</option>
-                        {animalTypes.map((at) => (
-                          <option key={at.id} value={at.id}>
-                            {language === 'bn' ? at.name_bn || at.name_en : at.name_en}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Breed */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-muted-foreground">
-                        {language === 'bn' ? 'জাত (যদি থাকে)' : 'Breed (Optional)'}
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.breed}
-                        onChange={(e) => setFormData({ ...formData, breed: e.target.value })}
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Gender */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-muted-foreground">
-                        {language === 'bn' ? 'লিঙ্গ' : 'Gender'}
-                      </label>
-                      <select
-                        value={formData.gender}
-                        onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
-                      >
-                        <option value="Male">{language === 'bn' ? 'পুরুষ' : 'Male'}</option>
-                        <option value="Female">{language === 'bn' ? 'মহিলা' : 'Female'}</option>
-                        <option value="Unknown">{language === 'bn' ? 'অজানা' : 'Unknown'}</option>
-                      </select>
-                    </div>
-
-                    {/* Weight */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-muted-foreground">
-                        {language === 'bn' ? 'ওজন (কেজি)' : 'Weight (kg)'}
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={formData.weight_kg}
-                        onChange={(e) => setFormData({ ...formData, weight_kg: e.target.value })}
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-6 pt-2 pb-2">
-                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-foreground">
-                      <input
-                        type="checkbox"
-                        checked={formData.vaccinated}
-                        onChange={(e) => setFormData({ ...formData, vaccinated: e.target.checked })}
-                        className="rounded border-border text-primary focus:ring-primary w-4 h-4"
-                      />
-                      {language === 'bn' ? 'ভ্যাকসিন দেওয়া হয়েছে' : 'Vaccinated'}
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-foreground">
-                      <input
-                        type="checkbox"
-                        checked={formData.spayed_neutered}
-                        onChange={(e) => setFormData({ ...formData, spayed_neutered: e.target.checked })}
-                        className="rounded border-border text-primary focus:ring-primary w-4 h-4"
-                      />
-                      {language === 'bn' ? 'বন্ধ্যাকরণ করা হয়েছে' : 'Spayed/Neutered'}
-                    </label>
-                  </div>
-
-                  {/* Reason */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-muted-foreground">
-                      {t('rehoming.reason')}
-                    </label>
-                    <textarea
-                      value={formData.reason}
-                      onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                      required
-                      rows={2}
-                      placeholder={language === 'bn' ? 'পুনর্বাসনের কারণ উল্লেখ করুন...' : 'Specify rehoming reason...'}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
-                    />
-                  </div>
-
-                  {/* Adopter Requirements */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-muted-foreground">
-                      {language === 'bn' ? 'দত্তক নেওয়ার শর্তসমূহ' : 'Adopter Requirements'}
-                    </label>
-                    <textarea
-                      value={formData.adopter_requirements}
-                      onChange={(e) => setFormData({ ...formData, adopter_requirements: e.target.value })}
-                      rows={2}
-                      placeholder={language === 'bn' ? 'যেমন: পূর্বে পোষা প্রাণী পালনের অভিজ্ঞতা থাকতে হবে' : 'e.g. Must have prior pet experience'}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
-                    />
-                  </div>
-
-                  {/* Description */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-muted-foreground">
-                      {language === 'bn' ? 'অন্যান্য বিবরণ' : 'Description'}
-                    </label>
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      rows={2}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
-                    />
-                  </div>
-
-                  {/* Success banner */}
-                  {formSuccess && (
-                    <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex gap-1.5 items-center dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/50">
-                      <CheckCircle className="w-4 h-4" />
-                      <span>তালিকাটি সফলভাবে তৈরি করা হয়েছে!</span>
-                    </div>
-                  )}
-
-                  {/* Error banner */}
-                  {formError && (
-                    <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex gap-1.5 items-center dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/50">
-                      <AlertCircle className="w-4 h-4" />
-                      <span>{formError}</span>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex justify-end gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setCreateFormOpen(false)}
-                      className="px-4 py-2 border border-border bg-card text-foreground text-xs font-semibold rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      {t('common.cancel')}
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={createListingMutation.isPending || !formData.pet_name || !formData.animal_type || !!formSuccess}
-                      className="px-4 py-2 bg-primary hover:bg-primary/95 text-white text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-sm disabled:opacity-55"
-                    >
-                      {createListingMutation.isPending && <Spinner size="sm" />}
-                      <span>{t('common.submit')}</span>
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
 
         </div>
       </div>

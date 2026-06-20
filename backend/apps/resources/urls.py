@@ -1,7 +1,7 @@
 from rest_framework.routers import SimpleRouter
-from apps.resources.views import GovtResourceViewSet
+from apps.resources.views import ResourceViewSet
 
 router = SimpleRouter()
-router.register(r'', GovtResourceViewSet, basename='govtresource')
+router.register(r'', ResourceViewSet, basename='resource')
 
 urlpatterns = router.urls

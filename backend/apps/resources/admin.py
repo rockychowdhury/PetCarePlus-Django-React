@@ -1,9 +1,9 @@
 from django.contrib import admin
-from .models import GovtResource
+from .models import Resource
 
 
-@admin.register(GovtResource)
-class GovtResourceAdmin(admin.ModelAdmin):
-    list_display = ('name_en', 'resource_type', 'division', 'district', 'phone', 'is_active')
-    list_filter = ('resource_type', 'division', 'is_active')
-    search_fields = ('name_en', 'name_bn', 'district')
+@admin.register(Resource)
+class ResourceAdmin(admin.ModelAdmin):
+    list_display = ('title_en', 'resource_type', 'animal_type', 'is_active')
+    list_filter = ('resource_type', 'animal_type', 'is_active')
+    search_fields = ('title_en', 'title_bn', 'description_en')

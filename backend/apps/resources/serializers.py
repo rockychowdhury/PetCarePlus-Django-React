@@ -1,39 +1,34 @@
 """
-PetCarePlus v2 — Government Resources Serializer
+PetCarePlus v2 — Resources Serializer
 
-Bilingual serializer for GovtResource model using BilingualMixin.
+Bilingual serializer for Resource model using BilingualMixin.
 """
 
 from rest_framework import serializers
 from common.mixins import BilingualMixin
-from apps.resources.models import GovtResource
+from apps.resources.models import Resource
 
 
-class GovtResourceSerializer(BilingualMixin, serializers.ModelSerializer):
+class ResourceSerializer(BilingualMixin, serializers.ModelSerializer):
     """
-    Serializer for GovtResource model.
-    Dynamically returns translated 'name', 'description', and 'address' based on user language context.
+    Serializer for Resource model.
+    Dynamically returns translated 'title' and 'description' based on user language context.
     """
-    name = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
-    address = serializers.SerializerMethodField()
+    animal_type_name = serializers.CharField(source='animal_type.name_en', read_only=True)
 
     class Meta:
-        model = GovtResource
+        model = Resource
         fields = [
-            'id', 'name', 'description', 'resource_type',
-            'division', 'district', 'phone', 'email', 'website', 'address',
+            'id', 'title', 'description', 'resource_type', 'animal_type', 'animal_type_name',
             'is_active', 'created_at', 'updated_at',
-            'name_en', 'name_bn', 'description_en', 'description_bn',
-            'address_en', 'address_bn'
+            'title_en', 'title_bn', 'description_en', 'description_bn'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
-    def get_name(self, obj):
-        return self.get_bilingual_field(obj, 'name')
+    def get_title(self, obj):
+        return self.get_bilingual_field(obj, 'title')
 
     def get_description(self, obj):
         return self.get_bilingual_field(obj, 'description')
-
-    def get_address(self, obj):
-        return self.get_bilingual_field(obj, 'address')
