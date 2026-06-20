@@ -79,7 +79,7 @@ def get_local_providers(user, provider_type=None, animal_type_id=None):
     # 2. Same Union
     union = getattr(user, 'union', None)
     if union:
-        local = base_qs.filter(user__union__iexact=union)
+        local = base_qs.filter(union__iexact=union)
         if local.count() >= LOCAL_THRESHOLD:
             return local.order_by('-avg_rating')
 

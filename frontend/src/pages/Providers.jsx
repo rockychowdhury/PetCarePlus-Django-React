@@ -45,6 +45,55 @@ export const Providers = () => {
     setCurrentPage(1)
   }, [activeType, selectedAnimalId])
 
+  // Initial Auto-Location Logic
+  useEffect(() => {
+    // Only run this once when the store is completely empty (no previous session)
+    if (storeDiv === '') {
+      const { setLocation, clearLocation } = useLocationStore.getState()
+      
+      const fallbackToProfileOrAll = () => {
+        if (user && (user.latitude || user.district)) {
+          setLocation({
+            division: user.division || '',
+            district: user.district || '',
+            upazila: user.upazila || '',
+            union: user.union || '',
+            latitude: user.latitude || null,
+            longitude: user.longitude || null,
+          })
+        } else {
+          clearLocation() // Sets division to 'all'
+        }
+      }
+
+      const checkPermissions = async () => {
+        try {
+          if (navigator.permissions) {
+            const permission = await navigator.permissions.query({ name: 'geolocation' })
+            if (permission.state === 'granted') {
+              navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                  setLocation({
+                    division: 'all', // Ensure a fallback structure is present
+                    latitude: pos.coords.latitude,
+                    longitude: pos.coords.longitude,
+                  })
+                },
+                () => fallbackToProfileOrAll()
+              )
+              return // wait for geolocation callback
+            }
+          }
+        } catch (e) {
+          console.error("Geolocation permissions API not supported", e)
+        }
+        fallbackToProfileOrAll()
+      }
+
+      checkPermissions()
+    }
+  }, [storeDiv, user])
+
   // Fetch animal specialties
   const { data: animalTypes } = useQuery({
     queryKey: ['animalTypes'],
@@ -80,6 +129,10 @@ export const Providers = () => {
 
   return (
     <PageLayout>
+      <LocationModal 
+        isOpen={isLocationModalOpen} 
+        onClose={() => setIsLocationModalOpen(false)} 
+      />
       <div className="bg-pcp-surface/20 py-8 min-h-screen border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 animate-fade-in">
           
@@ -107,11 +160,6 @@ export const Providers = () => {
               </button>
             </div>
           </div>
-
-          <LocationModal 
-            isOpen={isLocationModalOpen} 
-            onClose={() => setIsLocationModalOpen(false)} 
-          />
 
           {/* Filtering Tabs & Animal Specialty Dropdown */}
           <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">

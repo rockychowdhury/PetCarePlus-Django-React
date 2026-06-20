@@ -58,7 +58,9 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         lng = self.request.query_params.get('lng')
         
         location_source = None
-        if division or district or upazila or union or (lat and lng):
+        if division == 'all':
+            pass # Explicit override for nationwide search
+        elif division or district or upazila or union or (lat and lng):
             class MockUser:
                 def __init__(self, div, dist, upz, uni, la, ln):
                     self.division = div
@@ -103,7 +105,9 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         lng = request.query_params.get('lng')
         
         location_source = None
-        if division or district or upazila or union or (lat and lng):
+        if division == 'all':
+            pass # Explicit override for nationwide search
+        elif division or district or upazila or union or (lat and lng):
             class MockUser:
                 def __init__(self, div, dist, upz, uni, la, ln):
                     self.division = div

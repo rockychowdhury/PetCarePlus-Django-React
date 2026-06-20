@@ -20,7 +20,7 @@ export const useLocationStore = create(
         longitude: location.longitude || null,
       }),
 
-      clearLocation: () => set({ division: '', district: '', upazila: '', union: '', latitude: null, longitude: null }),
+      clearLocation: () => set({ division: 'all', district: '', upazila: '', union: '', latitude: null, longitude: null }),
     }),
     {
       name: 'petcareplus-location',

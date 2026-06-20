@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { MapPin, Navigation, X, Check } from 'lucide-react'
+import { MapPin, Navigation, X, Check, Search } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { locationsApi } from '../../api/locations'
 import { useLocationStore } from '../../store/locationStore'
@@ -126,6 +126,21 @@ export const LocationModal = ({ isOpen, onClose }) => {
     )
   }
 
+  const handleUseProfileLocation = () => {
+    if (!user) return
+    
+    // Directly apply the user's profile location to the search and close the modal
+    setLocation({
+      division: user.division || '',
+      district: user.district || '',
+      upazila: user.upazila || '',
+      union: user.union || '',
+      latitude: user.latitude || null,
+      longitude: user.longitude || null,
+    })
+    onClose()
+  }
+
   useEffect(() => {
     if (!autoFillTarget) return
 
@@ -198,7 +213,7 @@ export const LocationModal = ({ isOpen, onClose }) => {
     setLng(null)
     setGpsStatus('')
     setLocation({
-      division: '',
+      division: 'all',
       district: '',
       upazila: '',
       union: '',
@@ -212,33 +227,57 @@ export const LocationModal = ({ isOpen, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-[100] flex items-start justify-center p-4 bg-black/40 overflow-y-auto"
       style={{ paddingTop: '5vh', paddingBottom: '5vh' }}
     >
-      <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border/60 flex flex-col my-auto">
-        <div className="flex items-center justify-between p-4 border-b border-border/60 shrink-0">
-          <h3 className="font-bold text-base sm:text-lg flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-primary" />
+      <div className="bg-card w-full max-w-sm rounded-xl shadow-2xl border border-border/60 flex flex-col my-auto">
+        <div className="flex items-center justify-between p-3 border-b border-border/60 shrink-0">
+          <h3 className="font-bold text-sm sm:text-base flex items-center gap-1.5">
+            <MapPin className="w-4 h-4 text-primary" />
             Set Search Location
           </h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-muted rounded-full transition-colors">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-1 hover:bg-muted rounded-full transition-colors">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-4 space-y-4">
-          <div className="flex gap-2">
+        <div className="p-3 space-y-3">
+          {/* User Profile Location */}
+          {user && (user.district || user.latitude) && (
+            <div className="flex items-center justify-between bg-pcp-green/5 dark:bg-pcp-green/10 border border-pcp-green/20 rounded-lg p-2">
+              <div className="flex items-center gap-2">
+                <div className="bg-pcp-green/20 p-1 rounded-full">
+                  <MapPin className="w-3 h-3 text-pcp-green" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold text-pcp-text-primary dark:text-zinc-200">Profile Location</p>
+                  <p className="text-[10px] font-medium text-muted-foreground line-clamp-1">
+                    {[user.union, user.upazila, user.district].filter(Boolean).join(', ')}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleUseProfileLocation}
+                className="text-[11px] font-bold text-pcp-green hover:bg-pcp-green/10 px-3 py-1 rounded-full transition-colors whitespace-nowrap border border-pcp-green/30"
+              >
+                Use
+              </button>
+            </div>
+          )}
+
+          {/* Capture Location & Reset */}
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
               onClick={handleGps}
-              className="flex-grow flex items-center justify-center gap-2 py-3 bg-primary/10 hover:bg-primary/20 text-primary font-bold rounded-xl transition-colors border border-primary/20 text-xs sm:text-sm"
+              className="flex-grow flex items-center justify-center gap-1.5 py-2 bg-zinc-100/80 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-pcp-text-primary dark:text-zinc-200 font-bold rounded-full transition-colors text-xs border border-zinc-200 dark:border-zinc-700 shadow-sm"
             >
-              <Navigation className="w-4 h-4" />
-              {gpsStatus && gpsStatus !== 'outside_bd' ? gpsStatus : 'Use GPS Location'}
+              <MapPin className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
+              {gpsStatus && gpsStatus !== 'outside_bd' ? gpsStatus : 'Capture Current Location'}
             </button>
             <button
               onClick={handleReset}
-              className="px-4 py-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 font-bold rounded-xl transition-colors text-xs sm:text-sm border border-border"
-              title="Reset to Bangladesh"
+              className="px-4 py-2 bg-zinc-100/80 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-rose-600 dark:text-rose-400 font-bold rounded-full transition-colors text-xs border border-zinc-200 dark:border-zinc-700 shadow-sm"
+              title="Reset to Nationwide"
             >
               Reset
             </button>
@@ -251,21 +290,21 @@ export const LocationModal = ({ isOpen, onClose }) => {
           )}
 
           {lat && lng && gpsStatus !== 'outside_bd' && (
-            <div className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
-              <Check className="w-3 h-3 text-emerald-500" />
-              Coordinates: {lat.toFixed(4)}, {lng.toFixed(4)}
+            <div className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1.5 bg-muted/30 py-2 rounded-lg">
+              <Check className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="font-medium">Coordinates: {lat.toFixed(4)}, {lng.toFixed(4)}</span>
             </div>
           )}
 
           <div className="relative flex items-center py-1">
             <div className="flex-grow border-t border-border" />
-            <span className="flex-shrink-0 mx-4 text-xs font-bold text-muted-foreground uppercase">OR</span>
+            <span className="flex-shrink-0 mx-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">OR</span>
             <div className="flex-grow border-t border-border" />
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <div>
-              <label className="text-xs font-bold text-muted-foreground mb-1.5 block">Division</label>
+              <label className="text-[11px] font-bold text-muted-foreground mb-1 block">Division</label>
               <CustomSelect
                 value={divisionId}
                 onChange={(val) => { setDivisionId(val); setDistrictId(''); setUpazilaId(''); setUnionId(''); setLat(null); setLng(null); }}
@@ -275,7 +314,7 @@ export const LocationModal = ({ isOpen, onClose }) => {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-muted-foreground mb-1.5 block">District</label>
+              <label className="text-[11px] font-bold text-muted-foreground mb-1 block">District</label>
               <CustomSelect
                 value={districtId}
                 onChange={(val) => { setDistrictId(val); setUpazilaId(''); setUnionId(''); setLat(null); setLng(null); }}
@@ -286,7 +325,7 @@ export const LocationModal = ({ isOpen, onClose }) => {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-muted-foreground mb-1.5 block">Upazila</label>
+              <label className="text-[11px] font-bold text-muted-foreground mb-1 block">Upazila</label>
               <CustomSelect
                 value={upazilaId}
                 onChange={(val) => { setUpazilaId(val); setUnionId(''); setLat(null); setLng(null); }}
@@ -297,7 +336,7 @@ export const LocationModal = ({ isOpen, onClose }) => {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-muted-foreground mb-1.5 block">Union</label>
+              <label className="text-[11px] font-bold text-muted-foreground mb-1 block">Union</label>
               <CustomSelect
                 value={unionId}
                 onChange={(val) => { setUnionId(val); setLat(null); setLng(null); }}
@@ -309,12 +348,13 @@ export const LocationModal = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        <div className="p-4 border-t border-border/60 shrink-0">
+        <div className="p-3 border-t border-border/60 shrink-0">
           <button
             onClick={handleSave}
-            className="w-full py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-md transition-colors"
+            className="w-full py-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2"
           >
-            Save Search Location
+            <Search className="w-3.5 h-3.5" />
+            {language === 'bn' ? 'সেবাদাতা খুঁজুন' : 'Search Providers'}
           </button>
         </div>
       </div>

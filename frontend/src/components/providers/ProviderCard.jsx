@@ -6,7 +6,7 @@ import { useLanguage } from '../../hooks/useLanguage'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { providersApi } from '../../api/providers'
 import toast from 'react-hot-toast'
-import { Star, MapPin, Heart, Phone } from 'lucide-react'
+import { Star, MapPin, Heart, Phone, Sparkles } from 'lucide-react'
 import { getAnimalIcon } from '../../utils/animals'
 
 export const ProviderCard = ({ provider }) => {
@@ -132,11 +132,20 @@ export const ProviderCard = ({ provider }) => {
           />
         </button>
 
-        {/* Rating Floating Over Image (Bottom Right) */}
-        <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 px-2.5 py-1 bg-black/60 dark:bg-zinc-950/70 text-white backdrop-blur-sm rounded-lg text-[11px] font-bold shadow-sm">
-          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-          <span>{ratingValue > 0 ? ratingValue.toFixed(1) : '0.0'}</span>
-          <span className="opacity-70 font-medium">({total_reviews})</span>
+        {/* Rating or New Badge Floating Over Image (Bottom Right) */}
+        <div className="absolute bottom-2.5 right-2.5">
+          {total_reviews > 0 ? (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-black/60 dark:bg-zinc-950/70 text-white backdrop-blur-sm rounded-lg text-[11px] font-bold shadow-sm">
+              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              <span>{ratingValue.toFixed(1)}</span>
+              <span className="opacity-70 font-medium">({total_reviews})</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 px-2.5 py-1 bg-pcp-green/90 dark:bg-pcp-green/80 text-white backdrop-blur-sm rounded-lg text-[11px] font-bold shadow-sm uppercase tracking-wider">
+              <Sparkles className="w-3 h-3" />
+              <span>{language === 'bn' ? 'নতুন' : 'New'}</span>
+            </div>
+          )}
         </div>
       </div>
 

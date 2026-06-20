@@ -72,6 +72,8 @@ export const WriteReviewDialog = ({
         queryClient.invalidateQueries(['providerReviews', String(providerId)])
         queryClient.invalidateQueries(['providerDetail', String(providerId)])
         queryClient.invalidateQueries(['completedBookings', providerId])
+        queryClient.invalidateQueries(['providers'])
+        queryClient.invalidateQueries(['localProviders'])
       }
       if (onSuccessCallback) onSuccessCallback()
       handleReset()

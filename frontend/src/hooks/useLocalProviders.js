@@ -20,15 +20,20 @@ export const useLocalProviders = (filters = {}) => {
     ...filters,
   }
 
-  // Inject location filters if explicit search location is set in the store
-  if (storeLat && storeLng) {
-    queryParams.lat = storeLat
-    queryParams.lng = storeLng
+  // Always inject available manual location fields
+  if (storeDiv === 'all') {
+    queryParams.division = 'all'
   } else {
     if (storeDiv) queryParams.division = storeDiv
     if (storeDist) queryParams.district = storeDist
     if (storeUpz) queryParams.upazila = storeUpz
     if (storeUnion) queryParams.union = storeUnion
+  }
+
+  // Inject GPS coordinates if available
+  if (storeLat && storeLng) {
+    queryParams.lat = storeLat
+    queryParams.lng = storeLng
   }
 
   return useQuery({
