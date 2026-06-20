@@ -5,6 +5,7 @@ Serializers for AI diagnostic input/output, conversation sessions, and provider 
 """
 
 from rest_framework import serializers
+import ast
 from apps.ai_assistant.models import AISession, AIProviderSuggestion
 from apps.animals.serializers import AnimalTypeSerializer
 from apps.providers.serializers import ServiceProviderSerializer
@@ -50,6 +51,7 @@ class AISessionSerializer(serializers.ModelSerializer):
     animal_type_details = AnimalTypeSerializer(source='animal_type', read_only=True)
     provider_suggestions = AIProviderSuggestionSerializer(many=True, read_only=True)
     user_email = serializers.EmailField(source='user.email', read_only=True)
+    diagnostic_result = serializers.SerializerMethodField()
 
     class Meta:
         model = AISession
@@ -57,13 +59,37 @@ class AISessionSerializer(serializers.ModelSerializer):
             'id', 'user', 'user_email', 'animal_type', 'animal_type_details',
             'conversation_history', 'total_turns', 'urgency_level',
             'ai_diagnosis_summary', 'ai_care_advice', 'started_at', 'ended_at',
-            'provider_suggestions', 'is_complete'
+            'provider_suggestions', 'is_complete', 'diagnostic_result'
         ]
         read_only_fields = [
             'id', 'user', 'conversation_history', 'total_turns', 'urgency_level',
             'ai_diagnosis_summary', 'ai_care_advice', 'started_at', 'ended_at',
             'provider_suggestions'
         ]
+
+    def get_diagnostic_result(self, obj):
+        try:
+            history = obj.conversation_history
+            if history and len(history) >= 2:
+                content = history[1].get('content', '')
+                if content.startswith('{'):
+                    # The content is a string representation of a Python dict from Gemini
+                    ai_response = ast.literal_eval(content)
+                    return {
+                        'ai_response': ai_response,
+                        'query_type': ai_response.get('query_type', 'disease'),
+                        'providers': AIProviderSuggestionSerializer(
+                            obj.provider_suggestions.all().order_by('rank'),
+                            many=True,
+                            context=self.context
+                        ).data,
+                        'animal_type': AnimalTypeSerializer(obj.animal_type).data,
+                        'resources': [],
+                        'govt_vets': []
+                    }
+        except Exception:
+            pass
+        return None
 
 
 class AIDiagnoseInputSerializer(serializers.Serializer):

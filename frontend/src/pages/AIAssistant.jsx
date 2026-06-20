@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import { useAIDiagnose } from '../hooks/useAISession'
 import { guidelinesApi } from '../api/guidelines'
+import { aiApi } from '../api/ai'
 import { useLanguage } from '../hooks/useLanguage'
 import { useAuthStore } from '../store/authStore'
 import { getAnimalIcon, ANIMAL_THEMES } from '../utils/animals'
@@ -67,6 +69,21 @@ export const AIAssistant = () => {
   const [district, setDistrict] = useState('')
   const [geoStatus, setGeoStatus] = useState('idle') // idle | loading | success | denied
   const [geoCoords, setGeoCoords] = useState(null)
+
+  // URL Params for loading previous sessions
+  const [searchParams, setSearchParams] = useSearchParams()
+  const sessionIdParam = searchParams.get('session')
+
+  // Fetch session if session ID is in URL
+  const { data: sessionData, isLoading: isLoadingSession } = useQuery({
+    queryKey: ['session', sessionIdParam],
+    queryFn: () => aiApi.getSessionDetail(sessionIdParam),
+    enabled: !!sessionIdParam,
+  })
+
+  // Combine local result (from new submission) with fetched session
+  const activeResult = result || sessionData?.diagnostic_result
+  const isCurrentlyLoading = isLoading || isLoadingSession
 
   // Fetch animal types
   const { data: animalTypes, isLoading: isLoadingAnimals } = useQuery({
@@ -145,6 +162,9 @@ export const AIAssistant = () => {
     resetDiagnosis()
     setSelectedAnimal(null)
     setProblemText('')
+    if (sessionIdParam) {
+      setSearchParams({})
+    }
   }
 
   const handleExampleClick = (prompt) => {
@@ -152,16 +172,16 @@ export const AIAssistant = () => {
   }
 
   // Extract data from result
-  const aiResponse = result?.ai_response
-  const queryType = result?.query_type
+  const aiResponse = activeResult?.ai_response
+  const queryType = activeResult?.query_type
   const diagnosis = aiResponse?.diagnosis
   const urgency = aiResponse?.urgency
   const warningData = aiResponse?.warning_signs
   const positiveData = aiResponse?.positive_signs
   const guidedResponse = aiResponse?.guided_response
-  const providers = result?.providers || []
-  const resources = result?.resources || []
-  const govtVets = result?.govt_vets || []
+  const providers = activeResult?.providers || []
+  const resources = activeResult?.resources || []
+  const govtVets = activeResult?.govt_vets || []
   const suggestLivestockOfficer = aiResponse?.suggest_livestock_officer
 
   return (
@@ -191,7 +211,7 @@ export const AIAssistant = () => {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
           {/* ═══════════════════ INPUT FORM ═══════════════════ */}
-          {!result && (
+          {!activeResult && (
             <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in-up">
 
               {/* Step 1: Animal Selection */}
@@ -395,7 +415,7 @@ export const AIAssistant = () => {
           )}
 
           {/* ═══════════════════ LOADING SKELETON ═══════════════════ */}
-          {isLoading && (
+          {isCurrentlyLoading && (
             <div className="space-y-5 animate-fade-in py-8">
               <div className="flex flex-col items-center justify-center text-center space-y-4">
                 <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
@@ -432,7 +452,7 @@ export const AIAssistant = () => {
           )}
 
           {/* ═══════════════════ RESULTS DASHBOARD ═══════════════════ */}
-          {result && !isLoading && (
+          {activeResult && !isCurrentlyLoading && (
             <div ref={resultsRef} className="space-y-6 animate-fade-in-up">
 
               {/* New Consultation Button */}
@@ -446,8 +466,8 @@ export const AIAssistant = () => {
                       {language === 'bn' ? 'এআই বিশ্লেষণ ফলাফল' : 'AI Analysis Results'}
                     </h2>
                     <p className="text-[10px] text-muted-foreground">
-                      {result.animal_type &&
-                        (language === 'bn' ? result.animal_type.name_bn : result.animal_type.name_en)}
+                      {activeResult.animal_type &&
+                        (language === 'bn' ? activeResult.animal_type.name_bn : activeResult.animal_type.name_en)}
                     </p>
                   </div>
                 </div>
