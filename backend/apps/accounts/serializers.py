@@ -143,13 +143,17 @@ PetCarePlus Team
 পেটকেয়ারপ্লাস টিম
 """
 
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL or 'noreply@petcareplus.app',
-            [user.email],
-            fail_silently=True
-        )
+        def send_email_async():
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL or 'noreply@petcareplus.app',
+                [user.email],
+                fail_silently=True
+            )
+
+        import threading
+        threading.Thread(target=send_email_async).start()
 
         return user
 
