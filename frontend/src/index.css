@@ -1,247 +1,116 @@
-@import 'leaflet/dist/leaflet.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* ========================================
-       LIGHT MODE - Sage & Stone Theme
-       Clean, warm, nature-inspired palette
-    ======================================== */
+    /* Main Background & Text (Soft Warm Mint/White and Forest Text) */
+    --background: 135 20% 98%;      
+    --foreground: 154 30% 10%;
 
-    /* Background Colors */
-    --color-bg-primary: #FDFBF7;
-    /* Off-white - Main background */
-    --color-bg-secondary: #F5F3EF;
-    /* Warm stone - Cards, sections */
-    --color-bg-surface: #FFFFFF;
-    /* Pure white - Elevated surfaces */
-    --color-bg-overlay: rgba(0, 0, 0, 0.5);
+    /* Card & Popovers */
+    --card: 0 0% 100%;
+    --card-foreground: 154 30% 10%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 154 30% 10%;
 
-    /* Text Colors */
-    --color-text-primary: #1C1C1C;
-    /* Charcoal - Headings */
-    --color-text-secondary: #5C5C5C;
-    /* Warm gray - Body text */
-    --color-text-tertiary: #8A8A8A;
-    /* Muted gray - Hints */
-    --color-text-inverted: #FFFFFF;
-    /* White - On dark backgrounds */
-    --color-text-muted: #B0B0B0;
-    /* Light gray - Disabled */
+    /* Brand Primary (Green #2D6A4F) */
+    --primary: 154 42% 25%;
+    --primary-foreground: 135 20% 98%;
 
-    /* Brand Colors (V2 Unified) */
-    --color-brand-primary: #C48B28;
-    /* Golden - Primary actions */
-    --color-brand-secondary: #EBC176;
-    /* Warm Sand - Accents */
-    --color-brand-accent: #FAF3E0;
-    /* Soft Linen - Highlights */
-    --color-brand-ai: #8A725B;
-    /* Earthy Taupe - AI features */
+    /* Brand Muted/Secondary (Sage #D8F3DC) */
+    --secondary: 138 35% 90%;
+    --secondary-foreground: 154 42% 15%;
 
-    /* Theme V2 Specifics */
-    --themev2-bg: #FEF9ED;
-    --themev2-surface: #FFFFFF;
-    --themev2-primary: #C48B28;
-    --themev2-text: #402E11;
+    /* Muted Labels & Backgrounds */
+    --muted: 135 12% 93%;
+    --muted-foreground: 154 15% 40%;
 
-    /* Border Colors */
-    --color-border: #EBC176;
-    /* Warm border - Default */
-    --color-border-light: #FAF3E0;
-    /* Subtle border */
-    --color-border-focus: #C48B28;
-    /* Golden - Focus state */
-    --color-border-error: #E05D5D;
-    /* Soft red - Error */
+    /* Accent & Highlight (Vibrant Emerald-Mint Green #00D084) */
+    --accent: 145 80% 45%;
+    --accent-foreground: 0 0% 100%;
 
-    /* Status Colors */
-    --color-status-success: #4CAF7C;
-    /* Forest green */
-    --color-status-error: #E05D5D;
-    /* Soft red */
-    --color-status-warning: #E5A84C;
-    /* Warm amber */
-    --color-status-info: #5B9BD5;
-    /* Calm blue */
+    /* Destructive/Emergency (#E76F51 or Red) */
+    --destructive: 11 80% 61%;
+    --destructive-foreground: 0 0% 98%;
 
-    /* Logo Specific (Default) */
-    --logo-primary: #C48B28;
-    --logo-secondary: #EBC176;
-    --logo-bg: #FEF9ED;
-    --logo-text: #402E11;
+    /* Borders & Inputs (Subtle Green Tint) */
+    --border: 135 15% 91%;
+    --input: 135 15% 91%;
+    --ring: 145 80% 45%;
 
-
+    /* Radii - Upgraded to soft organic 16px radius */
+    --radius: 1rem; 
   }
 
+  .dark {
+    --background: 154 25% 6%;
+    --foreground: 135 15% 95%;
+
+    --card: 154 22% 8%;
+    --card-foreground: 135 15% 95%;
+
+    --popover: 154 22% 8%;
+    --popover-foreground: 135 15% 95%;
+
+    --primary: 145 60% 32%;
+    --primary-foreground: 135 15% 98%;
+
+    --secondary: 154 15% 14%;
+    --secondary-foreground: 135 15% 90%;
+
+    --muted: 154 15% 12%;
+    --muted-foreground: 154 10% 65%;
+
+    --accent: 145 80% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 11 80% 61%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 154 15% 15%;
+    --input: 154 15% 15%;
+    --ring: 145 80% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased transition-colors duration-300;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
 }
 
 @layer components {
-
-  /* Card Components */
-  .card {
-    @apply bg-bg-surface rounded-2xl border border-border shadow-sm transition-all duration-300 hover:shadow-lg;
+  /* Premium Card Styles */
+  .pcp-card {
+    @apply bg-card text-card-foreground rounded-xl border border-border/80 shadow-sm transition-all duration-300 hover:shadow-md;
+  }
+  
+  .pcp-card-interactive {
+    @apply pcp-card hover:-translate-y-0.5 hover:border-pcp-green-light/30 hover:shadow-lg active:translate-y-0 active:shadow-md;
   }
 
-  .card-hover {
-    @apply card hover:-translate-y-1 hover:border-border-focus;
-  }
-
-  /* Button Components */
-  .btn-primary {
-    @apply h-12 px-6 bg-brand-primary text-text-inverted font-semibold rounded-xl transition-all duration-200 hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  .btn-secondary {
-    @apply h-12 px-6 border-2 border-brand-secondary text-brand-secondary font-semibold rounded-xl transition-all duration-200 hover:bg-brand-secondary hover:text-text-inverted active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  .btn-ghost {
-    @apply h-10 px-4 text-text-secondary font-medium rounded-xl transition-all duration-200 hover:bg-bg-secondary hover:text-text-primary active:scale-[0.98] flex items-center justify-center gap-2;
-  }
-
-  .btn-outline {
-    @apply h-12 px-6 border-2 border-border text-text-primary font-semibold rounded-xl transition-all duration-200 hover:border-border-focus hover:bg-bg-secondary active:scale-[0.98] flex items-center justify-center gap-2;
-  }
-
-  /* Input Components */
-  .input-field {
-    @apply h-12 w-full px-4 rounded-xl border border-border bg-bg-surface text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-border-focus focus:ring-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-bg-secondary;
-  }
-
-  .input-field:focus {
-    --tw-ring-color: var(--color-border-focus);
-    --tw-ring-opacity: 0.2;
-  }
-
-  .input-error {
-    @apply input-field border-border-error focus:border-border-error;
-  }
-
-  .input-error:focus {
-    --tw-ring-color: var(--color-border-error);
-    --tw-ring-opacity: 0.2;
-  }
-
-  .input-success {
-    @apply input-field border-status-success focus:border-status-success;
-  }
-
-  .input-success:focus {
-    --tw-ring-color: var(--color-status-success);
-    --tw-ring-opacity: 0.2;
-  }
-
-  /* Label Components */
-  .label {
-    @apply block text-sm font-semibold text-text-primary mb-2;
-  }
-
-  .label-optional {
-    @apply label text-text-secondary;
-  }
-
-  /* Auth Specific Components */
-  .auth-container {
-    @apply min-h-screen w-full bg-bg-primary flex items-center justify-center p-4;
-  }
-
-  .auth-card {
-    @apply bg-bg-surface rounded-3xl shadow-xl w-full max-w-[440px] p-8 md:p-10 flex flex-col items-center relative border border-border;
-  }
-
-  .auth-input {
-    @apply h-12 w-full px-4 rounded-xl border border-border bg-bg-secondary text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-border-focus focus:ring-2 transition-all duration-200;
-  }
-
-  .auth-input:focus {
-    --tw-ring-color: var(--color-border-focus);
-    --tw-ring-opacity: 0.2;
-  }
-
-  .auth-button {
-    @apply w-full h-12 px-6 bg-brand-primary text-text-inverted font-semibold rounded-xl transition-all duration-200 hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-2 shadow-md disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  /* Status Messages */
-  .alert-success {
-    @apply p-4 rounded-xl text-sm text-status-success;
-    background-color: color-mix(in srgb, var(--color-status-success) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-status-success) 20%, transparent);
-  }
-
-  .alert-error {
-    @apply p-4 rounded-xl text-sm text-status-error;
-    background-color: color-mix(in srgb, var(--color-status-error) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-status-error) 20%, transparent);
-  }
-
-  .alert-warning {
-    @apply p-4 rounded-xl text-sm text-status-warning;
-    background-color: color-mix(in srgb, var(--color-status-warning) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-status-warning) 20%, transparent);
-  }
-
-  .alert-info {
-    @apply p-4 rounded-xl text-sm text-status-info;
-    background-color: color-mix(in srgb, var(--color-status-info) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-status-info) 20%, transparent);
-  }
-
-  /* Marquee Animation */
-  .animate-marquee {
-    animation: marquee 40s linear infinite;
-  }
-
-  @keyframes marquee {
-    0% {
-      transform: translateX(0);
-    }
-
-    100% {
-      transform: translateX(-50%);
-    }
-  }
-
-  /* Divider */
-  .divider {
-    @apply relative text-center my-6 before:content-[''] before:absolute before:top-1/2 before:left-0 before:right-0 before:h-px before:bg-border;
-  }
-
-  .divider-text {
-    @apply relative inline-block px-4 bg-bg-surface text-text-tertiary text-sm font-medium;
-  }
-
-  /* Typography Utilities */
-  .text-display-xl {
-    @apply text-5xl sm:text-6xl lg:text-[5.875rem] leading-[0.9] tracking-tighter;
-  }
-
-  /* Utility for hiding scrollbars while maintaining functionality */
+  /* Custom Scrollbar Utility */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
-
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
 }
 
-body {
-  background-color: #FEF9ED;
-  @apply text-text-primary font-sans transition-colors duration-300;
-}
-
-/* Animations */
+/* Custom Page Transitions & Animations */
 @keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(12px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
@@ -252,73 +121,51 @@ body {
   from {
     opacity: 0;
   }
-
   to {
     opacity: 1;
   }
 }
 
-@keyframes slide-in {
-  from {
-    transform: translateX(-100%);
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
   }
-
-  to {
-    transform: translateX(0);
+  50% {
+    opacity: 0.7;
   }
 }
 
 .animate-fade-in-up {
-  animation: fade-in-up 0.5s ease-out;
+  animation: fade-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-fade-in {
-  animation: fade-in 0.3s ease-out;
+  animation: fade-in 0.25s ease-out forwards;
 }
 
-.animate-slide-in {
-  animation: slide-in 0.3s ease-out;
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s infinite ease-in-out;
 }
 
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Focus visible for accessibility */
-*:focus-visible {
-  @apply outline-none ring-2 ring-offset-2 ring-offset-bg-primary;
-  --tw-ring-color: var(--color-border-focus);
-}
-
-/* Selection styling */
+/* Global Selection styling */
 ::selection {
-  @apply text-text-primary;
-  background-color: color-mix(in srgb, var(--color-brand-secondary) 30%, transparent);
+  @apply bg-pcp-green-muted text-pcp-green;
 }
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background-color: transparent;
+  @apply bg-transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
-  /* slate-300 */
-  border-radius: 10px;
-  border: 3px solid transparent;
-  background-clip: content-box;
+  @apply bg-muted-foreground/20 rounded-full border-2 border-transparent bg-clip-content;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #94a3b8;
-  /* slate-400 */
+  @apply bg-muted-foreground/45;
 }
-
-/* Admin specific scrollbar overrides would be done via scope if needed, 
-   but clean slate/blue is better for both. */

@@ -11,7 +11,7 @@ export const extractFieldErrors = (error) => {
     const fieldErrors = {};
 
     // Check standard fields
-    ['email', 'password', 'first_name', 'last_name', 'phone_number', 'non_field_errors', 'detail'].forEach(field => {
+    ['email', 'password', 'name', 'phone_number', 'non_field_errors', 'detail'].forEach(field => {
         if (data[field]) {
             if (Array.isArray(data[field])) {
                 fieldErrors[field] = data[field][0];

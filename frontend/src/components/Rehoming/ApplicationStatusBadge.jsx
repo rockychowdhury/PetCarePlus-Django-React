@@ -1,1 +1,0 @@
-import React from 'react'; const ApplicationStatusBadge = () => <div className='p-8'><h1 className='text-2xl font-bold'>ApplicationStatusBadge</h1><p>Coming Soon</p></div>; export default ApplicationStatusBadge;

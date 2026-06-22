@@ -1,71 +1,104 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: ["class"],
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'class',
   theme: {
+    container: {
+      center: true,
+      padding: "2rem",
+      screens: {
+        "2xl": "1400px",
+      },
+    },
     extend: {
       colors: {
-        // Unified Semantic Color System
-        bg: {
-          primary: 'var(--color-bg-primary)',
-          secondary: 'var(--color-bg-secondary)',
-          surface: 'var(--color-bg-surface)',
-          overlay: 'var(--color-bg-overlay)',
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
         },
-        text: {
-          primary: 'var(--color-text-primary)',
-          secondary: 'var(--color-text-secondary)',
-          tertiary: 'var(--color-text-tertiary)',
-          inverted: 'var(--color-text-inverted)',
-          muted: 'var(--color-text-muted)',
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
-        brand: {
-          primary: 'var(--color-brand-primary)',
-          secondary: 'var(--color-brand-secondary)',
-          accent: 'var(--color-brand-accent)',
-          ai: 'var(--color-brand-ai)',
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
         },
-        border: {
-          DEFAULT: 'var(--color-border)',
-          light: 'var(--color-border-light)',
-          focus: 'var(--color-border-focus)',
-          error: 'var(--color-border-error)',
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
         },
-        status: {
-          success: 'var(--color-status-success)',
-          error: 'var(--color-status-error)',
-          warning: 'var(--color-status-warning)',
-          info: 'var(--color-status-info)',
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
         },
-        themev2: {
-          bg: 'var(--themev2-bg)',
-          surface: 'var(--themev2-surface)',
-          primary: 'var(--themev2-primary)',
-          text: 'var(--themev2-text)',
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
         },
-
-      },
-      fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-        logo: ['"Concert One"', 'sans-serif'],
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        
+        // PetCarePlus V2 Custom Semantic Tokens (Shades of Green Redesign)
+        pcp: {
+          green: {
+            DEFAULT: '#2D6A4F', // Deep Forest Green
+            light: '#52B788',   // Medium Mint/Sage Green
+            accent: '#00D084',  // Vibrant Neon Emerald Accent
+            hover: '#1B4332',   // Deep Emerald Green Hover
+            muted: '#D8F3DC',   // Light Sage/Mint Green Muted
+            bg: '#F4F9F5',      // Soft Clean Green Background Tint
+          },
+          orange: {
+            DEFAULT: '#40916C', // Transited to Beautiful Rich Green-Teal
+            warm: '#2D6A4F',
+          },
+          surface: '#F4F9F5',
+          card: '#FFFFFF',
+          border: '#D8F3DC',
+          text: {
+            primary: '#1B4332',  // Forest Green Primary Text
+            secondary: '#40916C', // Medium Sage/Teal Secondary Text
+            muted: '#74A58F',     // Muted Green-Gray Text
+          }
+        }
       },
       borderRadius: {
-        'xl': '0.75rem',    // 12px
-        '2xl': '1rem',      // 16px
-        '3xl': '1.5rem',    // 24px
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
-      screens: {
-        xs: '480px',
+      fontFamily: {
+        sans: ['"Hind Siliguri"', 'Inter', 'sans-serif'],
       },
-      transitionDuration: {
-        '400': '400ms',
+      keyframes: {
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
       },
     },
   },
   plugins: [
-    require('@tailwindcss/forms')
+    require("tailwindcss-animate"),
+    require("@tailwindcss/forms")
   ],
 }

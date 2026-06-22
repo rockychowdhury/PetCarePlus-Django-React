@@ -1,248 +1,176 @@
+"""
+PetCarePlus v2 — Rehoming Models
+
+Simplified from v1's 3-model flow (Request → Listing → Inquiry) to:
+- RehomingListing: direct listing, cat/dog only
+- RehomingApplication: application to adopt
+"""
+
 from django.db import models
-
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-
-class RehomingRequest(models.Model):
-    """
-    Tracks the rehoming decision process before a listing goes live.
-    Includes agreement acceptance and cooling period.
-    """
-    
-    STATUS_CHOICES = [
-        ('draft', 'Draft'),
-        ('confirmed', 'Confirmed'),  # Ready to create listing
-        ('listed', 'Listed'),       # Listing has been created
-        ('cancelled', 'Cancelled'),  # Owner changed mind
-        ('expired', 'Expired'),  # Draft never completed
-    ]
-    
-    URGENCY_CHOICES = [
-        ('immediate', 'Immediate - Emergency'),
-        ('soon', 'Within 1 Month'),
-        ('flexible', 'Flexible Timeline'),
-    ]
-    
-    pet = models.ForeignKey(
-        'pets.PetProfile',
-        on_delete=models.CASCADE,
-        related_name='rehoming_requests'
-    )
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='rehoming_requests')
-    
-    # Agreement & Terms
-    terms_accepted = models.BooleanField(default=False)
-    terms_accepted_at = models.DateTimeField(null=True, blank=True)
-    terms_version = models.CharField(max_length=20, default='1.0')  # Track which terms version
-    
-    # Rehoming Details
-    reason = models.TextField(
-        help_text="Please explain why you need to rehome your pet. This helps us find the best match."
-    )
-    urgency = models.CharField(max_length=20, choices=URGENCY_CHOICES)
-    ideal_home_notes = models.TextField(
-        blank=True,
-        help_text="Describe the ideal new home for your pet"
-    )
-    
-    # Location (for initial filtering)
-    location_city = models.CharField(max_length=100)
-    location_state = models.CharField( max_length=50)
-    location_zip = models.CharField(max_length=20, blank=True)
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-    
-    
-    # Status & Timeline
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
-    
-    confirmed_at = models.DateTimeField(null=True, blank=True)
-    cancelled_at = models.DateTimeField(null=True, blank=True)
-    cancellation_reason = models.TextField(blank=True)
-    
-    # Metadata
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    # Profile completion checks (cached for reference)
-    owner_profile_complete = models.BooleanField(default=False)
-    pet_profile_complete = models.BooleanField(default=False)
-    
-    class Meta:
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['status', 'created_at']),
-            models.Index(fields=['owner', 'status']),
-        ]
-    
-    def __str__(self):
-        return f"Rehoming Request for {self.pet.name} - {self.status}"
-    
-    @property
-    def can_proceed_to_listing(self):
-        """Check if request can be converted to active listing"""
-        return self.status == 'confirmed' and self.terms_accepted
-    
-    def cancel(self, reason=""):
-        """Cancel the rehoming request"""
-        from django.utils import timezone
-        self.status = 'cancelled'
-        self.cancelled_at = timezone.now()
-        self.cancellation_reason = reason
-        self.save()
+from django.conf import settings
 
 
 class RehomingListing(models.Model):
     """
-    Public/verified listing created from a confirmed RehomingRequest.
-    This is what adopters browse.
+    Free rehoming listing. Cat and dog only, scoped to local network.
+    One listing per pet (OneToOne).
     """
-    
-    STATUS_CHOICES = [
-        ('pending_review', 'Pending Review'),  # If moderation enabled
-        ('active', 'Active'),
-        ('paused', 'Paused'),
-        ('under_review', 'Under Review'),  # During adoption process
-        ('rehomed', 'Successfully Rehomed'),
-        ('closed', 'Closed'),
-    ]
-    
-    # Valid status transitions
-    STATUS_TRANSITIONS = {
-        'pending_review': ['active', 'rejected'],
-        'active': ['paused', 'under_review', 'closed', 'rehomed'],
-        'paused': ['active', 'closed'],
-        'under_review': ['active', 'rehomed', 'closed'],
-        'rehomed': [],  # Terminal state
-        'closed': []    # Terminal state
-    }
 
-    # Link to request that created this
-    request = models.OneToOneField(
-        RehomingRequest,
-        on_delete=models.CASCADE,
-        related_name='listing',
-        null=False,
-        blank=False
-    )
-    
-    pet = models.OneToOneField(
-        'pets.PetProfile',
-        on_delete=models.CASCADE,
-        related_name='rehoming_listing'
-    )
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='listings')
+    class Status(models.TextChoices):
+        ACTIVE = 'active', 'Active'
+        ADOPTED = 'adopted', 'Adopted'
+        WITHDRAWN = 'withdrawn', 'Withdrawn'
 
-    def can_transition_to(self, new_status):
-        """Check if status transition is allowed"""
-        return new_status in self.STATUS_TRANSITIONS.get(self.status, [])
-    
-    def save(self, *args, **kwargs):
-        """Validate status transitions before saving"""
-        if self.pk:  # Existing object
-            try:
-                old_instance = RehomingListing.objects.get(pk=self.pk)
-                if old_instance.status != self.status:
-                    if not old_instance.can_transition_to(self.status):
-                        from django.core.exceptions import ValidationError
-                        raise ValidationError(
-                            f"Cannot transition from '{old_instance.status}' to '{self.status}'"
-                        )
-            except RehomingListing.DoesNotExist:
-                pass # Should not happen if self.pk exists
-        super().save(*args, **kwargs)
-    
-    # Copy key fields from request (for query performance)
-    reason = models.TextField()
-    urgency = models.CharField(max_length=20)
-    ideal_home_notes = models.TextField(blank=True)
-    
+    class Gender(models.TextChoices):
+        MALE = 'male', 'Male'
+        FEMALE = 'female', 'Female'
+        UNKNOWN = 'unknown', 'Unknown'
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='rehoming_listings'
+    )
+    animal_type = models.ForeignKey(
+        'animals.AnimalType',
+        on_delete=models.PROTECT,
+        related_name='rehoming_listings',
+        help_text='Must be a companion animal (cat, dog)'
+    )
+
+    # Pet Identity
+    pet_name = models.CharField(max_length=100)
+    breed = models.CharField(max_length=100, blank=True)
+    gender = models.CharField(
+        max_length=10,
+        choices=Gender.choices,
+        default=Gender.UNKNOWN
+    )
+    age = models.DecimalField(
+        max_digits=4, 
+        decimal_places=1, 
+        null=True, 
+        blank=True, 
+        help_text='Age in years'
+    )
+    description = models.TextField(max_length=1000, blank=True)
+
+    # Physical & Health
+    weight_kg = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+    spayed_neutered = models.BooleanField(default=False)
+    vaccinated = models.BooleanField(default=False)
+
+    # Media
+    photo_url = models.URLField(max_length=500, blank=True)
+
     # Location
-    location_city = models.CharField(max_length=100)
-    location_state = models.CharField(max_length=50)
-    location_zip = models.CharField(max_length=20, blank=True)
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    district = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text='জেলা (District) of the pet/owner'
+    )
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text='Latitude for distance matching'
+    )
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text='Longitude for distance matching'
+    )
+
+    reason = models.TextField(help_text='Reason for rehoming')
+    adopter_requirements = models.TextField(
+        blank=True,
+        help_text='Requirements for the potential adopter (e.g. Must have yard, no other pets)'
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.ACTIVE
+    )
     
-    
-    # Listing Status
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
-    
-    # Engagement
-    view_count = models.IntegerField(default=0)
-    inquiry_count = models.IntegerField(default=0)
-    
-    # Timeline
-    published_at = models.DateTimeField(auto_now_add=True)
-    paused_at = models.DateTimeField(null=True, blank=True)
-    closed_at = models.DateTimeField(null=True, blank=True)
-    rehomed_at = models.DateTimeField(null=True, blank=True)
-    
+    policy_accepted = models.BooleanField(
+        default=False,
+        help_text='User agreed to safety and responsibility guidelines'
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
-        ordering = ['-published_at']
-        indexes = [
-            models.Index(fields=['status', 'urgency']),
-            models.Index(fields=['location_state', 'status']),
-            models.Index(fields=['published_at']),
-        ]
-    
+        verbose_name = 'Rehoming Listing'
+        verbose_name_plural = 'Rehoming Listings'
+        ordering = ['-created_at']
+
     def __str__(self):
-        return f"Listing for {self.pet.name} - {self.status}"
-    
-    def mark_as_rehomed(self, new_owner=None):
-        """Mark pet and listing as rehomed"""
-        from django.utils import timezone
-        self.status = 'rehomed'
-        self.rehomed_at = timezone.now()
-        
-        self.pet.status = 'rehomed'
-        if new_owner:
-            self.pet.owner = new_owner
-            
-        self.pet.save()
-        self.save()
+        return f'Rehoming: {self.pet_name} ({self.status})'
+
+    def clean(self):
+        """Validate that the animal type supports rehoming (cat/dog only)."""
+        from django.core.exceptions import ValidationError
+        if self.animal_type and not self.animal_type.supports_rehoming:
+            raise ValidationError(
+                f'{self.animal_type.name_en} cannot be listed for rehoming. '
+                'Only cats and dogs are eligible.'
+            )
 
 
-class AdoptionInquiry(models.Model):
+class RehomingApplication(models.Model):
     """
-    Previously RehomingRequest.
-    A simple handshake request from an adopter to start a conversation.
+    Application to adopt a pet from a rehoming listing.
     """
-    listing = models.ForeignKey(RehomingListing, on_delete=models.CASCADE, related_name="inquiries")
-    requester = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_inquiries")
 
-    message = models.TextField(help_text="Introductory message to the owner")
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        REVIEWED = 'reviewed', 'Reviewed'
+        APPROVED = 'approved', 'Approved'
+        REJECTED = 'rejected', 'Rejected'
+        CANCELLED = 'cancelled', 'Cancelled'
 
-    STATUS_CHOICES = [
-        ('pending_review', 'Pending Review'),
-        ('approved_meet_greet', 'Approved for Meet & Greet'),
-        ('adopted', 'Adopted'),
-        ('rejected', 'Rejected'),
-        ('withdrawn', 'Withdrawn'),
-    ]
+    listing = models.ForeignKey(
+        RehomingListing,
+        on_delete=models.CASCADE,
+        related_name='applications'
+    )
+    applicant = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='rehoming_applications'
+    )
+
+    message = models.TextField(help_text='Why do you want to adopt this pet?')
 
     status = models.CharField(
-        max_length=50,
-        choices=STATUS_CHOICES,
-        default='pending_review'
+        max_length=10,
+        choices=Status.choices,
+        default=Status.PENDING
     )
     
-    owner_notes = models.TextField(blank=True, null=True, help_text="Notes from the owner regarding this application")
-    rejection_reason = models.TextField(blank=True, null=True, help_text="Reason for rejection")
-
-    # AI Match Analysis
-    match_percentage = models.IntegerField(default=0, help_text="AI Calculated match percentage (0-100)")
-    ai_processed = models.BooleanField(default=False, help_text="Whether this application has been analyzed by AI")
+    ai_score = models.IntegerField(
+        null=True, 
+        blank=True,
+        help_text='AI-generated matching score out of 10'
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('listing', 'requester') 
+        verbose_name = 'Rehoming Application'
+        verbose_name_plural = 'Rehoming Applications'
+        ordering = ['-created_at']
+        unique_together = ('listing', 'applicant')
 
     def __str__(self):
-        return f"Inquiry by {self.requester.email} for {self.listing.pet.name}"
+        return f'Application: {self.applicant.email} → {self.listing.pet_name}'
