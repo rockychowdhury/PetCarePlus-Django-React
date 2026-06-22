@@ -71,7 +71,6 @@ INSTALLED_APPS = [
     'apps.rehoming',
     'apps.notifications',
     'apps.locations',
-    'django_q',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -239,16 +238,3 @@ else:
         }
     }
 
-# Django Q2 Settings
-Q_CLUSTER = {
-    'name': 'petcareplus',
-    'workers': 2,
-    'recycle': 50,
-    'timeout': 60,
-    'compress': True,
-    'save_limit': 250,
-    'queue_limit': 500,
-    'cpu_affinity': 1,
-    'label': 'Django Q',
-    'orm': 'default'
-}

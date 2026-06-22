@@ -23,8 +23,6 @@ from apps.rehoming.serializers import (
 )
 
 from apps.rehoming.tasks import calculate_ai_score_task
-from django_q.tasks import async_task
-
 
 @method_decorator(cache_page(60 * 15), name='list')
 @method_decorator(vary_on_headers('Authorization', 'Cookie'), name='list')
@@ -154,9 +152,8 @@ class RehomingApplicationViewSet(viewsets.ModelViewSet):
             ai_score=None
         )
 
-        # Trigger AI analysis as a background task
-        async_task(
-            calculate_ai_score_task,
+        # Trigger AI analysis synchronously
+        calculate_ai_score_task(
             application.id,
             listing_details,
             message

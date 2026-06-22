@@ -20,8 +20,4 @@ python-dotenv==1.0.1
 # Utilities
 pillow>=11.0.0
 requests>=2.32.5
-django-background-tasks>=1.2.5
-
-
-django-q2==1.6.1
 redis>=5.0.1
