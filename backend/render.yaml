@@ -22,7 +22,7 @@ services:
       - key: ALLOWED_HOSTS
         value: "*"
       - key: DJANGO_SETTINGS_MODULE
-        value: PetCarePlus.settings
+        value: config.settings.production
   - type: redis
     name: petcareplus-redis
     ipAllowList: [] # Only allow internal connections
