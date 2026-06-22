@@ -15,8 +15,7 @@ urlpatterns = [
     # API v1
     path('api/v1/auth/', include('apps.accounts.urls')),
     path('api/v1/animals/', include('apps.animals.urls')),
-    path('api/v1/guidelines/', include('apps.animals.urls_guidelines')),
-    path('api/v1/vaccinations/', include('apps.animals.urls_vaccinations')),
+
     path('api/v1/resources/', include('apps.resources.urls')),
     path('api/v1/providers/', include('apps.providers.urls')),
     path('api/v1/bookings/', include('apps.bookings.urls')),

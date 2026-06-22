@@ -198,7 +198,7 @@ APPEND_SLASH = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = get_env(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:5173,http://127.0.0.1:5173',
+    default='http://localhost:5173,http://127.0.0.1:5173,https://petcarepp.netlify.app',
     cast=lambda v: [s.strip() for s in v.split(',')]
 )
 
@@ -219,6 +219,25 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # ──────────────────────────────────────────────
 
 FRONTEND_URL = get_env('FRONTEND_URL', default='http://localhost:5173')
+
+# ──────────────────────────────────────────────
+# Caching Configuration
+# ──────────────────────────────────────────────
+
+REDIS_URL = get_env('REDIS_URL') or get_env('REDIS_CACHE_URL')
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
 
 # Django Q2 Settings
 Q_CLUSTER = {

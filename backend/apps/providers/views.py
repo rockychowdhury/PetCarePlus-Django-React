@@ -9,6 +9,9 @@ from rest_framework import viewsets, permissions, filters, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_headers
 
 from common.pagination import StandardPagination
 from common.permissions import IsOwnerOrAdmin
@@ -24,6 +27,10 @@ class ServiceProviderPagination(StandardPagination):
     page_size = 16
 
 
+@method_decorator(cache_page(60 * 15), name='list')
+@method_decorator(vary_on_headers('Authorization', 'Cookie'), name='list')
+@method_decorator(cache_page(60 * 15), name='retrieve')
+@method_decorator(vary_on_headers('Authorization', 'Cookie'), name='retrieve')
 class ServiceProviderViewSet(viewsets.ModelViewSet):
     """
     ViewSet for ServiceProvider.

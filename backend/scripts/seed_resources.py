@@ -116,7 +116,13 @@ def seed_resources():
     ]
 
     for item_data in resources_data:
-        Resource.objects.create(**item_data)
+        animal_type = item_data.pop('animal_type', None)
+        resource = Resource.objects.create(**item_data)
+        if animal_type:
+            resource.animal_types.add(animal_type)
+        else:
+            if dog: resource.animal_types.add(dog)
+            if cat: resource.animal_types.add(cat)
         
     print(f"Successfully seeded {len(resources_data)} resources.")
 

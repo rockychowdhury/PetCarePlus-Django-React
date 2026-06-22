@@ -33,7 +33,7 @@ CSRF_COOKIE_HTTPONLY = True
 
 CSRF_TRUSTED_ORIGINS = get_env(
     'CSRF_TRUSTED_ORIGINS',
-    default='https://petcareplus.app',
+    default='https://petcarepp.netlify.app',
     cast=lambda v: [s.strip() for s in v.split(',')]
 )
 

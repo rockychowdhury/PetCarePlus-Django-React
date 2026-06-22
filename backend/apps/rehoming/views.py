@@ -10,6 +10,9 @@ from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.db.models import Q, F
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_headers
 
 from common.permissions import IsOwnerOrAdmin
 from common.utils import get_local_queryset
@@ -23,6 +26,10 @@ from apps.rehoming.tasks import calculate_ai_score_task
 from django_q.tasks import async_task
 
 
+@method_decorator(cache_page(60 * 15), name='list')
+@method_decorator(vary_on_headers('Authorization', 'Cookie'), name='list')
+@method_decorator(cache_page(60 * 15), name='retrieve')
+@method_decorator(vary_on_headers('Authorization', 'Cookie'), name='retrieve')
 class RehomingListingViewSet(viewsets.ModelViewSet):
     """
     ViewSet for RehomingListings.
