@@ -199,7 +199,7 @@ class SavedItemViewSet(viewsets.ViewSet):
         if model_type == 'serviceprovider':
             objects_dict = {
                 obj.id: obj for obj in model.objects.select_related(
-                    'user', 'division', 'district', 'upazila', 'union'
+                    'user'
                 ).prefetch_related(
                     'services', 'animal_types__animal_type'
                 ).filter(id__in=object_ids)
