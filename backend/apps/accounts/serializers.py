@@ -58,12 +58,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     Generates a secure password and emails it to the user.
     """
     name = serializers.CharField(write_only=True, required=True)
-    phone = serializers.CharField(write_only=True, required=True)
+    phone = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    password = serializers.CharField(write_only=True, required=True, min_length=8)
 
     class Meta:
         model = User
         fields = [
-            'id', 'email', 'name', 'phone', 'role'
+            'id', 'email', 'name', 'phone', 'password', 'role'
         ]
 
     def validate_email(self, value):
@@ -80,57 +81,15 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user = User.objects.create(
             email=validated_data['email'],
             full_name=name,
-            phone_number=validated_data['phone'],
+            phone_number=validated_data.get('phone', ''),
             role=role,
             is_active=not is_provider  # Provider accounts start as inactive
         )
 
-        from django.core.mail import send_mail
-        from django.conf import settings
-
-        if is_provider:
-            # Set unusable password for providers until admin verifies
-            user.set_unusable_password()
-            user.save()
-
-            # Send pending approval email
-            subject = 'Pending Approval: PetCarePlus / অনুমোদনের অপেক্ষায়'
-            message = f"""Hi {validated_data['name']},
-
-Your provider account has been successfully created but is currently pending approval.
-আপনার সেবাদাতা অ্যাকাউন্টটি সফলভাবে তৈরি করা হয়েছে তবে এটি বর্তমানে অনুমোদনের অপেক্ষায় রয়েছে।
-
-Please contact your nearest Department of Livestock Services officer to verify your profile.
-আপনার প্রোফাইল যাচাই করার জন্য অনুগ্রহ করে আপনার নিকটস্থ প্রাণিসম্পদ অধিদপ্তরের কর্মকর্তার সাথে যোগাযোগ করুন।
-
-Once verified, you will receive another email with your login password.
-যাচাইকরণ সম্পন্ন হলে, আপনি লগইন পাসওয়ার্ডসহ আরেকটি ইমেইল পাবেন।
-
-Best regards,
-PetCarePlus Team
-পেটকেয়ারপ্লাস টিম
-"""
-        else:
-            # Generate random password for regular users
-            import secrets
-            import string
-            alphabet = string.ascii_letters + string.digits
-            password = ''.join(secrets.choice(alphabet) for _ in range(8))
-            
-            user.set_password(password)
-            user.save()
-
-            # Render free tier blocks outbound SMTP port 587. 
-            # We must return the password directly to the frontend.
-            user.plain_password = password
+        user.set_password(validated_data['password'])
+        user.save()
 
         return user
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        if hasattr(instance, 'plain_password'):
-            data['plain_password'] = instance.plain_password
-        return data
 
 
 class UserProfileSerializer(serializers.ModelSerializer):

@@ -157,53 +157,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def save(self, *args, **kwargs):
         # Check if this is an update to an existing provider user
-        if self.pk and self.role == 'provider' and self.is_active:
-            try:
-                orig = User.objects.get(pk=self.pk)
-                # If they were inactive and are now active (approved by admin)
-                if not orig.is_active:
-                    # Generate a random password
-                    import secrets
-                    import string
-                    alphabet = string.ascii_letters + string.digits
-                    password = ''.join(secrets.choice(alphabet) for _ in range(8))
-                    
-                    self.set_password(password)
-
-                    # Send welcome email with password
-                    from django.core.mail import send_mail
-                    from django.conf import settings
-
-                    subject = 'Approved: PetCarePlus Provider Account / আপনার অ্যাকাউন্টটি অনুমোদিত হয়েছে!'
-                    message = f"""Hi {self.full_name},
-
-Great news! Your provider account has been verified and approved by the admin.
-দারুণ খবর! আপনার সেবাদাতা অ্যাকাউন্টটি অ্যাডমিন দ্বারা যাচাই এবং অনুমোদিত হয়েছে।
-
-Here are your login credentials to access the platform:
-প্ল্যাটফর্মে প্রবেশ করার জন্য আপনার লগইন বিবরণ নিচে দেওয়া হলো:
-
-Email (ইমেইল): {self.email}
-Password (পাসওয়ার্ড): {password}
-
-Please log in using the link below to complete your business profile:
-অনুগ্রহ করে নিচের লিঙ্কের মাধ্যমে লগইন করুন এবং আপনার ব্যবসার প্রোফাইল সম্পূর্ণ করুন:
-
-{settings.FRONTEND_URL}/login
-
-Best regards,
-PetCarePlus Team
-পেটকেয়ারপ্লাস টিম
-"""
-                    send_mail(
-                        subject,
-                        message,
-                        settings.DEFAULT_FROM_EMAIL or 'noreply@petcareplus.app',
-                        [self.email],
-                        fail_silently=True
-                    )
-            except User.DoesNotExist:
-                pass
+        # Providers now set their own password during registration, so we don't need to generate one
+        # or send an email on approval since Render free tier blocks SMTP.
         
         super().save(*args, **kwargs)
 

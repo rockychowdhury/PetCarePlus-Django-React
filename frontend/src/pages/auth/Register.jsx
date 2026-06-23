@@ -13,20 +13,16 @@ export const Register = () => {
   // Form fields state
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
+  const [password, setPassword] = useState('')
   const [role, setRole] = useState('pet_owner')
   
   const [errorText, setErrorText] = useState('')
   const [registered, setRegistered] = useState(false)
-  const [registeredPassword, setRegisteredPassword] = useState('')
 
   // Mutation to handle registration
   const registerMutation = useMutation({
     mutationFn: (userData) => authApi.register(userData),
-    onSuccess: (data) => {
-      if (data?.plain_password) {
-        setRegisteredPassword(data.plain_password)
-      }
+    onSuccess: () => {
       setRegistered(true)
     },
     onError: (err) => {
@@ -41,7 +37,7 @@ export const Register = () => {
     registerMutation.mutate({
       name,
       email,
-      phone,
+      password,
       role,
     })
   }
@@ -76,21 +72,13 @@ export const Register = () => {
               ) : (
                 language === 'bn' ? (
                   <>
-                    স্বাগতম! আপনার অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে। আপনার লগইন পাসওয়ার্ডটি নিচে দেওয়া হলো। 
-                    <br/><br/>
-                    ইমেইল: <strong className="text-primary">{email}</strong><br/>
-                    পাসওয়ার্ড: <strong className="text-primary font-mono text-base bg-primary/10 px-2 py-1 rounded">{registeredPassword}</strong>
-                    <br/><br/>
-                    লগইন করার পর পাসওয়ার্ডটি সংরক্ষণ করে রাখুন।
+                    স্বাগতম! আপনার অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে। 
+                    অনুগ্রহ করে লগইন পেজে গিয়ে আপনার ইমেইল এবং পাসওয়ার্ড দিয়ে প্রবেশ করুন।
                   </>
                 ) : (
                   <>
-                    Welcome! Your account has been successfully created. Your login password is provided below.
-                    <br/><br/>
-                    Email: <strong className="text-primary">{email}</strong><br/>
-                    Password: <strong className="text-primary font-mono text-base bg-primary/10 px-2 py-1 rounded">{registeredPassword}</strong>
-                    <br/><br/>
-                    Please save this password for your records before proceeding.
+                    Welcome! Your account has been successfully created.
+                    Please proceed to the login page and sign in with your email and password.
                   </>
                 )
               )}
@@ -162,17 +150,18 @@ export const Register = () => {
               </div>
             </div>
 
-            {/* Mobile number */}
+            {/* Password */}
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-muted-foreground">{t('auth.phone')}</label>
+              <label className="text-[11px] font-bold text-muted-foreground">{t('auth.password')}</label>
               <div className="relative">
-                <Phone className="absolute left-3 top-2 text-muted-foreground w-3.5 h-3.5" />
+                <AlertCircle className="absolute left-3 top-2 text-muted-foreground w-3.5 h-3.5" />
                 <input 
-                  type="text" 
-                  value={phone} 
-                  onChange={(e) => setPhone(e.target.value)} 
+                  type="password" 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
                   required 
-                  placeholder="017XXXXXXXX" 
+                  minLength={8}
+                  placeholder="••••••••" 
                   className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold" 
                 />
               </div>
