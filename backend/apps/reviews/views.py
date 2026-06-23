@@ -35,8 +35,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         provider_pk = self.kwargs.get('provider_pk')
         if provider_pk:
-            return Review.objects.filter(provider_id=provider_pk)
-        return Review.objects.all()
+            return Review.objects.select_related('reviewer').filter(provider_id=provider_pk)
+        return Review.objects.select_related('reviewer').all()
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:

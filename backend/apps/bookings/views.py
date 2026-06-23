@@ -29,19 +29,25 @@ class BookingViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         
+        base_qs = Booking.objects.select_related(
+            'user', 'provider__user', 'service', 'animal_type', 'review'
+        ).prefetch_related(
+            'provider__services', 'provider__animal_types__animal_type'
+        )
+        
         # Admin can access all appointments
         if user.role == 'admin':
-            return Booking.objects.all()
+            return base_qs.all()
             
         # Providers view appointments booked with them
         if user.role == 'provider':
             # Check if user has a ServiceProvider profile
             if hasattr(user, 'service_provider'):
-                return Booking.objects.filter(provider=user.service_provider)
+                return base_qs.filter(provider=user.service_provider)
             return Booking.objects.none()
 
         # Regular customers (pet owners/farmers) view their own appointments
-        return Booking.objects.filter(user=user)
+        return base_qs.filter(user=user)
 
     def perform_create(self, serializer):
         user = self.request.user

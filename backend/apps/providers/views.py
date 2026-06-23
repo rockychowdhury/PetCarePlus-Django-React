@@ -10,8 +10,11 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_headers
+
+from django.db.models import Exists, OuterRef
+from django.contrib.contenttypes.models import ContentType
+from apps.accounts.models import SavedItem
 
 from common.pagination import StandardPagination
 from common.permissions import IsOwnerOrAdmin
@@ -27,10 +30,7 @@ class ServiceProviderPagination(StandardPagination):
     page_size = 16
 
 
-@method_decorator(cache_page(60 * 15), name='list')
-@method_decorator(vary_on_headers('Authorization', 'Cookie'), name='list')
-@method_decorator(cache_page(60 * 15), name='retrieve')
-@method_decorator(vary_on_headers('Authorization', 'Cookie'), name='retrieve')
+
 class ServiceProviderViewSet(viewsets.ModelViewSet):
     """
     ViewSet for ServiceProvider.
@@ -47,11 +47,21 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         
         # Admin gets everything
         if user and user.is_authenticated and user.role == 'admin':
-            return ServiceProvider.objects.prefetch_related('animal_types').all()
+            qs = ServiceProvider.objects.select_related('user', 'division', 'district', 'upazila', 'union').prefetch_related('services', 'animal_types__animal_type').all()
+            return qs
 
         # For detail views (retrieve, toggle_favorite), don't restrict by location cascade
         if getattr(self, 'action', None) != 'list':
-            return ServiceProvider.objects.prefetch_related('animal_types').filter(is_verified=True, is_active=True)
+            qs = ServiceProvider.objects.select_related('user', 'division', 'district', 'upazila', 'union').prefetch_related('services', 'animal_types__animal_type').filter(is_verified=True, is_active=True)
+            if user and user.is_authenticated:
+                ct = ContentType.objects.get_for_model(ServiceProvider)
+                saved_subquery = SavedItem.objects.filter(
+                    user=user,
+                    content_type=ct,
+                    object_id=OuterRef('pk')
+                )
+                qs = qs.annotate(is_saved=Exists(saved_subquery))
+            return qs
 
         provider_type = self.request.query_params.get('provider_type')
         animal_type_id = self.request.query_params.get('animal_type')
@@ -101,7 +111,17 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
             )
 
         # Fallback: List all active verified service providers
-        qs = ServiceProvider.objects.prefetch_related('animal_types').filter(is_verified=True, is_active=True)
+        qs = ServiceProvider.objects.select_related('user', 'division', 'district', 'upazila', 'union').prefetch_related('services', 'animal_types__animal_type').filter(is_verified=True, is_active=True)
+        
+        if user and user.is_authenticated:
+            ct = ContentType.objects.get_for_model(ServiceProvider)
+            saved_subquery = SavedItem.objects.filter(
+                user=user,
+                content_type=ct,
+                object_id=OuterRef('pk')
+            )
+            qs = qs.annotate(is_saved=Exists(saved_subquery))
+            
         if provider_type:
             qs = qs.filter(provider_type=provider_type)
         if animal_type_id:
@@ -152,7 +172,17 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         resolved_level = 'exact'
 
         if location_source:
-            base_qs = ServiceProvider.objects.filter(is_verified=True, is_active=True)
+            base_qs = ServiceProvider.objects.select_related('user', 'division', 'district', 'upazila', 'union').prefetch_related('services', 'animal_types__animal_type').filter(is_verified=True, is_active=True)
+            
+            if user and user.is_authenticated:
+                ct = ContentType.objects.get_for_model(ServiceProvider)
+                saved_subquery = SavedItem.objects.filter(
+                    user=user,
+                    content_type=ct,
+                    object_id=OuterRef('pk')
+                )
+                base_qs = base_qs.annotate(is_saved=Exists(saved_subquery))
+
             if provider_type:
                 base_qs = base_qs.filter(provider_type=provider_type)
             if animal_type_id:

@@ -196,7 +196,21 @@ class SavedItemViewSet(viewsets.ViewSet):
         saved_items = SavedItem.objects.filter(user=request.user, content_type=content_type).order_by('-created_at')
         
         object_ids = saved_items.values_list('object_id', flat=True)
-        objects_dict = {obj.id: obj for obj in model.objects.filter(id__in=object_ids)}
+        if model_type == 'serviceprovider':
+            objects_dict = {
+                obj.id: obj for obj in model.objects.select_related(
+                    'user', 'division', 'district', 'upazila', 'union'
+                ).prefetch_related(
+                    'services', 'animal_types__animal_type'
+                ).filter(id__in=object_ids)
+            }
+        elif model_type == 'resource':
+            objects_dict = {
+                obj.id: obj for obj in model.objects.prefetch_related('animal_types').filter(id__in=object_ids)
+            }
+        else:
+            objects_dict = {obj.id: obj for obj in model.objects.filter(id__in=object_ids)}
+            
         ordered_objects = [objects_dict[obj_id] for obj_id in object_ids if obj_id in objects_dict]
         
         if model_type == 'serviceprovider':

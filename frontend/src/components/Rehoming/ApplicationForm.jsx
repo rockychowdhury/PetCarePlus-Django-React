@@ -11,7 +11,7 @@ export const ApplicationForm = ({ listingId, ownerName, adopterName, adopterCont
   const { language, t } = useLanguage()
   const queryClient = useQueryClient()
   
-  const defaultClosing = `${language === 'bn' ? 'বিনীত,' : 'Sincerely,'}\n${adopterName}\n${adopterContact}`
+  const defaultClosing = `Sincerely,\n${adopterName}\n${adopterContact}`
   
   const [message, setMessage] = useState('')
   const [closing, setClosing] = useState(defaultClosing)
@@ -59,10 +59,10 @@ export const ApplicationForm = ({ listingId, ownerName, adopterName, adopterCont
     mutationFn: (text) => aiApi.polishText(text, language),
     onSuccess: (data) => {
       setMessage(data.polished_text)
-      toast.success(language === 'bn' ? 'টেক্সট পলিশ করা হয়েছে!' : 'Text polished successfully!', { icon: '✨' })
+      toast.success('Text polished successfully!', { icon: '✨' })
     },
     onError: () => {
-      toast.error(language === 'bn' ? 'পলিশ করতে সমস্যা হয়েছে।' : 'Failed to polish text.')
+      toast.error('Failed to polish text.')
     }
   })
 
@@ -87,7 +87,7 @@ export const ApplicationForm = ({ listingId, ownerName, adopterName, adopterCont
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border/40 pb-2 mb-4">
         <h4 className="font-bold text-sm uppercase text-pcp-text-primary tracking-wider">
-          {language === 'bn' ? 'দত্তক নিতে আবেদন করুন' : 'Apply to Adopt'}
+          Apply to Adopt
         </h4>
         
         {isDirty && !applyMutation.isPending && !successText && (
@@ -106,7 +106,7 @@ export const ApplicationForm = ({ listingId, ownerName, adopterName, adopterCont
         {/* Email Header / Greeting */}
         <div className="px-5 pt-5 pb-1">
           <p className="font-medium text-foreground">
-            {language === 'bn' ? 'হ্যালো' : 'Hello'} <span className="font-bold">{ownerName}</span>,
+            Hello <span className="font-bold">{ownerName}</span>,
           </p>
         </div>
 
@@ -116,7 +116,7 @@ export const ApplicationForm = ({ listingId, ownerName, adopterName, adopterCont
             <div className="absolute inset-0 z-10 bg-background/50 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-lg">
               <Loader2 className="w-6 h-6 text-indigo-500 animate-spin mb-2" />
               <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 rounded-full animate-pulse">
-                {language === 'bn' ? 'AI দিয়ে সাজানো হচ্ছে...' : 'Polishing with AI...'}
+                Polishing with AI...
               </span>
             </div>
           )}
@@ -126,9 +126,7 @@ export const ApplicationForm = ({ listingId, ownerName, adopterName, adopterCont
             required
             rows={5}
             disabled={applyMutation.isPending || polishMutation.isPending || !!successText}
-            placeholder={language === 'bn' 
-              ? 'শর্তসমূহ পড়ে আপনার পোষা প্রাণী পালনের অভিজ্ঞতা এবং কেন আপনি এটি দত্তক নিতে চান তা লিখুন...' 
-              : 'Read the requirements and write your pet care experience and why you want to adopt this pet...'}
+            placeholder="Read the requirements and write your pet care experience and why you want to adopt this pet..."
             className={`w-full resize-none bg-transparent border-none focus:ring-0 p-0 text-foreground placeholder:text-muted-foreground/50 leading-relaxed transition-opacity ${polishMutation.isPending ? 'opacity-30' : 'opacity-100'}`}
           />
         </div>
@@ -178,7 +176,7 @@ export const ApplicationForm = ({ listingId, ownerName, adopterName, adopterCont
           ) : (
             <Sparkles className="w-3.5 h-3.5" />
           )}
-          <span>{language === 'bn' ? 'এআই দিয়ে পলিশ করুন' : 'Polish with AI'}</span>
+          <span>Polish with AI</span>
         </button>
 
         <button

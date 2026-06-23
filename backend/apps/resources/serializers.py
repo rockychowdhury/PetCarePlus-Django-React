@@ -39,13 +39,7 @@ class ResourceSerializer(BilingualMixin, serializers.ModelSerializer):
         ]
 
     def get_is_saved(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            from apps.accounts.models import SavedItem
-            from django.contrib.contenttypes.models import ContentType
-            content_type = ContentType.objects.get_for_model(obj)
-            return SavedItem.objects.filter(user=request.user, content_type=content_type, object_id=obj.id).exists()
-        return False
+        return getattr(obj, 'is_saved', False)
 
     def get_title(self, obj):
         return self.get_bilingual_field(obj, 'title')

@@ -10,8 +10,11 @@ from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 
 from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_headers
+
+from django.db.models import Exists, OuterRef
+from django.contrib.contenttypes.models import ContentType
+from apps.accounts.models import SavedItem
 
 from common.permissions import IsAdminUser
 from apps.resources.models import Resource
@@ -24,7 +27,6 @@ class ResourcePagination(PageNumberPagination):
     max_page_size = 100
 
 
-@method_decorator(cache_page(None), name='retrieve')
 @method_decorator(vary_on_headers('Authorization', 'Cookie'), name='retrieve')
 class ResourceViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -49,11 +51,24 @@ class ResourceViewSet(viewsets.ReadOnlyModelViewSet):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        # Admins can view inactive resources in list/detail; others only active
         user = self.request.user
+        
+        qs = Resource.objects.prefetch_related('animal_types')
         if user and user.is_authenticated and user.role == 'admin':
-            return Resource.objects.prefetch_related('animal_types').all()
-        return Resource.objects.prefetch_related('animal_types').filter(is_active=True)
+            pass
+        else:
+            qs = qs.filter(is_active=True)
+            
+        if user and user.is_authenticated:
+            ct = ContentType.objects.get_for_model(Resource)
+            saved_subquery = SavedItem.objects.filter(
+                user=user,
+                content_type=ct,
+                object_id=OuterRef('pk')
+            )
+            qs = qs.annotate(is_saved=Exists(saved_subquery))
+            
+        return qs
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:

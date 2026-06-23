@@ -75,13 +75,7 @@ class ServiceProviderSerializer(BilingualMixin, serializers.ModelSerializer):
         return self.get_bilingual_field(obj, 'description')
 
     def get_is_favorite(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            from apps.accounts.models import SavedItem
-            from django.contrib.contenttypes.models import ContentType
-            content_type = ContentType.objects.get_for_model(obj)
-            return SavedItem.objects.filter(user=request.user, content_type=content_type, object_id=obj.id).exists()
-        return False
+        return getattr(obj, 'is_saved', False)
 
     def get_supported_animal_types(self, obj):
         # Retrieve mapped bilingual animal types

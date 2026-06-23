@@ -11,7 +11,6 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.db.models import Q, F
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_headers
 
 from common.permissions import IsOwnerOrAdmin
@@ -24,10 +23,7 @@ from apps.rehoming.serializers import (
 
 from apps.rehoming.tasks import calculate_ai_score_task
 
-@method_decorator(cache_page(60 * 15), name='list')
-@method_decorator(vary_on_headers('Authorization', 'Cookie'), name='list')
-@method_decorator(cache_page(60 * 15), name='retrieve')
-@method_decorator(vary_on_headers('Authorization', 'Cookie'), name='retrieve')
+
 class RehomingListingViewSet(viewsets.ModelViewSet):
     """
     ViewSet for RehomingListings.
@@ -42,10 +38,10 @@ class RehomingListingViewSet(viewsets.ModelViewSet):
         
         # Admin views all listings
         if user and user.is_authenticated and user.role == 'admin':
-            return RehomingListing.objects.all()
+            return RehomingListing.objects.select_related('owner', 'animal_type').all()
 
         # Public listings: only ACTIVE listings
-        qs = RehomingListing.objects.filter(status=RehomingListing.Status.ACTIVE)
+        qs = RehomingListing.objects.select_related('owner', 'animal_type').filter(status=RehomingListing.Status.ACTIVE)
 
         # 1. Explicit district filter
         district = self.request.query_params.get('district')
@@ -101,7 +97,7 @@ class RehomingListingViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def mine(self, request):
         """Returns all rehoming listings created by the current user (including adopted/cancelled)."""
-        qs = RehomingListing.objects.filter(owner=request.user).order_by('-created_at')
+        qs = RehomingListing.objects.select_related('owner', 'animal_type').filter(owner=request.user).order_by('-created_at')
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
 
@@ -124,7 +120,12 @@ class RehomingApplicationViewSet(viewsets.ModelViewSet):
             return RehomingApplication.objects.all()
 
         # Users see applications they sent, or received on their listings
-        return RehomingApplication.objects.filter(
+        return RehomingApplication.objects.select_related(
+            'listing', 
+            'applicant', 
+            'listing__owner', 
+            'listing__animal_type'
+        ).filter(
             Q(applicant=user) | Q(listing__owner=user)
         ).order_by(F('ai_score').desc(nulls_last=True), '-created_at')
 
