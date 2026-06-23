@@ -8,10 +8,9 @@ export const useLocalProviders = (filters = {}) => {
   const isAuthenticated = !!useAuthStore((state) => state.user)
 
   const {
-    division: storeDiv,
-    district: storeDist,
-    upazila: storeUpz,
-    union: storeUnion,
+    division_id: storeDiv,
+    district_id: storeDist,
+    upazila_id: storeUpz,
     latitude: storeLat,
     longitude: storeLng
   } = useLocationStore()
@@ -22,12 +21,11 @@ export const useLocalProviders = (filters = {}) => {
 
   // Always inject available manual location fields
   if (storeDiv === 'all') {
-    queryParams.division = 'all'
+    queryParams.division_id = 'all'
   } else {
-    if (storeDiv) queryParams.division = storeDiv
-    if (storeDist) queryParams.district = storeDist
-    if (storeUpz) queryParams.upazila = storeUpz
-    if (storeUnion) queryParams.union = storeUnion
+    if (storeDiv) queryParams.division_id = storeDiv
+    if (storeDist) queryParams.district_id = storeDist
+    if (storeUpz) queryParams.upazila_id = storeUpz
   }
 
   // Inject GPS coordinates if available
@@ -44,7 +42,6 @@ export const useLocalProviders = (filters = {}) => {
       storeDiv,
       storeDist,
       storeUpz,
-      storeUnion,
       storeLat,
       storeLng,
       queryParams,

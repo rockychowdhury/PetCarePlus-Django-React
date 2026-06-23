@@ -88,7 +88,7 @@ class ServiceProvider(models.Model):
         ordering = ['-avg_rating', '-created_at']
         indexes = [
             models.Index(fields=['provider_type', 'is_verified']),
-            models.Index(fields=['division', 'district']),
+            models.Index(fields=['division', 'district', 'upazila']),
             models.Index(fields=['avg_rating']),
         ]
 

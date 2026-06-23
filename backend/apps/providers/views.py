@@ -47,36 +47,47 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         
         # Admin gets everything
         if user and user.is_authenticated and user.role == 'admin':
-            return ServiceProvider.objects.all()
+            return ServiceProvider.objects.prefetch_related('animal_types').all()
 
         # For detail views (retrieve, toggle_favorite), don't restrict by location cascade
         if getattr(self, 'action', None) != 'list':
-            return ServiceProvider.objects.filter(is_verified=True, is_active=True)
+            return ServiceProvider.objects.prefetch_related('animal_types').filter(is_verified=True, is_active=True)
 
         provider_type = self.request.query_params.get('provider_type')
         animal_type_id = self.request.query_params.get('animal_type')
 
         # Check query parameters for explicit location scoping override
-        division = self.request.query_params.get('division')
-        district = self.request.query_params.get('district')
-        upazila = self.request.query_params.get('upazila')
-        union = self.request.query_params.get('union')
+        division_id = self.request.query_params.get('division_id')
+        district_id = self.request.query_params.get('district_id')
+        upazila_id = self.request.query_params.get('upazila_id')
         lat = self.request.query_params.get('lat')
         lng = self.request.query_params.get('lng')
         
+        # Look up names from IDs
+        from apps.locations.models import Division, District, Upazila
+        division_name = None
+        district_name = None
+        upazila_name = None
+        
+        if division_id and division_id != 'all':
+            division_name = Division.objects.filter(id=division_id).values_list('name_en', flat=True).first()
+        if district_id:
+            district_name = District.objects.filter(id=district_id).values_list('name_en', flat=True).first()
+        if upazila_id:
+            upazila_name = Upazila.objects.filter(id=upazila_id).values_list('name_en', flat=True).first()
+            
         location_source = None
-        if division == 'all':
+        if division_id == 'all':
             pass # Explicit override for nationwide search
-        elif division or district or upazila or union or (lat and lng):
+        elif division_name or district_name or upazila_name or (lat and lng):
             class MockUser:
-                def __init__(self, div, dist, upz, uni, la, ln):
+                def __init__(self, div, dist, upz, la, ln):
                     self.division = div
                     self.district = dist
                     self.upazila = upz
-                    self.union = uni
                     self.latitude = la
                     self.longitude = ln
-            location_source = MockUser(division, district, upazila, union, lat, lng)
+            location_source = MockUser(division_name, district_name, upazila_name, lat, lng)
         elif user and user.is_authenticated and (user.district or user.latitude):
             # Fallback to user profile if no explicit search location is provided
             location_source = user
@@ -90,7 +101,7 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
             )
 
         # Fallback: List all active verified service providers
-        qs = ServiceProvider.objects.filter(is_verified=True, is_active=True)
+        qs = ServiceProvider.objects.prefetch_related('animal_types').filter(is_verified=True, is_active=True)
         if provider_type:
             qs = qs.filter(provider_type=provider_type)
         if animal_type_id:
@@ -104,26 +115,36 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         provider_type = request.query_params.get('provider_type')
         animal_type_id = request.query_params.get('animal_type')
 
-        division = request.query_params.get('division')
-        district = request.query_params.get('district')
-        upazila = request.query_params.get('upazila')
-        union = request.query_params.get('union')
+        division_id = request.query_params.get('division_id')
+        district_id = request.query_params.get('district_id')
+        upazila_id = request.query_params.get('upazila_id')
         lat = request.query_params.get('lat')
         lng = request.query_params.get('lng')
         
+        from apps.locations.models import Division, District, Upazila
+        division_name = None
+        district_name = None
+        upazila_name = None
+        
+        if division_id and division_id != 'all':
+            division_name = Division.objects.filter(id=division_id).values_list('name_en', flat=True).first()
+        if district_id:
+            district_name = District.objects.filter(id=district_id).values_list('name_en', flat=True).first()
+        if upazila_id:
+            upazila_name = Upazila.objects.filter(id=upazila_id).values_list('name_en', flat=True).first()
+        
         location_source = None
-        if division == 'all':
+        if division_id == 'all':
             pass # Explicit override for nationwide search
-        elif division or district or upazila or union or (lat and lng):
+        elif division_name or district_name or upazila_name or (lat and lng):
             class MockUser:
-                def __init__(self, div, dist, upz, uni, la, ln):
+                def __init__(self, div, dist, upz, la, ln):
                     self.division = div
                     self.district = dist
                     self.upazila = upz
-                    self.union = uni
                     self.latitude = la
                     self.longitude = ln
-            location_source = MockUser(division, district, upazila, union, lat, lng)
+            location_source = MockUser(division_name, district_name, upazila_name, lat, lng)
         elif user and user.is_authenticated and (user.district or user.latitude):
             location_source = user
 
@@ -139,7 +160,6 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
 
             lat_val = getattr(location_source, 'latitude', None)
             lng_val = getattr(location_source, 'longitude', None)
-            union_val = getattr(location_source, 'union', None)
             upazila_val = getattr(location_source, 'upazila', None)
             district_val = getattr(location_source, 'district', None)
             division_val = getattr(location_source, 'division', None)
@@ -175,10 +195,6 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
                         exact_match_found = False
                         resolved_level = 'fallback'
                 except (ValueError, TypeError):
-                    exact_match_found = False
-                    resolved_level = 'fallback'
-            elif union_val:
-                if base_qs.filter(user__union__iexact=union_val).count() < 1:
                     exact_match_found = False
                     resolved_level = 'fallback'
             elif upazila_val:

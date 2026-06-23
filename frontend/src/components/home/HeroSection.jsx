@@ -12,9 +12,9 @@ export const HeroSection = ({ onScrollToProviders, onScrollToAI }) => {
   
   // Location store
   const {
-    division: anonDivision,
-    district: anonDistrict,
-    upazila: anonUpazila,
+    division_id: anonDivision,
+    district_id: anonDistrict,
+    upazila_id: anonUpazila,
     setLocation,
   } = useLocationStore()
 
@@ -64,7 +64,7 @@ export const HeroSection = ({ onScrollToProviders, onScrollToAI }) => {
         console.error('Failed to sync location to profile:', err)
       }
     } else {
-      setLocation({ division, district, upazila })
+      setLocation({ division_id: division, district_id: district, upazila_id: upazila })
     }
   }
 

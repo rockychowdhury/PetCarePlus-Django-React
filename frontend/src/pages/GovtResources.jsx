@@ -12,18 +12,17 @@ import { Phone, MapPin, Globe, Building2, HeartHandshake, Siren, Info } from 'lu
 export const GovtResources = () => {
   const { language, t, tField } = useLanguage()
   const user = useAuthStore((state) => state.user)
-  const user = useAuthStore((state) => state.user)
 
   // Location store for anonymous
-  const { division: anonDivision, district: anonDistrict, setLocation } = useLocationStore()
+  const { division_id: anonDivision, district_id: anonDistrict, setLocation } = useLocationStore()
 
   // State selectors
   const [selectedDivision, setSelectedDivision] = useState('')
   const [selectedDistrict, setSelectedDistrict] = useState('')
 
-  // Sync state with location
+  // Prefill locations
   useEffect(() => {
-    if (user) {
+    if (user && user.has_location) {
       setSelectedDivision(user.division || '')
       setSelectedDistrict(user.district || '')
     } else {
@@ -36,13 +35,13 @@ export const GovtResources = () => {
     const div = e.target.value
     setSelectedDivision(div)
     setSelectedDistrict('')
-    if (!user) setLocation({ division: div, district: '', upazila: '' })
+    if (!user) setLocation({ division_id: div, district_id: '', upazila_id: '' })
   }
 
   const handleDistrictChange = (e) => {
     const dist = e.target.value
     setSelectedDistrict(dist)
-    if (!user) setLocation({ division: selectedDivision, district: dist, upazila: '' })
+    if (!user) setLocation({ division_id: selectedDivision, district_id: dist, upazila_id: '' })
   }
 
   // Query resources based on active location selections

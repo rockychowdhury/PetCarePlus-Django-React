@@ -29,7 +29,7 @@ def get_local_providers(user, provider_type=None, animal_type_id=None):
     Returns:
         QuerySet of ServiceProvider objects.
     """
-    base_qs = ServiceProvider.objects.filter(is_verified=True, is_active=True)
+    base_qs = ServiceProvider.objects.prefetch_related('animal_types').filter(is_verified=True, is_active=True)
 
     if provider_type:
         base_qs = base_qs.filter(provider_type=provider_type)
@@ -76,14 +76,7 @@ def get_local_providers(user, provider_type=None, animal_type_id=None):
         except (ValueError, TypeError):
             pass
 
-    # 2. Same Union
-    union = getattr(user, 'union', None)
-    if union:
-        local = base_qs.filter(union__iexact=union)
-        if local.count() >= LOCAL_THRESHOLD:
-            return local.order_by('-avg_rating')
-
-    # 3. Same Upazila
+    # 2. Same Upazila
     upazila = getattr(user, 'upazila', None)
     if upazila:
         local = base_qs.filter(upazila__iexact=upazila)

@@ -11,14 +11,14 @@ export const LocationModal = ({ isOpen, onClose }) => {
   const { language } = useLanguage()
   const { user } = useAuthStore()
   const {
-    division: storeDiv, district: storeDist, upazila: storeUpz, union: storeUnion,
+    division_id: storeDiv, district_id: storeDist, upazila_id: storeUpz, union_id: storeUnion,
     latitude: storeLat, longitude: storeLng, setLocation
   } = useLocationStore()
 
-  const [divisionId, setDivisionId] = useState('')
-  const [districtId, setDistrictId] = useState('')
-  const [upazilaId, setUpazilaId] = useState('')
-  const [unionId, setUnionId] = useState('')
+  const [divisionId, setDivisionId] = useState(storeDiv === 'all' ? '' : storeDiv || '')
+  const [districtId, setDistrictId] = useState(storeDist || '')
+  const [upazilaId, setUpazilaId] = useState(storeUpz || '')
+  const [unionId, setUnionId] = useState(storeUnion || '')
   const [lat, setLat] = useState(storeLat || null)
   const [lng, setLng] = useState(storeLng || null)
   const [gpsStatus, setGpsStatus] = useState('')
@@ -129,12 +129,23 @@ export const LocationModal = ({ isOpen, onClose }) => {
   const handleUseProfileLocation = () => {
     if (!user) return
     
-    // Directly apply the user's profile location to the search and close the modal
+    // Look up IDs from the names in the user profile
+    const uDivId = divisions.find(d => d.name_en === user.division)?.id || ''
+    // Since districts and upazilas might not be loaded yet if division wasn't selected,
+    // we can just pass the names and the API will handle it, OR we pass what we have.
+    // Actually, we pass the names to the locationStore, and the API fallback will
+    // still use user profile if IDs are missing, OR we can just let it be.
+    // Wait, useLocalProviders maps `division_id`, `district_id`, `upazila_id`.
+    // If they are missing, it won't send them, and backend will fallback to user profile!
+    
     setLocation({
       division: user.division || '',
       district: user.district || '',
       upazila: user.upazila || '',
       union: user.union || '',
+      division_id: uDivId || '',
+      district_id: '', // Will fallback to user profile in backend if missing
+      upazila_id: '',  // Will fallback to user profile in backend if missing
       latitude: user.latitude || null,
       longitude: user.longitude || null,
     })
@@ -198,6 +209,9 @@ export const LocationModal = ({ isOpen, onClose }) => {
       district: selectedDistrict,
       upazila: selectedUpazila,
       union: selectedUnion,
+      division_id: divisionId,
+      district_id: districtId,
+      upazila_id: upazilaId,
       latitude: lat,
       longitude: lng,
     })
@@ -217,6 +231,9 @@ export const LocationModal = ({ isOpen, onClose }) => {
       district: '',
       upazila: '',
       union: '',
+      division_id: 'all',
+      district_id: '',
+      upazila_id: '',
       latitude: null,
       longitude: null,
     })
