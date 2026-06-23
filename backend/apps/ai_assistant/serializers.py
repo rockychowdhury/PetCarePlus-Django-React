@@ -124,18 +124,14 @@ class AIDiagnoseInputSerializer(serializers.Serializer):
         max_length=50,
         help_text="User's district for location-based provider matching"
     )
-    user_latitude = serializers.DecimalField(
+    user_latitude = serializers.FloatField(
         required=False,
         allow_null=True,
-        max_digits=9,
-        decimal_places=6,
         help_text="User's latitude from geolocation"
     )
-    user_longitude = serializers.DecimalField(
+    user_longitude = serializers.FloatField(
         required=False,
         allow_null=True,
-        max_digits=9,
-        decimal_places=6,
         help_text="User's longitude from geolocation"
     )
 
