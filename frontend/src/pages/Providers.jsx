@@ -120,8 +120,13 @@ export const Providers = () => {
 
   // Determine display location text
   let locationText = language === 'bn' ? 'বাংলাদেশ (সব)' : 'Bangladesh (All)'
-  if (storeUnion || storeUpz || storeDist) {
+  if (storeDiv === 'all') {
+    locationText = language === 'bn' ? 'বাংলাদেশ (সব)' : 'Bangladesh (All)'
+  } else if (storeUnion || storeUpz || storeDist || (storeDiv && storeDiv !== 'all')) {
     const parts = [storeUnion, storeUpz, storeDist].filter(Boolean)
+    if (parts.length === 0 && storeDiv) {
+      parts.push(storeDiv)
+    }
     locationText = parts.join(', ')
   } else if (user?.district) {
     locationText = user.district

@@ -1,64 +1,33 @@
-import React, { useRef, useState } from 'react'
+import React from 'react'
 import PageLayout from '../components/layout/PageLayout'
 import HeroSection from '../components/home/HeroSection'
-import AIPreviewSection from '../components/home/AIPreviewSection'
-import AnimalQuickFilter from '../components/home/AnimalQuickFilter'
-import GuidelinesPreview from '../components/home/GuidelinesPreview'
-import LocalProviders from '../components/home/LocalProviders'
-import VaccinationLookup from '../components/home/VaccinationLookup'
-import RehomingPreview from '../components/home/RehomingPreview'
-import GovtResourcesPreview from '../components/home/GovtResourcesPreview'
+import FeaturesGrid from '../components/home/FeaturesGrid'
+import HowItWorks from '../components/home/HowItWorks'
+import FeatureShowcase from '../components/home/FeatureShowcase'
+import FAQ from '../components/home/FAQ'
+import CTAFooter from '../components/home/CTAFooter'
 
 export const Home = () => {
-  const [activeAnimalId, setActiveAnimalId] = useState(null)
-  
-  const providersRef = useRef(null)
-  const aiRef = useRef(null)
-
-  const handleScrollToProviders = () => {
-    providersRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
-  const handleScrollToAI = () => {
-    aiRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
   return (
     <PageLayout>
       <div className="flex flex-col w-full min-h-screen">
-        {/* Section 1: Hero */}
-        <HeroSection
-          onScrollToProviders={handleScrollToProviders}
-          onScrollToAI={handleScrollToAI}
-        />
+        {/* Section 1: Hero — Bold centered headline + bento stat cards */}
+        <HeroSection />
 
-        {/* Section 2: AI Assistant Preview */}
-        <div ref={aiRef}>
-          <AIPreviewSection />
-        </div>
+        {/* Section 2: How It Works — 3-step visual flow */}
+        <HowItWorks />
 
-        {/* Section 3: Animal Quick Filter */}
-        <AnimalQuickFilter
-          activeAnimalId={activeAnimalId}
-          onSelectAnimal={setActiveAnimalId}
-        />
+        {/* Section 3: FeaturesGrid — Bento grid of all features */}
+        <FeaturesGrid />
 
-        {/* Section 4: Guidelines Preview */}
-        <GuidelinesPreview activeAnimalId={activeAnimalId} />
+        {/* Section 4: Detailed Feature Showcase (Rehoming, AI, Providers, Resources) */}
+        <FeatureShowcase />
 
-        {/* Section 5: Local Providers */}
-        <div ref={providersRef}>
-          <LocalProviders activeAnimalId={activeAnimalId} />
-        </div>
+        {/* Section 5: Frequently Asked Questions */}
+        <FAQ />
 
-        {/* Section 6: Vaccination Quick Lookup */}
-        <VaccinationLookup activeAnimalId={activeAnimalId} />
-
-        {/* Section 7: Rehoming Listings Preview */}
-        <RehomingPreview />
-
-        {/* Section 8: Government Resources Preview */}
-        <GovtResourcesPreview />
+        {/* Section 6: Call-to-Action Footer — Green gradient banner */}
+        <CTAFooter />
       </div>
     </PageLayout>
   )
