@@ -121,7 +121,7 @@ You MUST respond strictly in the following JSON format:
         )
 
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-1.5-flash',
             contents=contents,
             config=config
         )
@@ -158,7 +158,7 @@ def polish_text(text, language='bn'):
         system_instruction = f"You are a helpful assistant. The user is writing a pet adoption application. Polish the provided text to make it sound professional, empathetic, and responsible. Keep it in the {'Bangla' if language == 'bn' else 'English'} language. Do NOT add greetings like 'Hello' or closings like 'Sincerely'. Just return the polished body text directly."
 
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-1.5-flash',
             contents=[types.Content(role='user', parts=[types.Part.from_text(text=text)])],
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
@@ -201,7 +201,7 @@ def analyze_adoption_application(listing_details, application_text):
         )
 
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-1.5-flash',
             contents=[types.Content(role='user', parts=[types.Part.from_text(text=prompt)])],
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
