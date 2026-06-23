@@ -7,7 +7,7 @@ export const HeroSection = () => {
   const { language } = useLanguage()
 
   return (
-    <section className="relative min-h-[85vh] flex items-center justify-center border-b border-border/40 overflow-hidden bg-gradient-to-br from-blue-50/40 via-emerald-50/40 to-violet-50/40 dark:from-blue-950/20 dark:via-emerald-950/20 dark:to-violet-950/20 animate-gradient-x bg-[length:200%_auto]">
+    <section className="relative min-h-[calc(100dvh-4rem)] lg:min-h-[calc(100dvh-5rem)] flex items-center justify-center border-b border-border/40 overflow-hidden bg-gradient-to-br from-blue-50/40 via-emerald-50/40 to-violet-50/40 dark:from-blue-950/20 dark:via-emerald-950/20 dark:to-violet-950/20 animate-gradient-x bg-[length:200%_auto]">
       {/* Clean, minimalist dot pattern background overlay */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
       
