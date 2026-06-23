@@ -120,48 +120,17 @@ PetCarePlus Team
             user.set_password(password)
             user.save()
 
-            # Send welcome email containing credentials
-            subject = 'Welcome to PetCarePlus / পেটকেয়ারপ্লাসে আপনাকে স্বাগতম!'
-            message = f"""Hi {validated_data['name']},
-
-Welcome to PetCarePlus! Your account has been successfully created.
-পেটকেয়ারপ্লাসে আপনাকে স্বাগতম! আপনার অ্যাকাউন্টটি সফলভাবে তৈরি করা হয়েছে।
-
-Here are your login credentials to access the platform:
-প্ল্যাটফর্মে প্রবেশ করার জন্য আপনার লগইন বিবরণ নিচে দেওয়া হলো:
-
-Email (ইমেইল): {user.email}
-Password (পাসওয়ার্ড): {password}
-
-Please log in using the link below and set up your location details:
-অনুগ্রহ করে নিচের লিঙ্কের মাধ্যমে লগইন করুন এবং আপনার অবস্থান নির্ধারণ করুন:
-
-{settings.FRONTEND_URL}/login
-
-Best regards,
-PetCarePlus Team
-পেটকেয়ারপ্লাস টিম
-"""
-
-        def send_email_async():
-            try:
-                send_mail(
-                    subject,
-                    message,
-                    settings.DEFAULT_FROM_EMAIL or 'noreply@petcareplus.app',
-                    [user.email],
-                    fail_silently=False
-                )
-                print(f"Successfully sent email to {user.email}")
-            except Exception as e:
-                import traceback
-                print(f"Failed to send email to {user.email}: {e}")
-                traceback.print_exc()
-
-        import threading
-        threading.Thread(target=send_email_async).start()
+            # Render free tier blocks outbound SMTP port 587. 
+            # We must return the password directly to the frontend.
+            user.plain_password = password
 
         return user
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if hasattr(instance, 'plain_password'):
+            data['plain_password'] = instance.plain_password
+        return data
 
 
 class UserProfileSerializer(serializers.ModelSerializer):

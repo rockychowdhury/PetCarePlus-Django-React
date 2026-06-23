@@ -18,11 +18,15 @@ export const Register = () => {
   
   const [errorText, setErrorText] = useState('')
   const [registered, setRegistered] = useState(false)
+  const [registeredPassword, setRegisteredPassword] = useState('')
 
   // Mutation to handle registration
   const registerMutation = useMutation({
     mutationFn: (userData) => authApi.register(userData),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data?.plain_password) {
+        setRegisteredPassword(data.plain_password)
+      }
       setRegistered(true)
     },
     onError: (err) => {
@@ -72,15 +76,21 @@ export const Register = () => {
               ) : (
                 language === 'bn' ? (
                   <>
-                    লগইন পাসওয়ার্ড সহ একটি স্বাগতম ইমেইল{' '}
-                    <strong className="text-primary">{email}</strong> ঠিকানায় পাঠানো হয়েছে।
-                    অনুগ্রহ করে আপনার ইনবক্স চেক করুন।
+                    স্বাগতম! আপনার অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে। আপনার লগইন পাসওয়ার্ডটি নিচে দেওয়া হলো। 
+                    <br/><br/>
+                    ইমেইল: <strong className="text-primary">{email}</strong><br/>
+                    পাসওয়ার্ড: <strong className="text-primary font-mono text-base bg-primary/10 px-2 py-1 rounded">{registeredPassword}</strong>
+                    <br/><br/>
+                    লগইন করার পর পাসওয়ার্ডটি সংরক্ষণ করে রাখুন।
                   </>
                 ) : (
                   <>
-                    A welcome email with your password has been sent to{' '}
-                    <strong className="text-primary">{email}</strong>.
-                    Please check your inbox.
+                    Welcome! Your account has been successfully created. Your login password is provided below.
+                    <br/><br/>
+                    Email: <strong className="text-primary">{email}</strong><br/>
+                    Password: <strong className="text-primary font-mono text-base bg-primary/10 px-2 py-1 rounded">{registeredPassword}</strong>
+                    <br/><br/>
+                    Please save this password for your records before proceeding.
                   </>
                 )
               )}
