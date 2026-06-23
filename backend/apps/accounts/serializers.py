@@ -144,13 +144,19 @@ PetCarePlus Team
 """
 
         def send_email_async():
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL or 'noreply@petcareplus.app',
-                [user.email],
-                fail_silently=True
-            )
+            try:
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL or 'noreply@petcareplus.app',
+                    [user.email],
+                    fail_silently=False
+                )
+                print(f"Successfully sent email to {user.email}")
+            except Exception as e:
+                import traceback
+                print(f"Failed to send email to {user.email}: {e}")
+                traceback.print_exc()
 
         import threading
         threading.Thread(target=send_email_async).start()
