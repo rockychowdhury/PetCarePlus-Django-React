@@ -75,7 +75,7 @@ export const WriteReviewDialog = ({
         queryClient.invalidateQueries(['providers'])
         queryClient.invalidateQueries(['localProviders'])
       }
-      if (onSuccessCallback) onSuccessCallback()
+      if (onSuccessCallback) onSuccessCallback(selectedBookingId, rating)
       handleReset()
       onClose()
     },

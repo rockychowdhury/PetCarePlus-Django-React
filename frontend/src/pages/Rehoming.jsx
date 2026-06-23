@@ -183,7 +183,35 @@ export const Rehoming = () => {
             {/* Full Width Listings Grid */}
             <div>
               {isLoadingListings ? (
-                <Spinner className="py-24" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {[...Array(4)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="group relative flex flex-col justify-between h-full bg-pcp-card dark:bg-card rounded-3xl shadow-sm border border-pcp-border/60 dark:border-white/5 p-4 overflow-hidden animate-pulse"
+                    >
+                      {/* Top Banner Cover Area Skeleton */}
+                      <div className="relative h-[150px] w-full shrink-0 rounded-2xl mb-4 bg-muted" />
+
+                      {/* Content Area Skeleton */}
+                      <div className="flex flex-col flex-grow px-1">
+                        <div className="w-3/4 h-5 bg-muted rounded mb-2.5" />
+                        <div className="w-1/2 h-3.5 bg-muted rounded mb-3.5" />
+                        
+                        <div className="w-2/3 h-4 bg-muted rounded mb-3.5" />
+                        <div className="w-1/2 h-3.5 bg-muted rounded mb-3.5" />
+
+                        <div className="h-px bg-pcp-border/30 dark:bg-border/30 my-2.5" />
+                        
+                        <div className="w-full h-8 bg-muted rounded mb-2.5" />
+                      </div>
+
+                      {/* Footer Area Skeleton */}
+                      <div className="mt-4 pt-3 border-t border-pcp-border/40 dark:border-border/40">
+                        <div className="w-full h-10 bg-muted rounded-xl" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : listings.length === 0 ? (
                 <div className="text-center py-20 px-4 bg-card rounded-2xl border border-dashed border-border/80">
                   <Heart className="w-10 h-10 text-muted-foreground/60 mx-auto mb-3" />

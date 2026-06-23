@@ -428,7 +428,24 @@ const DashboardBookings = () => {
         providerId={appointments.find(b => b.id === reviewBookingId)?.provider}
         providerName={appointments.find(b => b.id === reviewBookingId)?.provider_details?.business_name || 'Provider'}
         preselectedBookingId={reviewBookingId}
-        onSuccessCallback={() => queryClient.invalidateQueries({ queryKey: ['userBookings'] })}
+        onSuccessCallback={(bookingId, rating) => {
+          // Optimistically update the booking cache for instant UI feedback
+          queryClient.setQueryData(['userBookings'], (oldData) => {
+            if (!oldData) return oldData
+            const updater = (bookings) => 
+              bookings.map(b => 
+                String(b.id) === String(bookingId) 
+                  ? { ...b, has_review: true, review_rating: rating } 
+                  : b
+              )
+            
+            if (Array.isArray(oldData)) return updater(oldData)
+            if (oldData.results) return { ...oldData, results: updater(oldData.results) }
+            return oldData
+          })
+          // Also trigger a background refetch
+          queryClient.invalidateQueries({ queryKey: ['userBookings'] })
+        }}
       />
 
       {/* Status Change Confirmation Modal */}
