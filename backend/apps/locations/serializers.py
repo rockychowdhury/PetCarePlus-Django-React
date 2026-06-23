@@ -7,19 +7,16 @@ class UnionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class UpazilaSerializer(serializers.ModelSerializer):
-    unions = UnionSerializer(many=True, read_only=True)
     class Meta:
         model = Upazila
         fields = '__all__'
 
 class DistrictSerializer(serializers.ModelSerializer):
-    upazilas = UpazilaSerializer(many=True, read_only=True)
     class Meta:
         model = District
         fields = '__all__'
 
 class DivisionSerializer(serializers.ModelSerializer):
-    districts = DistrictSerializer(many=True, read_only=True)
     class Meta:
         model = Division
         fields = '__all__'
