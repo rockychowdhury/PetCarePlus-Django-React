@@ -11,6 +11,8 @@ import logging
 from django.conf import settings
 from google import genai
 from google.genai import types
+from google.genai.errors import APIError
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -120,14 +122,22 @@ You MUST respond strictly in the following JSON format:
             temperature=0.2
         )
 
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=contents,
-            config=config
-        )
-
-        result = json.loads(response.text)
-        return result
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=contents,
+                    config=config
+                )
+                result = json.loads(response.text)
+                return result
+            except APIError as e:
+                if e.code == 503 and attempt < max_retries - 1:
+                    logger.warning(f"Gemini 503 error on attempt {attempt + 1}, retrying in {2 ** attempt}s...")
+                    time.sleep(2 ** attempt)
+                    continue
+                raise
 
     except Exception as e:
         logger.error(f"Error calling Gemini API: {e}")
@@ -157,15 +167,24 @@ def polish_text(text, language='bn'):
         
         system_instruction = f"You are a helpful assistant. The user is writing a pet adoption application. Polish the provided text to make it sound professional, empathetic, and responsible. Keep it in the {'Bangla' if language == 'bn' else 'English'} language. Do NOT add greetings like 'Hello' or closings like 'Sincerely'. Just return the polished body text directly."
 
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=[types.Content(role='user', parts=[types.Part.from_text(text=text)])],
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                temperature=0.3
-            )
-        )
-        return response.text.strip()
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=[types.Content(role='user', parts=[types.Part.from_text(text=text)])],
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        temperature=0.3
+                    )
+                )
+                return response.text.strip()
+            except APIError as e:
+                if e.code == 503 and attempt < max_retries - 1:
+                    logger.warning(f"Gemini 503 error on attempt {attempt + 1}, retrying in {2 ** attempt}s...")
+                    time.sleep(2 ** attempt)
+                    continue
+                raise
     except Exception as e:
         logger.error(f"Error calling Gemini for polishing: {e}")
         return text
@@ -200,14 +219,25 @@ def analyze_adoption_application(listing_details, application_text):
             "Score this application out of 10. Reply with just the number."
         )
 
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=[types.Content(role='user', parts=[types.Part.from_text(text=prompt)])],
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                temperature=0.1
-            )
-        )
+        max_retries = 3
+        response = None
+        for attempt in range(max_retries):
+            try:
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=[types.Content(role='user', parts=[types.Part.from_text(text=prompt)])],
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        temperature=0.1
+                    )
+                )
+                break
+            except APIError as e:
+                if e.code == 503 and attempt < max_retries - 1:
+                    logger.warning(f"Gemini 503 error on attempt {attempt + 1}, retrying in {2 ** attempt}s...")
+                    time.sleep(2 ** attempt)
+                    continue
+                raise
         
         # Try to parse the integer from the response
         try:

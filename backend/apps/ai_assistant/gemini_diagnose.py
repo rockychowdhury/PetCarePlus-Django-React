@@ -11,6 +11,8 @@ import logging
 from django.conf import settings
 from google import genai
 from google.genai import types
+from google.genai.errors import APIError
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -140,14 +142,22 @@ You MUST respond strictly in the following JSON format:
             temperature=0.2
         )
 
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=contents,
-            config=config
-        )
-
-        result = json.loads(response.text)
-        return result
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=contents,
+                    config=config
+                )
+                result = json.loads(response.text)
+                return result
+            except APIError as e:
+                if e.code == 503 and attempt < max_retries - 1:
+                    logger.warning(f"Gemini 503 error on attempt {attempt + 1}, retrying in {2 ** attempt}s...")
+                    time.sleep(2 ** attempt)
+                    continue
+                raise
 
     except Exception as e:
         logger.error(f"Error calling Gemini Diagnose API: {e}")
