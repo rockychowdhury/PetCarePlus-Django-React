@@ -24,9 +24,7 @@ class ResourcePagination(PageNumberPagination):
     max_page_size = 100
 
 
-@method_decorator(cache_page(60 * 15), name='list')
-@method_decorator(vary_on_headers('Authorization', 'Cookie'), name='list')
-@method_decorator(cache_page(60 * 15), name='retrieve')
+@method_decorator(cache_page(None), name='retrieve')
 @method_decorator(vary_on_headers('Authorization', 'Cookie'), name='retrieve')
 class ResourceViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -61,3 +59,27 @@ class ResourceViewSet(viewsets.ReadOnlyModelViewSet):
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated(), IsAdminUser()]
+
+    def list(self, request, *args, **kwargs):
+        # Only cache if it's the basic page 1 (no other filters/searches)
+        query_params = request.query_params.dict()
+        page = query_params.pop('page', '1')
+        
+        is_basic_page_1 = (page == '1' and not query_params)
+        
+        if is_basic_page_1:
+            from django.core.cache import cache
+            from rest_framework.response import Response
+            
+            user_role = getattr(request.user, 'role', 'anon')
+            cache_key = f"resources_page_1_{user_role}"
+            cached_data = cache.get(cache_key)
+            
+            if cached_data:
+                return Response(cached_data)
+                
+            response = super().list(request, *args, **kwargs)
+            cache.set(cache_key, response.data, timeout=None) # Permanent cache
+            return response
+            
+        return super().list(request, *args, **kwargs)

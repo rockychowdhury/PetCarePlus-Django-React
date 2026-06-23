@@ -13,6 +13,11 @@ from apps.animals.models import AnimalType
 from apps.animals.serializers import AnimalTypeSerializer
 
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+
+@method_decorator(cache_page(None), name='list')
+@method_decorator(cache_page(None), name='retrieve')
 class AnimalTypeViewSet(viewsets.ModelViewSet):
     """
     ViewSet for AnimalType.
