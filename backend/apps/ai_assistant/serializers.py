@@ -71,8 +71,16 @@ class AISessionSerializer(serializers.ModelSerializer):
         try:
             history = obj.conversation_history
             if history and len(history) >= 2:
-                content = history[1].get('content', '')
-                if content.startswith('{'):
+                # Find the assistant message that contains the JSON diagnostic dict
+                content = ""
+                for msg in reversed(history):
+                    if msg.get('role') in ('assistant', 'model'):
+                        text = msg.get('content', '')
+                        if text.strip().startswith('{'):
+                            content = text
+                            break
+                
+                if content:
                     # The content is a string representation of a Python dict from Gemini
                     ai_response = ast.literal_eval(content)
                     return {
@@ -139,7 +147,6 @@ class AIDiagnoseInputSerializer(serializers.Serializer):
 class AIChatSerializer(serializers.Serializer):
     """
     Serializer for parsing incoming chat messages to the AI assistant.
-    Kept for backward compatibility with polish/scoring features.
     """
     session_id = serializers.IntegerField(
         required=False,
@@ -160,4 +167,26 @@ class AIChatSerializer(serializers.Serializer):
         default='bn',
         max_length=2,
         help_text="Language code ('bn' or 'en')"
+    )
+    user_division = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=50,
+        help_text="User's division for location-based provider matching"
+    )
+    user_district = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=50,
+        help_text="User's district for location-based provider matching"
+    )
+    user_latitude = serializers.FloatField(
+        required=False,
+        allow_null=True,
+        help_text="User's latitude from geolocation"
+    )
+    user_longitude = serializers.FloatField(
+        required=False,
+        allow_null=True,
+        help_text="User's longitude from geolocation"
     )

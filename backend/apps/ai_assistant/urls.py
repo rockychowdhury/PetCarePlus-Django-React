@@ -1,6 +1,7 @@
 from django.urls import path
 from apps.ai_assistant.views import (
     AIDiagnoseView,
+    AIChatView,
     AISessionListView,
     AISessionDetailView,
     AIPolishView,
@@ -8,6 +9,7 @@ from apps.ai_assistant.views import (
 
 urlpatterns = [
     path('diagnose/', AIDiagnoseView.as_view(), name='ai_diagnose'),
+    path('chat/', AIChatView.as_view(), name='ai_chat'),
     path('sessions/', AISessionListView.as_view(), name='ai_session_list'),
     path('sessions/<int:pk>/', AISessionDetailView.as_view(), name='ai_session_detail'),
     path('polish/', AIPolishView.as_view(), name='ai_polish'),

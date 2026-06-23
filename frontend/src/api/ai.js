@@ -6,6 +6,11 @@ export const aiApi = {
     return response.data
   },
 
+  chat: async (payload) => {
+    const response = await client.post('/ai/chat/', payload)
+    return response.data
+  },
+
   getSessions: async () => {
     const response = await client.get('/ai/sessions/')
     return response.data

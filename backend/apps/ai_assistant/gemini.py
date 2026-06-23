@@ -17,7 +17,7 @@ import time
 logger = logging.getLogger(__name__)
 
 
-def call_gemini(conversation_history, preferred_language='bn', animal_type_name='Cat'):
+def call_gemini(conversation_history, preferred_language='bn', animal_type_name='Cat', guideline_context=None, total_turns=1):
     """
     Calls the Gemini 2.5 Flash model with conversation history and returns a structured response.
     Automatically handles mock responses during test runs or if GEMINI_API_KEY is not configured.
@@ -52,8 +52,8 @@ def call_gemini(conversation_history, preferred_language='bn', animal_type_name=
             "symptoms or behaviors you would like to describe?"
         )
 
-        # If the user says "done" or similar, complete the session in tests
-        is_done = any(k in user_msg.lower() for k in ["done", "complete", "শেষ", "yes", "হ্যাঁ"])
+        # If the user says "done" or similar, or we hit a turn count limit, complete session
+        is_done = any(k in user_msg.lower() for k in ["done", "complete", "শেষ", "yes", "হ্যাঁ"]) or total_turns >= 3
 
         reply = mock_reply_bn if preferred_language == 'bn' else mock_reply_en
 
@@ -77,13 +77,18 @@ def call_gemini(conversation_history, preferred_language='bn', animal_type_name=
     try:
         client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
+        # Build guidelines context section if provided
+        guidelines_section = ""
+        if guideline_context:
+            guidelines_section = f"\nVERIFIED PLATFORM CARE GUIDELINES REFERENCE:\nUse the following guidelines as context to provide accurate answers and care advice:\n{guideline_context}\n"
+
         # Build system instruction template
         system_instruction = f"""
 You are Antigravity, a professional bilingual pet and livestock care AI assistant designed for users in Bangladesh.
 You are helping a client with a {animal_type_name}. The client's preferred language is {preferred_language} ('bn' for Bangla, 'en' for English).
 
 Always reply in the client's preferred language: {preferred_language}.
-
+{guidelines_section}
 Your goal:
 1. Ask helpful diagnostic questions to understand the symptoms (limit to 1-2 questions per turn).
 2. Maintain a friendly and empathetic tone.

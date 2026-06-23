@@ -32,11 +32,11 @@ class AIAssistantAPITests(APITestCase):
         # Create users
         self.user = User.objects.create_user(
             email='owner@test.com', password='password123',
-            first_name='Rocky', last_name='Owner', role='pet_owner'
+            full_name='Rocky Owner', role='pet_owner'
         )
         self.provider_user = User.objects.create_user(
             email='provider@test.com', password='password123',
-            first_name='Dr. Rocky', last_name='Provider', role='provider'
+            full_name='Dr. Rocky Provider', role='provider'
         )
 
         # Create service providers in the area (verified + unverified to test weighting)
@@ -74,41 +74,14 @@ class AIAssistantAPITests(APITestCase):
         self.assertEqual(session_data['user_email'], self.user.email)
         self.assertEqual(len(session_data['conversation_history']), 2)  # [User, AI]
 
-    def test_anonymous_session_turn_rate_limiting(self):
-        """Test anonymous user limit (max 3 turns without login)."""
-        # Turn 1
+    def test_anonymous_user_blocked(self):
+        """Test that unauthenticated requests to the chat endpoint are blocked."""
         payload = {
             'animal_type_id': self.cat_type.id,
             'message': 'Symptom query 1'
         }
         response = self.client.post(self.chat_url, payload)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        session_id = response.data['session']['id']
-
-        # Turn 2
-        payload = {
-            'session_id': session_id,
-            'message': 'Symptom query 2'
-        }
-        response = self.client.post(self.chat_url, payload)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        # Turn 3
-        payload = {
-            'session_id': session_id,
-            'message': 'Symptom query 3'
-        }
-        response = self.client.post(self.chat_url, payload)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['session']['total_turns'], 3)
-
-        # Turn 4 (Should fail with 403 Forbidden)
-        payload = {
-            'session_id': session_id,
-            'message': 'Symptom query 4'
-        }
-        response = self.client.post(self.chat_url, payload)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_session_completion_triggers_suggestions(self):
         """Test session completion extracts diagnostics and calculates weighted provider matches."""
