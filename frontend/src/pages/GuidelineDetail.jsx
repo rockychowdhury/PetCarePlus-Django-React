@@ -7,7 +7,7 @@ import { useLanguage } from '../hooks/useLanguage'
 import PageLayout from '../components/layout/PageLayout'
 import Spinner from '../components/ui/Spinner'
 import { getAnimalIcon, ANIMAL_THEMES } from '../utils/animals'
-import { ArrowLeft, Calendar, Bookmark, Building2, ShieldPlus, HeartPulse, Pill, Siren, Info, Home, Utensils } from 'lucide-react'
+import { ArrowLeft, Calendar, Bookmark, Building2, ShieldPlus, HeartPulse, Pill, Siren, Info, Home, Utensils, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import GuidelineCard from '../components/guidelines/GuidelineCard'
 
@@ -165,7 +165,11 @@ export const GuidelineDetail = () => {
                     }`}
                     title={language === 'bn' ? 'সংরক্ষণ করুন' : 'Save for later'}
                   >
-                    <Bookmark className={`w-5 h-5 ${is_saved ? 'fill-current' : ''}`} />
+                    {toggleSaveMutation.isPending ? (
+                      <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                    ) : (
+                      <Bookmark className={`w-5 h-5 ${is_saved ? 'fill-current' : ''}`} />
+                    )}
                   </button>
                 </div>
 

@@ -3,7 +3,10 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useLanguage } from '../../hooks/useLanguage'
 import { authApi } from '../../api/auth'
-import { Menu, X, Languages, LogOut, LayoutGrid, Calendar, Power, Sparkles } from 'lucide-react'
+import { 
+  Menu, X, Languages, LogOut, LayoutGrid, Calendar, Power, Sparkles, 
+  ChevronDown, Heart, BrainCircuit, Dog, UserCog, Briefcase, Settings 
+} from 'lucide-react'
 
 export const Navbar = () => {
   const { language, setLanguage, t } = useLanguage()
@@ -53,6 +56,34 @@ export const Navbar = () => {
     { name: language === 'bn' ? 'দত্তক' : 'Rehoming', path: '/rehoming' },
     { name: language === 'bn' ? 'নির্দেশিকা' : 'Guidelines', path: '/guidelines' },
   ]
+
+  const getUserMenuLinks = () => {
+    if (!user) return [];
+    
+    const commonLinks = [
+      { path: '/dashboard', label_bn: 'ড্যাশবোর্ড', label_en: 'Dashboard', icon: LayoutGrid },
+      { path: '/dashboard/bookings', label_bn: 'বুকিং', label_en: 'Bookings', icon: Calendar },
+    ];
+
+    const regularLinks = [
+      { path: '/dashboard/rehoming', label_bn: 'আমার রিহোমিং', label_en: 'My Rehoming', icon: Dog },
+      { path: '/dashboard/ai-sessions', label_bn: 'এআই সেশনস', label_en: 'AI Sessions', icon: BrainCircuit },
+      { path: '/dashboard/favorites', label_bn: 'প্রিয় তালিকা', label_en: 'Favorites', icon: Heart },
+    ];
+
+    const providerLinks = [
+      { path: '/dashboard/provider-profile', label_bn: 'প্রোভাইডার প্রোফাইল', label_en: 'Provider Profile', icon: UserCog },
+      { path: '/dashboard/provider-services', label_bn: 'সার্ভিসসমূহ', label_en: 'My Services', icon: Briefcase },
+    ];
+
+    const settingsLink = { path: '/dashboard/settings', label_bn: 'সেটিংস', label_en: 'Settings', icon: Settings };
+
+    if (user.role === 'provider') {
+      return [...commonLinks, ...providerLinks, settingsLink];
+    } else {
+      return [...commonLinks, ...regularLinks, settingsLink];
+    }
+  }
 
   const isActive = (path) => location.pathname === path
 
@@ -109,7 +140,7 @@ export const Navbar = () => {
                   className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <span className="truncate max-w-[100px]">{user.name}</span>
-                  <Menu className="w-4 h-4" />
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {isUserMenuOpen && (
@@ -118,23 +149,20 @@ export const Navbar = () => {
                       <p className="text-xs text-muted-foreground uppercase tracking-wider">{t(`profile.roles.${user.role}`)}</p>
                     </div>
                     
-                    <Link
-                      to="/dashboard"
-                      onClick={() => setIsUserMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-muted/50 transition-colors"
-                    >
-                      <LayoutGrid className="w-4 h-4" />
-                      {language === 'bn' ? 'ড্যাশবোর্ড' : 'Dashboard'}
-                    </Link>
-                    
-                    <Link
-                      to="/dashboard/bookings"
-                      onClick={() => setIsUserMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-muted/50 transition-colors"
-                    >
-                      <Calendar className="w-4 h-4" />
-                      {language === 'bn' ? 'বুকিং' : 'Bookings'}
-                    </Link>
+                    {getUserMenuLinks().map((link) => {
+                      const Icon = link.icon;
+                      return (
+                        <Link
+                          key={link.path}
+                          to={link.path}
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-muted/50 transition-colors"
+                        >
+                          <Icon className="w-4 h-4" />
+                          {language === 'bn' ? link.label_bn : link.label_en}
+                        </Link>
+                      );
+                    })}
 
                     <div className="mt-2 pt-2 border-t border-border/30">
                       <button
@@ -188,7 +216,7 @@ export const Navbar = () => {
 
       {/* Mobile Drawer menu */}
       {isOpen && (
-        <div className="md:hidden border-b border-border/40 bg-background animate-fade-in shadow-md">
+        <div className="md:hidden border-b border-border/40 bg-background animate-fade-in shadow-md max-h-[80vh] overflow-y-auto">
           <div className="px-4 pt-3 pb-4 space-y-1">
             {navItems.map((item) => (
               <Link
@@ -218,23 +246,20 @@ export const Navbar = () => {
                   </div>
                 </div>
 
-                <Link
-                  to="/dashboard"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <LayoutGrid className="w-4.5 h-4.5" />
-                  {language === 'bn' ? 'ড্যাশবোর্ড' : 'Dashboard'}
-                </Link>
-                
-                <Link
-                  to="/dashboard/bookings"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <Calendar className="w-4.5 h-4.5" />
-                  {language === 'bn' ? 'বুকিং' : 'Bookings'}
-                </Link>
+                {getUserMenuLinks().map((link) => {
+                  const Icon = link.icon;
+                  return (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <Icon className="w-4.5 h-4.5" />
+                      {language === 'bn' ? link.label_bn : link.label_en}
+                    </Link>
+                  );
+                })}
 
                 <button
                   onClick={handleLogout}

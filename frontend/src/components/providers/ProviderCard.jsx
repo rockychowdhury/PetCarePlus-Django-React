@@ -6,7 +6,7 @@ import { useLanguage } from '../../hooks/useLanguage'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { providersApi } from '../../api/providers'
 import toast from 'react-hot-toast'
-import { Star, MapPin, Heart, Phone, Sparkles } from 'lucide-react'
+import { Star, MapPin, Heart, Phone, Sparkles, Loader2 } from 'lucide-react'
 import { savedApi } from '../../api/saved'
 import { getAnimalIcon } from '../../utils/animals'
 
@@ -127,11 +127,15 @@ export const ProviderCard = ({ provider }) => {
               : 'bg-white/30 hover:bg-white/50 border-white/40'
           }`}
         >
-          <Heart 
-            className={`w-3.5 h-3.5 drop-shadow-sm transition-colors ${
-              is_favorite ? 'fill-rose-500 text-rose-500' : 'text-white'
-            }`} 
-          />
+          {toggleFavoriteMutation.isPending ? (
+            <Loader2 className="w-3.5 h-3.5 text-rose-500 animate-spin" />
+          ) : (
+            <Heart 
+              className={`w-3.5 h-3.5 drop-shadow-sm transition-colors ${
+                is_favorite ? 'fill-rose-500 text-rose-500' : 'text-white'
+              }`} 
+            />
+          )}
         </button>
 
         {/* Rating or New Badge Floating Over Image (Bottom Right) */}

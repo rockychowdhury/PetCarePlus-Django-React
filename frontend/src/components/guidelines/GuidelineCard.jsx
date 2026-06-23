@@ -2,7 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { useLanguage } from '../../hooks/useLanguage'
 import { getAnimalIcon, ANIMAL_THEMES } from '../../utils/animals'
-import { ArrowRight, BookOpen, Building2, ShieldPlus, HeartPulse, Pill, Siren, Info, Home, Utensils, Bookmark } from 'lucide-react'
+import { ArrowRight, BookOpen, Building2, ShieldPlus, HeartPulse, Pill, Siren, Info, Home, Utensils, Bookmark, Loader2 } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { savedApi } from '../../api/saved'
 import toast from 'react-hot-toast'
@@ -178,7 +178,11 @@ export const GuidelineCard = ({ guideline: resource }) => {
           }`}
           title={language === 'bn' ? 'সংরক্ষণ করুন' : 'Save for later'}
         >
-          <Bookmark className={`w-4 h-4 ${is_saved ? 'fill-current' : ''}`} />
+          {toggleSaveMutation.isPending ? (
+            <Loader2 className="w-4 h-4 text-primary animate-spin" />
+          ) : (
+            <Bookmark className={`w-4 h-4 ${is_saved ? 'fill-current' : ''}`} />
+          )}
         </button>
       </div>
     </div>
