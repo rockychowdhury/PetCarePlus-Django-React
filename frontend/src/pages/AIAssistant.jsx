@@ -100,7 +100,11 @@ export const AIAssistant = () => {
 
   // Scroll chat to bottom on new messages
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (chatEndRef.current) {
+      setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      }, 100)
+    }
   }, [messages, isLoading])
 
   // Fetch animal types
@@ -274,16 +278,24 @@ export const AIAssistant = () => {
     )
   }
 
-  // Extract variables
   const isSessionComplete = session?.is_complete
   const activeResult = session?.diagnostic_result
   const aiResponse = activeResult?.ai_response
   const queryType = activeResult?.query_type
+  
+  // Map one-shot schema
   const diagnosis = aiResponse?.diagnosis
-  const urgency = aiResponse?.urgency
+  const urgencyObj = aiResponse?.urgency
   const warningData = aiResponse?.warning_signs
   const positiveData = aiResponse?.positive_signs
   const guidedResponse = aiResponse?.guided_response
+  
+  // Map multi-turn schema or fallback
+  const urgencyLevel = urgencyObj?.level || aiResponse?.urgency_level
+  const diagnosisSummary = diagnosis?.possible_problems || aiResponse?.diagnosis_summary
+  const careAdvice = diagnosis?.what_owner_can_do || aiResponse?.care_advice
+  const thingsToCareAbout = diagnosis?.things_to_care_about
+
   const providers = activeResult?.providers || []
   const resources = activeResult?.resources || []
   const govtVets = activeResult?.govt_vets || []
@@ -706,15 +718,15 @@ export const AIAssistant = () => {
                 {isSessionComplete && activeResult ? (
                   <>
                     {/* Urgency indicator */}
-                    {urgency && <UrgencyIndicator level={urgency.level} />}
+                    {urgencyLevel && <UrgencyIndicator level={urgencyLevel} />}
 
-                    {/* Possible problems */}
-                    {diagnosis?.possible_problems && (
+                    {/* Possible problems / Diagnosis Summary */}
+                    {diagnosisSummary && (
                       <DiagnosisCard
                         icon={<Stethoscope className="w-5 h-5 text-primary" />}
                         iconBg="bg-primary/10"
                         title={language === 'bn' ? 'সম্ভাব্য সমস্যা ও রোগ নির্ণয়' : 'Possible Problems & Diagnosis'}
-                        content={diagnosis.possible_problems}
+                        content={diagnosisSummary}
                       />
                     )}
 
@@ -729,24 +741,24 @@ export const AIAssistant = () => {
                       />
                     )}
 
-                    {/* What owner can do */}
-                    {diagnosis?.what_owner_can_do && (
+                    {/* What owner can do / Care Advice */}
+                    {careAdvice && (
                       <DiagnosisCard
                         icon={<HandHeart className="w-5 h-5 text-accent" />}
                         iconBg="bg-accent/15"
                         title={language === 'bn' ? 'এখন কী করবেন — যত্ন ও প্রাথমিক চিকিৎসা' : 'What You Can Do Now — Care & First Aid'}
-                        content={diagnosis.what_owner_can_do}
+                        content={careAdvice}
                         borderColor="border-accent/30"
                       />
                     )}
 
                     {/* Things to care about */}
-                    {diagnosis?.things_to_care_about && (
+                    {thingsToCareAbout && (
                       <DiagnosisCard
                         icon={<ShieldAlert className="w-5 h-5 text-rose-500 dark:text-rose-400" />}
                         iconBg="bg-rose-100 dark:bg-rose-900/30"
                         title={language === 'bn' ? 'যা যা খেয়াল রাখতে হবে' : 'Things to Care About'}
-                        content={diagnosis.things_to_care_about}
+                        content={thingsToCareAbout}
                         borderColor="border-rose-200 dark:border-rose-900/50"
                       />
                     )}
