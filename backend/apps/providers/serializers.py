@@ -57,11 +57,21 @@ class ServiceProviderSerializer(BilingualMixin, serializers.ModelSerializer):
     distance = serializers.FloatField(read_only=True, required=False)
     is_favorite = serializers.SerializerMethodField()
 
+    division = serializers.CharField(source='division.name_en', read_only=True)
+    district = serializers.CharField(source='district.name_en', read_only=True)
+    upazila = serializers.CharField(source='upazila.name_en', read_only=True)
+    union = serializers.CharField(source='union.name_en', read_only=True)
+    division_id = serializers.IntegerField(source='division.id', read_only=True)
+    district_id = serializers.IntegerField(source='district.id', read_only=True)
+    upazila_id = serializers.IntegerField(source='upazila.id', read_only=True)
+    union_id = serializers.IntegerField(source='union.id', read_only=True)
+
     class Meta:
         model = ServiceProvider
         fields = [
             'id', 'user', 'user_email', 'user_name', 'business_name', 'description', 'profile_image_url',
-            'provider_type', 'is_government_vet', 'division', 'district', 'upazila', 'union', 'latitude', 'longitude', 'phone', 'email',
+            'provider_type', 'is_government_vet', 'division', 'district', 'upazila', 'union', 
+            'division_id', 'district_id', 'upazila_id', 'union_id', 'latitude', 'longitude', 'phone', 'email',
             'is_verified', 'is_active', 'avg_rating', 'total_reviews', 'services',
             'supported_animal_types', 'animal_type_ids', 'created_at', 'updated_at',
             'description_en', 'description_bn', 'distance', 'is_favorite'

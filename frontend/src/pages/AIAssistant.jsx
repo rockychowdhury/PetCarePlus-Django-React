@@ -292,7 +292,10 @@ export const AIAssistant = () => {
   // ═══════════════════ RENDER 2: AUTHENTICATED CHAT DASHBOARD ═══════════════════
   return (
     <PageLayout>
-      <div className="bg-pcp-surface/20 min-h-[90vh] border-b border-border/40">
+      <div className="bg-gradient-to-br from-background via-pcp-surface/10 to-accent/5 min-h-[90vh] border-b border-border/40 relative overflow-hidden">
+        {/* Ambient background glows */}
+        <div className="absolute top-1/4 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/3 right-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
         
         {/* Header Title */}
         <div className="bg-gradient-to-br from-primary/5 via-pcp-surface/30 to-accent/5 py-6 border-b border-border/40">
@@ -328,160 +331,175 @@ export const AIAssistant = () => {
           {/* ── STATE A: INITIAL QUESTIONNAIRE SETUP ── */}
           {!session && (
             <form onSubmit={handleStartConversation} className="max-w-3xl mx-auto space-y-6 animate-fade-in-up">
-              
-              {/* Animal Type selection */}
-              <div className="bg-card border border-border/85 rounded-2xl p-5 md:p-6 shadow-sm space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">🐾</span>
-                  <div>
-                    <h2 className="text-sm md:text-base font-extrabold text-foreground">
-                      {language === 'bn' ? 'পশুর ধরন নির্বাচন করুন' : 'Select Animal Type'}
-                    </h2>
-                    <p className="text-[10px] md:text-xs text-muted-foreground">
-                      {language === 'bn' ? 'কোন প্রাণীর লক্ষণ আলোচনা করতে চান?' : 'Which animal are you seeking care for?'}
-                    </p>
-                  </div>
-                </div>
-
-                {isLoadingAnimals ? (
-                  <Spinner className="py-4" />
-                ) : (
-                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                    {animalTypes?.map((animal) => {
-                      const Icon = getAnimalIcon(animal.slug)
-                      const theme = ANIMAL_THEMES[animal.slug] || ANIMAL_THEMES.cat
-                      const isSelected = selectedAnimal?.id === animal.id
-                      return (
-                        <button
-                          key={animal.id}
-                          type="button"
-                          onClick={() => setSelectedAnimal(animal)}
-                          className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all group ${
-                            isSelected
-                              ? 'ring-2 ring-primary border-primary bg-primary/10 shadow-md scale-[1.02]'
-                              : `${theme.bg} ${theme.border} hover:shadow-sm`
-                          }`}
-                        >
-                          <Icon
-                            className={`w-5 sm:w-6 h-5 sm:h-6 mb-1 ${
-                              isSelected ? 'text-primary' : theme.text
-                            } group-hover:scale-110 transition-transform`}
-                          />
-                          <span className={`text-[9px] sm:text-[10px] font-bold leading-tight ${
-                            isSelected ? 'text-primary' : 'text-foreground'
-                          }`}>
-                            {language === 'bn' ? animal.name_bn : animal.name_en}
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Initial message description */}
-              <div className="bg-card border border-border/85 rounded-2xl p-5 md:p-6 shadow-sm space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-accent/15 text-accent flex items-center justify-center">
-                    <Stethoscope className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm md:text-base font-extrabold text-foreground">
-                      {language === 'bn' ? 'প্রাথমিক সমস্যা বর্ণনা করুন' : 'Describe the Symptoms'}
-                    </h2>
-                    <p className="text-[10px] md:text-xs text-muted-foreground">
-                      {language === 'bn' ? 'পশুর প্রধান লক্ষণ এবং আপনার কোনো জিজ্ঞাসা প্রথমবার লিখুন।' : 'Write down the main symptoms or behavioral changes you observe.'}
-                    </p>
-                  </div>
-                </div>
-
-                <textarea
-                  value={problemText}
-                  onChange={(e) => setProblemText(e.target.value)}
-                  placeholder={
-                    language === 'bn'
-                      ? 'উদাহরণ: আমার ছাগল আজ সকাল থেকে কিছু খাচ্ছে না এবং ঝিমুচ্ছে...'
-                      : 'Example: My goat is lethargic and refusing feed since this morning...'
-                  }
-                  rows={4}
-                  maxLength={1000}
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-pcp-surface/30 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none placeholder:text-muted-foreground/60 transition-all"
-                />
+              <div className="bg-card border border-border/70 rounded-3xl p-6 md:p-8 shadow-xl shadow-muted/20 space-y-8 bg-gradient-to-b from-card via-card/95 to-card/90 backdrop-blur-md relative overflow-hidden">
                 
-                {/* Example prompts */}
-                <div className="space-y-2">
-                  <p className="text-[10px] md:text-xs font-bold text-muted-foreground flex items-center gap-1">
-                    <Lightbulb className="w-3 h-3 text-amber-500" />
-                    {language === 'bn' ? 'উদাহরণ লক্ষণসমূহ (ক্লিক করুন):' : 'Sample symptom templates (click):'}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {(EXAMPLE_PROMPTS[language] || EXAMPLE_PROMPTS.bn).map((prompt, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => handleExampleClick(prompt)}
-                        className="px-2.5 py-1 bg-muted/50 hover:bg-primary/10 text-[10px] md:text-xs text-muted-foreground hover:text-primary font-medium rounded-lg border border-border/50 hover:border-primary/30 transition-all text-left line-clamp-1 max-w-[280px]"
-                      >
-                        {prompt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+                {/* Decorative top accent lines */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/30 via-primary to-accent/30" />
 
-              {/* Location Override selection if browser location is denied */}
-              {geoStatus === 'denied' && (
-                <div className="bg-card border border-border/85 rounded-2xl p-5 md:p-6 shadow-sm space-y-4 animate-fade-in-up">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-sky-900/30 text-sky-600 flex items-center justify-center">
-                      <MapPin className="w-4 h-4" />
+                {/* Step 1: Animal Selection */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                      <span className="text-base">🐾</span>
                     </div>
                     <div>
-                      <h2 className="text-sm md:text-base font-extrabold text-foreground">
-                        {language === 'bn' ? 'আপনার বর্তমান অবস্থান (ঐচ্ছিক)' : 'Select Your Location (Optional)'}
+                      <h2 className="text-sm md:text-base font-extrabold text-foreground tracking-tight">
+                        {language === 'bn' ? '১. পশুর ধরন নির্বাচন করুন' : '1. Select Animal Type'}
                       </h2>
                       <p className="text-[10px] md:text-xs text-muted-foreground">
-                        {language === 'bn' ? 'জরুরি সেবাদাতা এবং সরকারি ডাক্তারের তালিকা আপনার অবস্থানের কাছাকাছি ফিল্টার হবে' : 'This allows the AI to fetch and suggest veterinarians located near you'}
+                        {language === 'bn' ? 'কোন প্রাণীর স্বাস্থ্য লক্ষণ আলোচনা করতে চান?' : 'Choose the animal that requires diagnostic advice.'}
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <select
-                      value={division}
-                      onChange={(e) => {
-                        setDivision(e.target.value)
-                        setDistrict('')
-                      }}
-                      className="px-3 py-2.5 rounded-xl border border-border bg-pcp-surface/30 text-sm focus:outline-none focus:border-primary"
-                    >
-                      <option value="">{language === 'bn' ? 'বিভাগ নির্বাচন করুন' : 'Select Division'}</option>
-                      {BANGLADESH_GEOGRAPHY.divisions.map((div) => (
-                        <option key={div.id} value={div.id}>
-                          {language === 'bn' ? div.name_bn : div.name_en}
-                        </option>
-                      ))}
-                    </select>
+                  {isLoadingAnimals ? (
+                    <Spinner className="py-4" />
+                  ) : (
+                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5">
+                      {animalTypes?.map((animal) => {
+                        const Icon = getAnimalIcon(animal.slug)
+                        const theme = ANIMAL_THEMES[animal.slug] || ANIMAL_THEMES.cat
+                        const isSelected = selectedAnimal?.id === animal.id
+                        return (
+                          <button
+                            key={animal.id}
+                            type="button"
+                            onClick={() => setSelectedAnimal(animal)}
+                            className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 active:scale-[0.97] group ${
+                              isSelected
+                                ? 'ring-2 ring-primary border-primary bg-primary/10 shadow-md shadow-primary/5 scale-[1.03]'
+                                : `${theme.bg} ${theme.border} hover:shadow-md hover:scale-[1.01]`
+                            }`}
+                          >
+                            <Icon
+                              className={`w-5 sm:w-6 h-5 sm:h-6 mb-1.5 ${
+                                isSelected ? 'text-primary' : theme.text
+                              } group-hover:scale-110 transition-transform`}
+                            />
+                            <span className={`text-[9px] sm:text-[10px] font-extrabold leading-tight ${
+                              isSelected ? 'text-primary' : 'text-foreground'
+                            }`}>
+                              {language === 'bn' ? animal.name_bn : animal.name_en}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
 
-                    <select
-                      value={district}
-                      onChange={(e) => setDistrict(e.target.value)}
-                      disabled={!division}
-                      className="px-3 py-2.5 rounded-xl border border-border bg-pcp-surface/30 text-sm focus:outline-none focus:border-primary disabled:opacity-50"
-                    >
-                      <option value="">{language === 'bn' ? 'জেলা নির্বাচন করুন' : 'Select District'}</option>
-                      {availableDistricts.map((dist) => (
-                        <option key={dist.id} value={dist.id}>
-                          {language === 'bn' ? dist.name_bn : dist.name_en}
-                        </option>
+                <hr className="border-border/50" />
+
+                {/* Step 2: Describe Symptoms */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-accent/15 text-accent flex items-center justify-center flex-shrink-0">
+                      <Stethoscope className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h2 className="text-sm md:text-base font-extrabold text-foreground tracking-tight">
+                        {language === 'bn' ? '২. লক্ষণসমূহ বর্ণনা করুন' : '2. Describe the Symptoms'}
+                      </h2>
+                      <p className="text-[10px] md:text-xs text-muted-foreground">
+                        {language === 'bn' ? 'লক্ষণ, খাওয়ার রুচি এবং সময়কাল বিস্তারিত টাইপ করুন।' : 'Detail the animal\'s current issues, appetite status, and duration.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <textarea
+                      value={problemText}
+                      onChange={(e) => setProblemText(e.target.value)}
+                      placeholder={
+                        language === 'bn'
+                          ? 'উদাহরণ: আমার ছাগল আজ সকাল থেকে কিছু খাচ্ছে না এবং ঝিমুচ্ছে...'
+                          : 'Example: My goat is lethargic and refusing feed since this morning...'
+                      }
+                      rows={4}
+                      maxLength={1000}
+                      className="w-full px-4 py-3 rounded-xl border border-border border-l-4 border-l-primary/70 bg-pcp-surface/20 text-sm focus:outline-none focus:border-primary focus:border-l-primary focus:ring-1 focus:ring-primary/20 resize-none placeholder:text-muted-foreground/60 transition-all font-medium"
+                    />
+                  </div>
+                  
+                  {/* Example templates */}
+                  <div className="space-y-2.5 pt-1">
+                    <p className="text-[10px] md:text-xs font-extrabold text-muted-foreground flex items-center gap-1">
+                      <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+                      {language === 'bn' ? 'উদাহরণ বিবরণী (ক্লিক করুন):' : 'Symptom templates (click to select):'}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(EXAMPLE_PROMPTS[language] || EXAMPLE_PROMPTS.bn).map((prompt, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleExampleClick(prompt)}
+                          className="px-2.5 py-1.5 bg-muted/40 hover:bg-primary/10 text-[10px] md:text-xs text-muted-foreground hover:text-primary font-bold rounded-lg border border-border/40 hover:border-primary/20 transition-all text-left line-clamp-1 max-w-[280px]"
+                        >
+                          {prompt}
+                        </button>
                       ))}
-                    </select>
+                    </div>
                   </div>
                 </div>
-              )}
+
+                {/* Step 3: Location Override (if denied) */}
+                {geoStatus === 'denied' && (
+                  <>
+                    <hr className="border-border/50" />
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-sky-900/30 text-sky-600 flex items-center justify-center flex-shrink-0">
+                          <MapPin className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h2 className="text-sm md:text-base font-extrabold text-foreground tracking-tight">
+                            {language === 'bn' ? '৩. আপনার অবস্থান নিশ্চিত করুন' : '3. Confirm Your Location'}
+                          </h2>
+                          <p className="text-[10px] md:text-xs text-muted-foreground">
+                            {language === 'bn' ? 'আপনার বিভাগের ডাক্তারদের সুপারিশ করতে সাহায্য করে' : 'Used to recommend closest veterinarians in your district'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <select
+                          value={division}
+                          onChange={(e) => {
+                            setDivision(e.target.value)
+                            setDistrict('')
+                          }}
+                          className="px-3.5 py-2.5 rounded-xl border border-border bg-pcp-surface/20 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 font-bold text-foreground"
+                        >
+                          <option value="">{language === 'bn' ? 'বি বিভাগ নির্বাচন করুন' : 'Select Division'}</option>
+                          {BANGLADESH_GEOGRAPHY.divisions.map((div) => (
+                            <option key={div.id} value={div.id}>
+                              {language === 'bn' ? div.name_bn : div.name_en}
+                            </option>
+                          ))}
+                        </select>
+
+                        <select
+                          value={district}
+                          onChange={(e) => setDistrict(e.target.value)}
+                          disabled={!division}
+                          className="px-3.5 py-2.5 rounded-xl border border-border bg-pcp-surface/20 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 font-bold text-foreground disabled:opacity-50"
+                        >
+                          <option value="">{language === 'bn' ? 'জেলা নির্বাচন করুন' : 'Select District'}</option>
+                          {availableDistricts.map((dist) => (
+                            <option key={dist.id} value={dist.id}>
+                              {language === 'bn' ? dist.name_bn : dist.name_en}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+              </div>
 
               {error && (
-                <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 text-xs md:text-sm text-destructive font-medium animate-fade-in">
+                <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 text-xs md:text-sm text-destructive font-bold animate-fade-in shadow-sm">
                   {error}
                 </div>
               )}
@@ -489,7 +507,7 @@ export const AIAssistant = () => {
               <button
                 type="submit"
                 disabled={!selectedAnimal || isLoading}
-                className="w-full py-3.5 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/95 hover:to-primary/85 text-white text-sm md:text-base font-extrabold rounded-2xl shadow-lg hover:shadow-xl flex items-center justify-center gap-2.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none active:scale-[0.99]"
+                className="w-full py-4 bg-gradient-to-r from-primary via-emerald-600 to-primary/95 hover:from-primary/95 hover:to-emerald-500 hover:shadow-lg hover:shadow-primary/10 text-white text-sm md:text-base font-extrabold rounded-2xl shadow-md flex items-center justify-center gap-2.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none active:scale-[0.99] active:shadow-md"
               >
                 {isLoading ? (
                   <>

@@ -320,6 +320,11 @@ export const LocationModal = ({ isOpen, onClose }) => {
           </div>
 
           <div className="space-y-2.5">
+            <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 p-2 rounded text-[10px] font-medium leading-tight">
+              {language === 'bn' 
+                ? 'আপনি চাইলে শুধুমাত্র একটি বিভাগ বা জেলা নির্বাচন করেও খুঁজতে পারেন।'
+                : 'You can search by just selecting a Division or District. No need to fill all fields.'}
+            </div>
             <div>
               <label className="text-[11px] font-bold text-muted-foreground mb-1 block">Division</label>
               <CustomSelect

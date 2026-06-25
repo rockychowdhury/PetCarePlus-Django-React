@@ -73,41 +73,17 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         lat = self.request.query_params.get('lat')
         lng = self.request.query_params.get('lng')
         
-        # Look up names from IDs
-        from apps.locations.models import Division, District, Upazila
-        division_name = None
-        district_name = None
-        upazila_name = None
-        
-        if division_id and division_id != 'all':
-            division_name = Division.objects.filter(id=division_id).values_list('name_en', flat=True).first()
-        if district_id:
-            district_name = District.objects.filter(id=district_id).values_list('name_en', flat=True).first()
-        if upazila_id:
-            upazila_name = Upazila.objects.filter(id=upazila_id).values_list('name_en', flat=True).first()
-            
-        location_source = None
-        if division_id == 'all':
-            pass # Explicit override for nationwide search
-        elif division_name or district_name or upazila_name or (lat and lng):
-            class MockUser:
-                def __init__(self, div, dist, upz, la, ln):
-                    self.division = div
-                    self.district = dist
-                    self.upazila = upz
-                    self.latitude = la
-                    self.longitude = ln
-            location_source = MockUser(division_name, district_name, upazila_name, lat, lng)
-        elif user and user.is_authenticated and (user.district or user.latitude):
-            # Fallback to user profile if no explicit search location is provided
-            location_source = user
+        has_location_params = division_id or district_id or upazila_id or (lat and lng)
+        has_profile_location = user and user.is_authenticated and (getattr(user, 'district_id', None) or getattr(user, 'latitude', None))
 
         # Apply cascade logic if location context is available
-        if location_source:
+        if has_location_params or has_profile_location:
             return get_local_providers(
-                user=location_source,
+                user=user if not has_location_params else None,
                 provider_type=provider_type,
-                animal_type_id=animal_type_id
+                animal_type_id=animal_type_id,
+                lat=lat, lng=lng,
+                division_id=division_id, district_id=district_id, upazila_id=upazila_id
             )
 
         # Fallback: List all active verified service providers
@@ -141,37 +117,13 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         lat = request.query_params.get('lat')
         lng = request.query_params.get('lng')
         
-        from apps.locations.models import Division, District, Upazila
-        division_name = None
-        district_name = None
-        upazila_name = None
-        
-        if division_id and division_id != 'all':
-            division_name = Division.objects.filter(id=division_id).values_list('name_en', flat=True).first()
-        if district_id:
-            district_name = District.objects.filter(id=district_id).values_list('name_en', flat=True).first()
-        if upazila_id:
-            upazila_name = Upazila.objects.filter(id=upazila_id).values_list('name_en', flat=True).first()
-        
-        location_source = None
-        if division_id == 'all':
-            pass # Explicit override for nationwide search
-        elif division_name or district_name or upazila_name or (lat and lng):
-            class MockUser:
-                def __init__(self, div, dist, upz, la, ln):
-                    self.division = div
-                    self.district = dist
-                    self.upazila = upz
-                    self.latitude = la
-                    self.longitude = ln
-            location_source = MockUser(division_name, district_name, upazila_name, lat, lng)
-        elif user and user.is_authenticated and (user.district or user.latitude):
-            location_source = user
+        has_location_params = division_id or district_id or upazila_id or (lat and lng)
+        has_profile_location = user and user.is_authenticated and (getattr(user, 'district_id', None) or getattr(user, 'latitude', None))
 
         exact_match_found = True
         resolved_level = 'exact'
 
-        if location_source:
+        if has_location_params or has_profile_location:
             base_qs = ServiceProvider.objects.select_related('user').prefetch_related('services', 'animal_types__animal_type').filter(is_verified=True, is_active=True)
             
             if user and user.is_authenticated:
@@ -188,13 +140,20 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
             if animal_type_id:
                 base_qs = base_qs.filter(animal_types__animal_type_id=animal_type_id)
 
-            lat_val = getattr(location_source, 'latitude', None)
-            lng_val = getattr(location_source, 'longitude', None)
-            upazila_val = getattr(location_source, 'upazila', None)
-            district_val = getattr(location_source, 'district', None)
-            division_val = getattr(location_source, 'division', None)
+            lat_val = lat if has_location_params else getattr(user, 'latitude', None)
+            lng_val = lng if has_location_params else getattr(user, 'longitude', None)
+            upz_val = upazila_id if has_location_params else getattr(user, 'upazila_id', None)
+            dist_val = district_id if has_location_params else getattr(user, 'district_id', None)
+            div_val = division_id if has_location_params else getattr(user, 'division_id', None)
 
-            if lat_val and lng_val:
+            is_region_search = not lat_val and not lng_val and (upz_val or dist_val or div_val)
+
+            if is_region_search:
+                # Region search does no fallbacks, so exact_match_found is true
+                # unless the result is literally empty, but we can just leave it as exact.
+                if queryset.count() == 0:
+                    exact_match_found = False
+            elif lat_val and lng_val:
                 try:
                     import math
                     lat_v = float(lat_val)
@@ -227,16 +186,12 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
                 except (ValueError, TypeError):
                     exact_match_found = False
                     resolved_level = 'fallback'
-            elif upazila_val:
-                if base_qs.filter(upazila__iexact=upazila_val).count() < 1:
+            elif upz_val:
+                if base_qs.filter(upazila_id=upz_val).count() < 1:
                     exact_match_found = False
                     resolved_level = 'fallback'
-            elif district_val:
-                if base_qs.filter(district__iexact=district_val).count() < 1:
-                    exact_match_found = False
-                    resolved_level = 'fallback'
-            elif division_val:
-                if base_qs.filter(division__iexact=division_val).count() < 1:
+            elif dist_val:
+                if base_qs.filter(district_id=dist_val).count() < 1:
                     exact_match_found = False
                     resolved_level = 'fallback'
 

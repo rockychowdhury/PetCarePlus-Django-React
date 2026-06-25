@@ -17,17 +17,13 @@ from django.db import models
 from django.db.models.functions import ACos, Cos, Radians, Sin
 from django.db.models import F, ExpressionWrapper
 
-def get_local_providers(user, provider_type=None, animal_type_id=None):
+def get_local_providers(user=None, provider_type=None, animal_type_id=None,
+                        lat=None, lng=None, division_id=None, district_id=None, upazila_id=None):
     """
-    Get locally-scoped providers using cascade logic.
-
-    Args:
-        user: The requesting user (or MockUser with lat/lng/union/upazila)
-        provider_type: Optional filter by provider type (vet, groomer, etc.)
-        animal_type_id: Optional filter by animal type
-
-    Returns:
-        QuerySet of ServiceProvider objects.
+    Get locally-scoped providers.
+    - If Region Search (IDs only, no lat/lng): Strict match, NO fallback.
+    - If Radius Search (lat/lng provided): Radius -> Upazila -> District fallback.
+    - If Implicit (User profile): Radius -> Upazila -> District fallback.
     """
     base_qs = ServiceProvider.objects.prefetch_related('animal_types').filter(is_verified=True, is_active=True)
 
@@ -36,16 +32,36 @@ def get_local_providers(user, provider_type=None, animal_type_id=None):
     if animal_type_id:
         base_qs = base_qs.filter(animal_types__animal_type_id=animal_type_id)
 
-    # 1. Radial Haversine search (15km radius) if coordinates are available
-    lat = getattr(user, 'latitude', None)
-    lng = getattr(user, 'longitude', None)
+    # Determine if this is an explicit Region Search (IDs picked, no GPS)
+    is_region_search = not lat and not lng and (upazila_id or district_id or division_id)
 
+    if is_region_search:
+        if upazila_id:
+            return base_qs.filter(upazila_id=upazila_id).order_by('-avg_rating')
+        if district_id:
+            return base_qs.filter(district_id=district_id).order_by('-avg_rating')
+        if division_id and division_id != 'all':
+            return base_qs.filter(division_id=division_id).order_by('-avg_rating')
+        return base_qs.order_by('-avg_rating')
+
+    # --- Radius Search / Implicit Profile Search (with Fallback) ---
+    
+    # Extract implicit coordinates/IDs from user if not passed directly
+    if not lat and getattr(user, 'latitude', None):
+        lat = user.latitude
+    if not lng and getattr(user, 'longitude', None):
+        lng = user.longitude
+    if not upazila_id and getattr(user, 'upazila_id', None):
+        upazila_id = user.upazila_id
+    if not district_id and getattr(user, 'district_id', None):
+        district_id = user.district_id
+
+    # 1. Radial Haversine search (15km radius)
     if lat and lng:
         try:
             lat_val = float(lat)
             lng_val = float(lng)
             
-            # Bounding box filter for database index optimization (~15km delta)
             import math
             lat_delta = 15.0 / 111.0
             lng_delta = 15.0 / (111.0 * math.cos(math.radians(lat_val)))
@@ -76,28 +92,19 @@ def get_local_providers(user, provider_type=None, animal_type_id=None):
         except (ValueError, TypeError):
             pass
 
-    # 2. Same Upazila
-    upazila = getattr(user, 'upazila', None)
-    if upazila:
-        local = base_qs.filter(upazila__iexact=upazila)
+    # 2. Upazila Fallback
+    if upazila_id:
+        local = base_qs.filter(upazila_id=upazila_id)
         if local.count() >= LOCAL_THRESHOLD:
             return local.order_by('-avg_rating')
 
-    # 4. Same District
-    district = getattr(user, 'district', None)
-    if district:
-        local = base_qs.filter(district__iexact=district)
+    # 3. District Fallback
+    if district_id:
+        local = base_qs.filter(district_id=district_id)
         if local.count() >= LOCAL_THRESHOLD:
             return local.order_by('-avg_rating')
 
-    # 5. Same Division
-    division = getattr(user, 'division', None)
-    if division:
-        regional = base_qs.filter(division__iexact=division)
-        if regional.count() >= LOCAL_THRESHOLD:
-            return regional.order_by('-avg_rating')
-
-    # 6. All verified providers
+    # 4. Global Fallback
     return base_qs.order_by('-avg_rating')
 
 

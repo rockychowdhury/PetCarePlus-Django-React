@@ -49,10 +49,10 @@ class ServiceProvider(models.Model):
     profile_image_url = models.URLField(max_length=500, blank=True, null=True, help_text="Direct link to profile image")
 
     # Location (Bangladesh hierarchy)
-    division = models.CharField(max_length=20, choices=DIVISION_CHOICES)
-    district = models.CharField(max_length=50)
-    upazila = models.CharField(max_length=50, blank=True)
-    union = models.CharField(max_length=50, blank=True)
+    division = models.ForeignKey('locations.Division', on_delete=models.SET_NULL, null=True, blank=True, related_name='providers')
+    district = models.ForeignKey('locations.District', on_delete=models.SET_NULL, null=True, blank=True, related_name='providers')
+    upazila = models.ForeignKey('locations.Upazila', on_delete=models.SET_NULL, null=True, blank=True, related_name='providers')
+    union = models.ForeignKey('locations.Union', on_delete=models.SET_NULL, null=True, blank=True, related_name='providers')
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 

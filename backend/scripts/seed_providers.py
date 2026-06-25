@@ -11,6 +11,7 @@ django.setup()
 from django.contrib.auth import get_user_model
 from apps.providers.models import ServiceProvider, ProviderService, ProviderAnimalType
 from apps.animals.models import AnimalType
+from apps.locations.models import Division, District, Upazila
 
 User = get_user_model()
 
@@ -96,6 +97,10 @@ def seed_providers():
         ptype = random.choice(ptypes)
         loc = random.choice(LOCATIONS)
         
+        div_obj = Division.objects.filter(name_en__icontains=loc['division']).first()
+        dist_obj = District.objects.filter(name_en__icontains=loc['district']).first()
+        upz_obj = Upazila.objects.filter(name_en__icontains=loc['upazila']).first()
+        
         provider, _ = ServiceProvider.objects.update_or_create(
             user=user,
             defaults={
@@ -105,9 +110,9 @@ def seed_providers():
                 'provider_type': ptype,
                 'is_verified': True,
                 'profile_image_url': random.choice(IMAGES),
-                'division': loc['division'],
-                'district': loc['district'],
-                'upazila': loc['upazila'],
+                'division': div_obj,
+                'district': dist_obj,
+                'upazila': upz_obj,
                 'phone': f"017000000{i:02d}",
                 'email': email,
                 'avg_rating': round(random.uniform(3.5, 5.0), 1),
