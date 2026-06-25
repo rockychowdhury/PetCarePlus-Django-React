@@ -87,24 +87,32 @@ def get_local_providers(user=None, provider_type=None, animal_type_id=None,
             
             radial_qs = radial_qs.annotate(distance=distance_expr).filter(distance__lte=15.0).order_by('distance')
             
-            if radial_qs.count() >= LOCAL_THRESHOLD:
+            if radial_qs.count() > 0:
                 return radial_qs
         except (ValueError, TypeError):
             pass
 
-    # 2. Upazila Fallback
+        # Fallback to upazila if radius has 0 results
+        if upazila_id:
+            upazila_qs = base_qs.filter(upazila_id=upazila_id).order_by('-avg_rating')
+            if upazila_qs.count() > 0:
+                return upazila_qs
+        
+        # If NO one found (radius empty AND upazila empty/missing), return empty set!
+        return base_qs.none()
+
+    # 2. User Profile fallback (No GPS provided, fallback to explicitly saved user IDs)
     if upazila_id:
         local = base_qs.filter(upazila_id=upazila_id)
-        if local.count() >= LOCAL_THRESHOLD:
+        if local.count() > 0:
             return local.order_by('-avg_rating')
 
-    # 3. District Fallback
     if district_id:
         local = base_qs.filter(district_id=district_id)
-        if local.count() >= LOCAL_THRESHOLD:
+        if local.count() > 0:
             return local.order_by('-avg_rating')
 
-    # 4. Global Fallback
+    # 3. Global Fallback
     return base_qs.order_by('-avg_rating')
 
 

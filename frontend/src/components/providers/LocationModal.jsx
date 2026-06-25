@@ -76,7 +76,7 @@ export const LocationModal = ({ isOpen, onClose }) => {
   }, [storeUnion, unions, upazilaId])
 
   const handleGps = () => {
-    setGpsStatus('Detecting...')
+    setGpsStatus(language === 'bn' ? 'অপেক্ষা করুন...' : 'Detecting...')
     if (!navigator.geolocation) {
       setGpsStatus('Not supported')
       return
@@ -85,41 +85,68 @@ export const LocationModal = ({ isOpen, onClose }) => {
       async (pos) => {
         const latitude = pos.coords.latitude
         const longitude = pos.coords.longitude
-        setLat(latitude)
-        setLng(longitude)
-
+        
         if (latitude < 20.0 || latitude > 27.0 || longitude < 88.0 || longitude > 93.0) {
           setGpsStatus('outside_bd')
           return
         }
 
-        setGpsStatus('Reversing address...')
+        setGpsStatus(language === 'bn' ? 'প্রসেসিং...' : 'Processing...')
 
         try {
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
           )
           const data = await res.json()
+          let resolvedUpazilaId = ''
+          
           if (data && data.address) {
             const addr = data.address
             const divName = addr.state?.replace(' Division', '') || ''
             const distName = (addr.state_district || addr.county || addr.city)?.replace(' District', '') || ''
             const upzName = addr.city || addr.town || addr.county || ''
-            const unionName = addr.suburb || addr.village || addr.neighbourhood || ''
-
-            setAutoFillTarget({
-              division: divName,
-              district: distName,
-              upazila: upzName,
-              union: unionName,
-              rawAddressText: `${data.display_name} ${Object.values(addr).join(' ')}`.toLowerCase()
-            })
-            setGpsStatus('Location auto-filled!')
-          } else {
-            setGpsStatus('Address not found')
+            const rawAddress = `${data.display_name} ${Object.values(addr).join(' ')}`.toLowerCase()
+            
+            // Background resolution for Upazila ID
+            const divs = await locationsApi.getDivisions()
+            const divMatch = divs.find(d => rawAddress.includes(d.name_en.toLowerCase()) || divName.toLowerCase().includes(d.name_en.toLowerCase()))
+            
+            if (divMatch) {
+                const dists = await locationsApi.getDistricts(divMatch.id)
+                const distMatch = dists.find(d => rawAddress.includes(d.name_en.toLowerCase()) || distName.toLowerCase().includes(d.name_en.toLowerCase()))
+                
+                if (distMatch) {
+                    const upzs = await locationsApi.getUpazilas(distMatch.id)
+                    let upzMatch = upzs.find(u => {
+                        const cleanName = u.name_en.toLowerCase().replace(' sadar', '').replace(' city corporation', '').trim()
+                        return rawAddress.includes(cleanName) || upzName.toLowerCase().includes(cleanName)
+                    })
+                    
+                    if (!upzMatch && distMatch.name_en.toLowerCase() === 'dhaka') {
+                        upzMatch = upzs.find(u => u.name_en.toLowerCase().includes('dhaka north'))
+                    }
+                    
+                    if (upzMatch) {
+                        resolvedUpazilaId = upzMatch.id
+                    }
+                }
+            }
           }
+          
+          setLocation({
+            division: 'all',
+            district: '',
+            upazila: '',
+            union: '',
+            division_id: '',
+            district_id: '',
+            upazila_id: resolvedUpazilaId,
+            latitude: latitude,
+            longitude: longitude,
+          })
+          onClose()
         } catch (e) {
-          setGpsStatus('Reverse geocode failed')
+          setGpsStatus('Failed')
         }
       },
       () => setGpsStatus('Failed')
@@ -152,51 +179,6 @@ export const LocationModal = ({ isOpen, onClose }) => {
     onClose()
   }
 
-  useEffect(() => {
-    if (!autoFillTarget) return
-
-    if (divisions.length > 0 && !divisionId) {
-      const match = divisions.find(d =>
-        autoFillTarget.rawAddressText.includes(d.name_en.toLowerCase()) ||
-        (autoFillTarget.division && autoFillTarget.division.toLowerCase().includes(d.name_en.toLowerCase()))
-      )
-      if (match) setDivisionId(match.id)
-      else setAutoFillTarget(null)
-    }
-
-    if (divisionId && districts.length > 0 && !districtId) {
-      const match = districts.find(d =>
-        autoFillTarget.rawAddressText.includes(d.name_en.toLowerCase()) ||
-        (autoFillTarget.district && autoFillTarget.district.toLowerCase().includes(d.name_en.toLowerCase()))
-      )
-      setDistrictId(match?.id || districts[0]?.id || '')
-    }
-
-    if (districtId && upazilas.length > 0 && !upazilaId) {
-      let match = upazilas.find(u => {
-        const cleanName = u.name_en.toLowerCase()
-          .replace(' sadar', '')
-          .replace(' city corporation', '')
-          .trim()
-        return autoFillTarget.rawAddressText.includes(cleanName)
-      })
-      if (!match) {
-        const activeDist = districts.find(d => String(d.id) === String(districtId))
-        if (activeDist && activeDist.name_en.toLowerCase() === 'dhaka') {
-          match = upazilas.find(u => u.name_en.toLowerCase().includes('dhaka north'))
-        }
-      }
-      setUpazilaId(match?.id || upazilas[0]?.id || '')
-    }
-
-    if (upazilaId && unions.length > 0 && !unionId) {
-      const match = unions.find(u =>
-        autoFillTarget.rawAddressText.includes(u.name_en.toLowerCase())
-      )
-      setUnionId(match?.id || unions[0]?.id || '')
-      setAutoFillTarget(null)
-    }
-  }, [autoFillTarget, divisions, districts, upazilas, unions, divisionId, districtId, upazilaId, unionId])
 
   const handleSave = () => {
     const selectedDivision = divisions.find(d => String(d.id) === String(divisionId))?.name_en || ''
@@ -289,7 +271,7 @@ export const LocationModal = ({ isOpen, onClose }) => {
               className="flex-grow flex items-center justify-center gap-1.5 py-2 bg-zinc-100/80 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-pcp-text-primary dark:text-zinc-200 font-bold rounded-full transition-colors text-xs border border-zinc-200 dark:border-zinc-700 shadow-sm"
             >
               <MapPin className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
-              {gpsStatus && gpsStatus !== 'outside_bd' ? gpsStatus : 'Capture Current Location'}
+              {gpsStatus && gpsStatus !== 'outside_bd' ? gpsStatus : (language === 'bn' ? 'বর্তমান লোকেশন ব্যবহার করুন' : 'Use current location')}
             </button>
             <button
               onClick={handleReset}
@@ -320,11 +302,6 @@ export const LocationModal = ({ isOpen, onClose }) => {
           </div>
 
           <div className="space-y-2.5">
-            <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 p-2 rounded text-[10px] font-medium leading-tight">
-              {language === 'bn' 
-                ? 'আপনি চাইলে শুধুমাত্র একটি বিভাগ বা জেলা নির্বাচন করেও খুঁজতে পারেন।'
-                : 'You can search by just selecting a Division or District. No need to fill all fields.'}
-            </div>
             <div>
               <label className="text-[11px] font-bold text-muted-foreground mb-1 block">Division</label>
               <CustomSelect

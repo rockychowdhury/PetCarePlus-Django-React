@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import { useLocationStore } from './store/locationStore'
 import { authApi } from './api/auth'
@@ -57,15 +57,21 @@ const AuthProvider = ({ children }) => {
       })
   }, [])
 
-  if (isInitializing) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <Spinner size="lg" />
-      </div>
-    )
-  }
-
+  // UI block removed to allow navbar to load while authenticating
   return children
+}
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation()
+  
+  useEffect(() => {
+    // Force instant scroll to avoid weird visual sliding when navigating
+    document.documentElement.style.scrollBehavior = 'auto'
+    window.scrollTo(0, 0)
+    document.documentElement.style.scrollBehavior = ''
+  }, [pathname])
+  
+  return null
 }
 
 export const App = () => {
@@ -128,6 +134,7 @@ export const App = () => {
   }, [division, setLocation, language])
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AuthProvider>
         <Suspense
           fallback={
@@ -145,9 +152,23 @@ export const App = () => {
             <Route path="/resources" element={<GovtResources />} />
             <Route path="/providers" element={<Providers />} />
             <Route path="/providers/:id" element={<ProviderDetail />} />
-            <Route path="/ai-assistant" element={<AIAssistant />} />
-            <Route path="/rehoming" element={<Rehoming />} />
-            <Route path="/rehoming/:id" element={<RehomingDetail />} />
+
+            {/* Protected Content Routes */}
+            <Route path="/ai-assistant" element={
+              <ProtectedRoute>
+                <AIAssistant />
+              </ProtectedRoute>
+            } />
+            <Route path="/rehoming" element={
+              <ProtectedRoute>
+                <Rehoming />
+              </ProtectedRoute>
+            } />
+            <Route path="/rehoming/:id" element={
+              <ProtectedRoute>
+                <RehomingDetail />
+              </ProtectedRoute>
+            } />
 
             {/* Anonymous Auth Routes */}
             <Route

@@ -10,7 +10,7 @@ import {
 
 export const Navbar = () => {
   const { language, setLanguage, t } = useLanguage()
-  const { user, logout } = useAuthStore()
+  const { user, isInitializing, logout } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
   const [isOpen, setIsOpen] = useState(false)
@@ -52,9 +52,12 @@ export const Navbar = () => {
 
   const navItems = [
     { name: language === 'bn' ? 'সেবাদাতা' : 'Providers', path: '/providers' },
-    { name: language === 'bn' ? 'এআই সহকারী' : 'AI Assistant', path: '/ai-assistant' },
-    { name: language === 'bn' ? 'দত্তক' : 'Rehoming', path: '/rehoming' },
+    ...(user ? [
+      { name: language === 'bn' ? 'এআই সহকারী' : 'AI Assistant', path: '/ai-assistant' },
+      { name: language === 'bn' ? 'দত্তক' : 'Rehoming', path: '/rehoming' }
+    ] : []),
     { name: language === 'bn' ? 'নির্দেশিকা' : 'Guidelines', path: '/guidelines' },
+    { name: language === 'bn' ? 'সরকারি সম্পদ' : 'Resources', path: '/resources' },
   ]
 
   const getUserMenuLinks = () => {
@@ -133,7 +136,12 @@ export const Navbar = () => {
             {/* Divider */}
             <div className="w-px h-4 bg-border/60" />
 
-            {user ? (
+            {isInitializing ? (
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground animate-pulse">
+                <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                {language === 'bn' ? 'যাচাই করা হচ্ছে...' : 'Authenticating...'}
+              </div>
+            ) : user ? (
               <div className="relative flex items-center" ref={userMenuRef}>
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -235,7 +243,12 @@ export const Navbar = () => {
           </div>
 
           <div className="pt-4 pb-6 border-t border-border/40 px-4 space-y-3">
-            {user ? (
+            {isInitializing ? (
+              <div className="flex items-center justify-center py-4 gap-2 text-sm font-medium text-muted-foreground animate-pulse">
+                <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                {language === 'bn' ? 'যাচাই করা হচ্ছে...' : 'Authenticating...'}
+              </div>
+            ) : user ? (
               <div className="space-y-1">
                 <div className="px-3 py-2 mb-2">
                   <div className="text-sm font-bold text-foreground">{user.name}</div>
