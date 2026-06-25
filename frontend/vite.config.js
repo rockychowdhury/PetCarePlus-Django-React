@@ -11,7 +11,6 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts:['gentle-roses-pump.loca.lt'],
     port: 5173,
     proxy: {
       '/api/v1': {

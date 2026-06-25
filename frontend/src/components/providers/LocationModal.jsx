@@ -99,6 +99,11 @@ export const LocationModal = ({ isOpen, onClose }) => {
           )
           const data = await res.json()
           let resolvedUpazilaId = ''
+          let resolvedDivisionName = 'all'
+          let resolvedDistrictName = ''
+          let resolvedUpazilaName = ''
+          let resolvedDivisionId = ''
+          let resolvedDistrictId = ''
           
           if (data && data.address) {
             const addr = data.address
@@ -112,10 +117,16 @@ export const LocationModal = ({ isOpen, onClose }) => {
             const divMatch = divs.find(d => rawAddress.includes(d.name_en.toLowerCase()) || divName.toLowerCase().includes(d.name_en.toLowerCase()))
             
             if (divMatch) {
+                resolvedDivisionName = divMatch.name_en
+                resolvedDivisionId = divMatch.id
+                
                 const dists = await locationsApi.getDistricts(divMatch.id)
                 const distMatch = dists.find(d => rawAddress.includes(d.name_en.toLowerCase()) || distName.toLowerCase().includes(d.name_en.toLowerCase()))
                 
                 if (distMatch) {
+                    resolvedDistrictName = distMatch.name_en
+                    resolvedDistrictId = distMatch.id
+                    
                     const upzs = await locationsApi.getUpazilas(distMatch.id)
                     let upzMatch = upzs.find(u => {
                         const cleanName = u.name_en.toLowerCase().replace(' sadar', '').replace(' city corporation', '').trim()
@@ -128,22 +139,24 @@ export const LocationModal = ({ isOpen, onClose }) => {
                     
                     if (upzMatch) {
                         resolvedUpazilaId = upzMatch.id
+                        resolvedUpazilaName = upzMatch.name_en
                     }
                 }
             }
           }
           
           setLocation({
-            division: 'all',
-            district: '',
-            upazila: '',
+            division: resolvedDivisionName,
+            district: resolvedDistrictName,
+            upazila: resolvedUpazilaName,
             union: '',
-            division_id: '',
-            district_id: '',
+            division_id: resolvedDivisionId,
+            district_id: resolvedDistrictId,
             upazila_id: resolvedUpazilaId,
             latitude: latitude,
             longitude: longitude,
           })
+          setGpsStatus('')
           onClose()
         } catch (e) {
           setGpsStatus('Failed')

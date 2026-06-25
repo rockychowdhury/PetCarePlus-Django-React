@@ -47,12 +47,12 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         
         # Admin gets everything
         if user and user.is_authenticated and user.role == 'admin':
-            qs = ServiceProvider.objects.select_related('user').prefetch_related('services', 'animal_types__animal_type').all()
+            qs = ServiceProvider.objects.select_related('user', 'division', 'district', 'upazila', 'union').prefetch_related('services', 'animal_types__animal_type').all()
             return qs
 
         # For detail views (retrieve, toggle_favorite), don't restrict by location cascade
         if getattr(self, 'action', None) != 'list':
-            qs = ServiceProvider.objects.select_related('user').prefetch_related('services', 'animal_types__animal_type').filter(is_verified=True, is_active=True)
+            qs = ServiceProvider.objects.select_related('user', 'division', 'district', 'upazila', 'union').prefetch_related('services', 'animal_types__animal_type').filter(is_verified=True, is_active=True)
             if user and user.is_authenticated:
                 ct = ContentType.objects.get_for_model(ServiceProvider)
                 saved_subquery = SavedItem.objects.filter(
@@ -87,7 +87,7 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
             )
 
         # Fallback: List all active verified service providers
-        qs = ServiceProvider.objects.select_related('user').prefetch_related('services', 'animal_types__animal_type').filter(is_verified=True, is_active=True)
+        qs = ServiceProvider.objects.select_related('user', 'division', 'district', 'upazila', 'union').prefetch_related('services', 'animal_types__animal_type').filter(is_verified=True, is_active=True)
         
         if user and user.is_authenticated:
             ct = ContentType.objects.get_for_model(ServiceProvider)
@@ -124,7 +124,7 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         resolved_level = 'exact'
 
         if has_location_params or has_profile_location:
-            base_qs = ServiceProvider.objects.select_related('user').prefetch_related('services', 'animal_types__animal_type').filter(is_verified=True, is_active=True)
+            base_qs = ServiceProvider.objects.select_related('user', 'division', 'district', 'upazila', 'union').prefetch_related('services', 'animal_types__animal_type').filter(is_verified=True, is_active=True)
             
             if user and user.is_authenticated:
                 ct = ContentType.objects.get_for_model(ServiceProvider)
