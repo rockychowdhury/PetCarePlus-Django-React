@@ -427,13 +427,13 @@ export const AIAssistant = () => {
                       <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
                       {language === 'bn' ? 'উদাহরণ বিবরণী (ক্লিক করুন):' : 'Symptom templates (click to select):'}
                     </p>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
                       {(EXAMPLE_PROMPTS[language] || EXAMPLE_PROMPTS.bn).map((prompt, idx) => (
                         <button
                           key={idx}
                           type="button"
                           onClick={() => handleExampleClick(prompt)}
-                          className="px-2.5 py-1.5 bg-muted/40 hover:bg-primary/10 text-[10px] md:text-xs text-muted-foreground hover:text-primary font-bold rounded-lg border border-border/40 hover:border-primary/20 transition-all text-left line-clamp-1 max-w-[280px]"
+                          className="px-3 py-2 bg-muted/40 hover:bg-primary/10 text-xs text-muted-foreground hover:text-primary font-bold rounded-lg border border-border/40 hover:border-primary/20 transition-all text-left whitespace-normal break-words w-full sm:w-auto flex-1"
                         >
                           {prompt}
                         </button>
@@ -718,6 +718,17 @@ export const AIAssistant = () => {
                       />
                     )}
 
+                    {/* General Advice Response */}
+                    {guidedResponse && (
+                      <DiagnosisCard
+                        icon={<Lightbulb className="w-5 h-5 text-amber-500 dark:text-amber-400" />}
+                        iconBg="bg-amber-100 dark:bg-amber-900/30"
+                        title={language === 'bn' ? 'পরামর্শ ও নির্দেশিকা' : 'Advice & Guidelines'}
+                        content={guidedResponse}
+                        borderColor="border-amber-200 dark:border-amber-900/50"
+                      />
+                    )}
+
                     {/* What owner can do */}
                     {diagnosis?.what_owner_can_do && (
                       <DiagnosisCard
@@ -732,11 +743,11 @@ export const AIAssistant = () => {
                     {/* Things to care about */}
                     {diagnosis?.things_to_care_about && (
                       <DiagnosisCard
-                        icon={<ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400" />}
-                        iconBg="bg-amber-100 dark:bg-amber-900/30"
+                        icon={<ShieldAlert className="w-5 h-5 text-rose-500 dark:text-rose-400" />}
+                        iconBg="bg-rose-100 dark:bg-rose-900/30"
                         title={language === 'bn' ? 'যা যা খেয়াল রাখতে হবে' : 'Things to Care About'}
                         content={diagnosis.things_to_care_about}
-                        borderColor="border-amber-200 dark:border-amber-900/50"
+                        borderColor="border-rose-200 dark:border-rose-900/50"
                       />
                     )}
 
