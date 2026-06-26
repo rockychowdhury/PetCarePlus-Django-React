@@ -18,14 +18,20 @@ from django.db.models.functions import ACos, Cos, Radians, Sin
 from django.db.models import F, ExpressionWrapper
 
 def get_local_providers(user=None, provider_type=None, animal_type_id=None,
-                        lat=None, lng=None, division_id=None, district_id=None, upazila_id=None):
+                        lat=None, lng=None, division_id=None, district_id=None, upazila_id=None,
+                        base_qs=None, return_metadata=False):
     """
     Get locally-scoped providers.
     - If Region Search (IDs only, no lat/lng): Strict match, NO fallback.
     - If Radius Search (lat/lng provided): Radius -> Upazila -> District fallback.
     - If Implicit (User profile): Radius -> Upazila -> District fallback.
     """
-    base_qs = ServiceProvider.objects.prefetch_related('animal_types').filter(is_verified=True, is_active=True)
+    if base_qs is None:
+        base_qs = ServiceProvider.objects.select_related(
+            'user', 'division', 'district', 'upazila', 'union'
+        ).prefetch_related(
+            'services', 'animal_types__animal_type'
+        ).filter(is_verified=True, is_active=True)
 
     if provider_type:
         base_qs = base_qs.filter(provider_type=provider_type)
@@ -37,12 +43,16 @@ def get_local_providers(user=None, provider_type=None, animal_type_id=None,
 
     if is_region_search:
         if upazila_id:
-            return base_qs.filter(upazila_id=upazila_id).order_by('-avg_rating')
+            qs = base_qs.filter(upazila_id=upazila_id).order_by('-avg_rating')
+            return (qs, True, 'exact') if return_metadata else qs
         if district_id:
-            return base_qs.filter(district_id=district_id).order_by('-avg_rating')
+            qs = base_qs.filter(district_id=district_id).order_by('-avg_rating')
+            return (qs, True, 'exact') if return_metadata else qs
         if division_id and division_id != 'all':
-            return base_qs.filter(division_id=division_id).order_by('-avg_rating')
-        return base_qs.order_by('-avg_rating')
+            qs = base_qs.filter(division_id=division_id).order_by('-avg_rating')
+            return (qs, True, 'exact') if return_metadata else qs
+        qs = base_qs.order_by('-avg_rating')
+        return (qs, True, 'exact') if return_metadata else qs
 
     # --- Radius Search / Implicit Profile Search (with Fallback) ---
     
@@ -88,7 +98,7 @@ def get_local_providers(user=None, provider_type=None, animal_type_id=None,
             radial_qs = radial_qs.annotate(distance=distance_expr).filter(distance__lte=15.0).order_by('distance')
             
             if radial_qs.count() > 0:
-                return radial_qs
+                return (radial_qs, True, 'exact') if return_metadata else radial_qs
         except (ValueError, TypeError):
             pass
 
@@ -96,24 +106,26 @@ def get_local_providers(user=None, provider_type=None, animal_type_id=None,
         if upazila_id:
             upazila_qs = base_qs.filter(upazila_id=upazila_id).order_by('-avg_rating')
             if upazila_qs.count() > 0:
-                return upazila_qs
+                return (upazila_qs, False, 'fallback') if return_metadata else upazila_qs
         
         # If NO one found (radius empty AND upazila empty/missing), return empty set!
-        return base_qs.none()
+        empty_qs = base_qs.none()
+        return (empty_qs, False, 'fallback') if return_metadata else empty_qs
 
     # 2. User Profile fallback (No GPS provided, fallback to explicitly saved user IDs)
     if upazila_id:
         local = base_qs.filter(upazila_id=upazila_id)
         if local.count() > 0:
-            return local.order_by('-avg_rating')
+            return (local.order_by('-avg_rating'), True, 'exact') if return_metadata else local.order_by('-avg_rating')
 
     if district_id:
         local = base_qs.filter(district_id=district_id)
         if local.count() > 0:
-            return local.order_by('-avg_rating')
+            return (local.order_by('-avg_rating'), True, 'exact') if return_metadata else local.order_by('-avg_rating')
 
     # 3. Global Fallback
-    return base_qs.order_by('-avg_rating')
+    qs = base_qs.order_by('-avg_rating')
+    return (qs, False, 'fallback') if return_metadata else qs
 
 
 def get_local_queryset(queryset, user, location_field_prefix=''):

@@ -50,9 +50,11 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
             qs = ServiceProvider.objects.select_related('user', 'division', 'district', 'upazila', 'union').prefetch_related('services', 'animal_types__animal_type').all()
             return qs
 
+        base_qs = ServiceProvider.objects.select_related('user', 'division', 'district', 'upazila', 'union').prefetch_related('services', 'animal_types__animal_type').filter(is_verified=True, is_active=True)
+
         # For detail views (retrieve, toggle_favorite), don't restrict by location cascade
         if getattr(self, 'action', None) != 'list':
-            qs = ServiceProvider.objects.select_related('user', 'division', 'district', 'upazila', 'union').prefetch_related('services', 'animal_types__animal_type').filter(is_verified=True, is_active=True)
+            qs = base_qs
             if user and user.is_authenticated:
                 ct = ContentType.objects.get_for_model(ServiceProvider)
                 saved_subquery = SavedItem.objects.filter(
@@ -66,7 +68,6 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         provider_type = self.request.query_params.get('provider_type')
         animal_type_id = self.request.query_params.get('animal_type')
 
-        # Check query parameters for explicit location scoping override
         division_id = self.request.query_params.get('division_id')
         district_id = self.request.query_params.get('district_id')
         upazila_id = self.request.query_params.get('upazila_id')
@@ -76,19 +77,29 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
         has_location_params = division_id or district_id or upazila_id or (lat and lng)
         has_profile_location = user and user.is_authenticated and (getattr(user, 'district_id', None) or getattr(user, 'latitude', None))
 
+        self._exact_match_found = True
+        self._resolved_level = 'exact'
+
         # Apply cascade logic if location context is available
         if has_location_params or has_profile_location:
-            return get_local_providers(
+            qs, exact, level = get_local_providers(
                 user=user if not has_location_params else None,
                 provider_type=provider_type,
                 animal_type_id=animal_type_id,
                 lat=lat, lng=lng,
-                division_id=division_id, district_id=district_id, upazila_id=upazila_id
+                division_id=division_id, district_id=district_id, upazila_id=upazila_id,
+                base_qs=base_qs,
+                return_metadata=True
             )
+            self._exact_match_found = exact
+            self._resolved_level = level
+        else:
+            qs = base_qs
+            if provider_type:
+                qs = qs.filter(provider_type=provider_type)
+            if animal_type_id:
+                qs = qs.filter(animal_types__animal_type_id=animal_type_id)
 
-        # Fallback: List all active verified service providers
-        qs = ServiceProvider.objects.select_related('user', 'division', 'district', 'upazila', 'union').prefetch_related('services', 'animal_types__animal_type').filter(is_verified=True, is_active=True)
-        
         if user and user.is_authenticated:
             ct = ContentType.objects.get_for_model(ServiceProvider)
             saved_subquery = SavedItem.objects.filter(
@@ -98,116 +109,24 @@ class ServiceProviderViewSet(viewsets.ModelViewSet):
             )
             qs = qs.annotate(is_saved=Exists(saved_subquery))
             
-        if provider_type:
-            qs = qs.filter(provider_type=provider_type)
-        if animal_type_id:
-            qs = qs.filter(animal_types__animal_type_id=animal_type_id)
         return qs
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         
-        user = self.request.user
-        provider_type = request.query_params.get('provider_type')
-        animal_type_id = request.query_params.get('animal_type')
-
-        division_id = request.query_params.get('division_id')
-        district_id = request.query_params.get('district_id')
-        upazila_id = request.query_params.get('upazila_id')
-        lat = request.query_params.get('lat')
-        lng = request.query_params.get('lng')
-        
-        has_location_params = division_id or district_id or upazila_id or (lat and lng)
-        has_profile_location = user and user.is_authenticated and (getattr(user, 'district_id', None) or getattr(user, 'latitude', None))
-
-        exact_match_found = True
-        resolved_level = 'exact'
-
-        if has_location_params or has_profile_location:
-            base_qs = ServiceProvider.objects.select_related('user', 'division', 'district', 'upazila', 'union').prefetch_related('services', 'animal_types__animal_type').filter(is_verified=True, is_active=True)
-            
-            if user and user.is_authenticated:
-                ct = ContentType.objects.get_for_model(ServiceProvider)
-                saved_subquery = SavedItem.objects.filter(
-                    user=user,
-                    content_type=ct,
-                    object_id=OuterRef('pk')
-                )
-                base_qs = base_qs.annotate(is_saved=Exists(saved_subquery))
-
-            if provider_type:
-                base_qs = base_qs.filter(provider_type=provider_type)
-            if animal_type_id:
-                base_qs = base_qs.filter(animal_types__animal_type_id=animal_type_id)
-
-            lat_val = lat if has_location_params else getattr(user, 'latitude', None)
-            lng_val = lng if has_location_params else getattr(user, 'longitude', None)
-            upz_val = upazila_id if has_location_params else getattr(user, 'upazila_id', None)
-            dist_val = district_id if has_location_params else getattr(user, 'district_id', None)
-            div_val = division_id if has_location_params else getattr(user, 'division_id', None)
-
-            is_region_search = not lat_val and not lng_val and (upz_val or dist_val or div_val)
-
-            if is_region_search:
-                # Region search does no fallbacks, so exact_match_found is true
-                # unless the result is literally empty, but we can just leave it as exact.
-                if queryset.count() == 0:
-                    exact_match_found = False
-            elif lat_val and lng_val:
-                try:
-                    import math
-                    lat_v = float(lat_val)
-                    lng_v = float(lng_val)
-                    lat_delta = 15.0 / 111.0
-                    lng_delta = 15.0 / (111.0 * math.cos(math.radians(lat_v)))
-                    radial_qs = base_qs.exclude(latitude__isnull=True).filter(
-                        latitude__gte=lat_v - lat_delta,
-                        latitude__lte=lat_v + lat_delta,
-                        longitude__gte=lng_v - lng_delta,
-                        longitude__lte=lng_v + lng_delta
-                    )
-                    from django.db import models
-                    from django.db.models import F, ExpressionWrapper
-                    from django.db.models.functions import ACos, Cos, Radians, Sin
-                    lat_rad = Radians(lat_v)
-                    lng_rad = Radians(lng_v)
-                    distance_expr = ExpressionWrapper(
-                        6371 * ACos(
-                            Cos(lat_rad) * Cos(Radians(F('latitude'))) *
-                            Cos(Radians(F('longitude')) - lng_rad) +
-                            Sin(lat_rad) * Sin(Radians(F('latitude')))
-                        ),
-                        output_field=models.FloatField()
-                    )
-                    radial_qs = radial_qs.annotate(distance=distance_expr).filter(distance__lte=15.0)
-                    if radial_qs.count() < 1:
-                        exact_match_found = False
-                        resolved_level = 'fallback'
-                except (ValueError, TypeError):
-                    exact_match_found = False
-                    resolved_level = 'fallback'
-            elif upz_val:
-                if base_qs.filter(upazila_id=upz_val).count() < 1:
-                    exact_match_found = False
-                    resolved_level = 'fallback'
-            elif dist_val:
-                if base_qs.filter(district_id=dist_val).count() < 1:
-                    exact_match_found = False
-                    resolved_level = 'fallback'
-
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             response = self.get_paginated_response(serializer.data)
-            response.data['exact_match_found'] = exact_match_found
-            response.data['resolved_level'] = resolved_level
+            response.data['exact_match_found'] = getattr(self, '_exact_match_found', True)
+            response.data['resolved_level'] = getattr(self, '_resolved_level', 'exact')
             return response
 
         serializer = self.get_serializer(queryset, many=True)
         return Response({
             'results': serializer.data,
-            'exact_match_found': exact_match_found,
-            'resolved_level': resolved_level
+            'exact_match_found': getattr(self, '_exact_match_found', True),
+            'resolved_level': getattr(self, '_resolved_level', 'exact')
         })
 
     def get_permissions(self):
