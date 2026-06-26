@@ -432,7 +432,7 @@ class AIChatView(APIView):
                 animal_type_id=animal_type.id
             )
 
-            ranked_providers = _score_and_rank_providers(providers_qs, max_count=5)
+            ranked_providers = _score_and_rank_providers(providers_qs, max_count=2)
 
             # Save suggestions to DB and serialize
             for item in ranked_providers:
@@ -461,7 +461,7 @@ class AIChatView(APIView):
 
             # Match resources
             resource_keywords = result_dict.get('resource_keywords', [])
-            matched_res = _match_resources(animal_type, resource_keywords)
+            matched_res = _match_resources(animal_type, resource_keywords, limit=2)
             resources_serialized = ResourceSerializer(
                 matched_res, many=True, context={'request': request}
             ).data

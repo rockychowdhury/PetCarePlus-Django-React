@@ -266,9 +266,10 @@ export const AIAssistant = () => {
   const guidedResponse = aiResponse?.guided_response
   
   const urgencyLevel = urgencyObj?.level || aiResponse?.urgency_level
+  const urgencyExplanation = urgencyObj?.explanation || aiResponse?.urgency_explanation
   const diagnosisSummary = diagnosis?.possible_problems || aiResponse?.diagnosis_summary
   const careAdvice = diagnosis?.what_owner_can_do || aiResponse?.care_advice
-  const thingsToCareAbout = diagnosis?.things_to_care_about
+  const thingsToCareAbout = diagnosis?.things_to_care_about || aiResponse?.things_to_care_about
 
   const providers = activeResult?.providers || []
   const resources = activeResult?.resources || []
@@ -280,8 +281,8 @@ export const AIAssistant = () => {
   return (
     <PageLayout hideFooter={true}>
       <div className="flex-1 flex flex-col bg-background/50 overflow-hidden">
-        <div className="flex flex-col lg:flex-row flex-1 w-full max-w-[1500px] mx-auto relative lg:px-6">
-          <div className="flex flex-col flex-1 lg:w-1/2 relative transition-all duration-300 ease-in-out lg:border-r lg:border-border/40 lg:pr-4">
+        <div className="flex flex-col lg:flex-row flex-1 w-full max-w-7xl mx-auto relative px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col flex-1 lg:w-1/2 relative transition-all duration-300 ease-in-out lg:border-r lg:border-border/40 lg:pr-6">
           
           <div className="absolute top-1/4 left-10 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-1/4 right-10 w-[400px] h-[400px] bg-accent/5 rounded-full blur-3xl pointer-events-none" />
@@ -606,7 +607,7 @@ export const AIAssistant = () => {
           )}
         </div>
 
-        <div className={`fixed inset-y-0 right-0 w-full lg:static lg:w-1/2 bg-card border-l border-border lg:border-l-0 lg:shadow-none shadow-2xl z-50 transform transition-transform duration-500 cubic-bezier(0.16, 1, 0.3, 1) flex flex-col lg:pl-4 ${
+        <div className={`fixed top-16 bottom-0 right-0 w-full lg:relative lg:w-1/2 lg:sticky lg:top-0 lg:h-[calc(100vh-64px)] bg-card border-l border-border lg:border-l-0 lg:shadow-none shadow-2xl z-50 lg:z-auto transform transition-transform duration-500 cubic-bezier(0.16, 1, 0.3, 1) flex flex-col lg:pl-6 ${
           showReportMobile ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
         }`}>
           
@@ -626,7 +627,7 @@ export const AIAssistant = () => {
           <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 scrollbar-thin bg-background/30">
             {activeResult ? (
               <>
-                {urgencyLevel && <UrgencyIndicator level={urgencyLevel} />}
+                {urgencyLevel && <UrgencyIndicator level={urgencyLevel} explanation={urgencyExplanation} />}
                 {diagnosisSummary && (
                   <DiagnosisCard
                     icon={<Stethoscope className="w-5 h-5 text-primary" />}

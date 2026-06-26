@@ -62,14 +62,35 @@ def call_gemini(conversation_history, preferred_language='bn', animal_type_name=
             "reply": reply if not is_done else ("বিশ্লেষণ সমাপ্ত।" if preferred_language == 'bn' else "Analysis complete."),
             "session_complete": is_done,
             "urgency_level": urgency,
+            "urgency_explanation": (
+                "জ্বর এবং খাদ্য গ্রহণে অনীহা দেখা যাচ্ছে।"
+                if preferred_language == 'bn' else "Fever and loss of appetite observed."
+            ) if is_done else "",
             "diagnosis_summary": (
                 "মক রোগ নির্ণয়: হালকা সংক্রমণ বা এলার্জি।"
                 if preferred_language == 'bn' else "Mock Diagnosis: Mild infection or allergy."
             ) if is_done else "",
             "care_advice": (
-                "১. পর্যাপ্ত পানি খাওয়ান।\n২. পরিষ্কার এবং আরামদায়ক জায়গায় রাখুন।"
+                "১. পর্যাপ্ত পানি খাওয়ান।\n২. পরিষ্কার এবং আরামদায়ক জায়গায় রাখুন।"
                 if preferred_language == 'bn' else "1. Provide fresh water.\n2. Keep in a warm, clean place."
-            ) if is_done else ""
+            ) if is_done else "",
+            "things_to_care_about": (
+                "ওষুধ প্রয়োগে সতর্কতা অবলম্বন করুন। পরিষ্কার পরিবেশ বজায় রাখুন।"
+                if preferred_language == 'bn' else "Be careful with medication dosage. Maintain a clean environment."
+            ) if is_done else "",
+            "warning_signs": {
+                "emergency_situations": "যদি রক্তপাত হয় বা শ্বাসকষ্ট দেখা দেয়।" if preferred_language == 'bn' else "If bleeding occurs or breathing difficulty appears.",
+                "negative_symptoms": "জ্বর ৪৮ ঘণ্টার বেশি থাকলে।" if preferred_language == 'bn' else "If fever persists beyond 48 hours.",
+                "when_to_worry": "যদি ২৪ ঘণ্টার মধ্যে খাবার না খায়।" if preferred_language == 'bn' else "If the animal doesn't eat within 24 hours."
+            } if is_done else None,
+            "positive_signs": {
+                "safe_indicators": "প্রাণী সক্রিয় এবং পানি পান করছে।" if preferred_language == 'bn' else "Animal is active and drinking water.",
+                "recovery_signals": "জ্বর কমে যাওয়া এবং খাবারে আগ্রহ ফিরে আসা।" if preferred_language == 'bn' else "Fever reducing and appetite returning.",
+                "when_situation_is_controlled": "যখন স্বাভাবিক আচরণ ফিরে আসবে।" if preferred_language == 'bn' else "When normal behavior returns."
+            } if is_done else None,
+            "recommended_provider_type": "vet",
+            "suggest_livestock_officer": False,
+            "resource_keywords": ["fever", "infection", "care"] if is_done else []
         }
         return response_dict
 
@@ -97,16 +118,47 @@ Your goal:
    - 'see_vet_this_week': For non-urgent issues that need checking (e.g., skin itching, minor changes in appetite).
    - 'call_vet_now': For urgent symptoms (e.g., moderate fever, limping, persistent diarrhea).
    - 'emergency': For life-threatening emergencies (e.g., heavy bleeding, poisoning, severe breathing difficulty).
-4. If you have gathered sufficient information to conclude the assessment, set `session_complete` to `true`, and provide a structured care advice and diagnosis summary.
-5. If the session is NOT complete, set `session_complete` to `false`, and provide empty values for `diagnosis_summary` and `care_advice`.
+4. If you have gathered sufficient information to conclude the assessment, set `session_complete` to `true`, and provide the FULL structured diagnostic data below.
+5. If the session is NOT complete, set `session_complete` to `false`, and provide empty/null values for the diagnostic fields.
 
-You MUST respond strictly in the following JSON format:
+WHEN session_complete is FALSE, respond in this JSON format:
 {{
   "reply": "Your response message to the user in {preferred_language}",
-  "session_complete": true|false,
-  "urgency_level": "monitor_at_home"|"see_vet_this_week"|"call_vet_now"|"emergency",
-  "diagnosis_summary": "Extracted summary of potential issues (only if session_complete is true, else empty)",
-  "care_advice": "Home care tips or instructions (only if session_complete is true, else empty)"
+  "session_complete": false,
+  "urgency_level": "monitor_at_home",
+  "urgency_explanation": "",
+  "diagnosis_summary": "",
+  "care_advice": "",
+  "things_to_care_about": "",
+  "warning_signs": null,
+  "positive_signs": null,
+  "recommended_provider_type": "vet",
+  "suggest_livestock_officer": false,
+  "resource_keywords": []
+}}
+
+WHEN session_complete is TRUE, respond in this JSON format with ALL fields filled:
+{{
+  "reply": "A brief completion message in {preferred_language}",
+  "session_complete": true,
+  "urgency_level": "monitor_at_home|see_vet_this_week|call_vet_now|emergency",
+  "urgency_explanation": "Brief 1-2 sentence explanation of why this urgency level was chosen",
+  "diagnosis_summary": "Detailed explanation of possible diseases or conditions (2-3 paragraphs in {preferred_language})",
+  "care_advice": "Immediate actionable care steps — home remedies, first aid, dietary changes (numbered list in {preferred_language})",
+  "things_to_care_about": "Important precautions — medication warnings, environmental factors, dietary restrictions, isolation needs (in {preferred_language})",
+  "warning_signs": {{
+    "emergency_situations": "When does this become an emergency? Critical scenarios to watch for",
+    "negative_symptoms": "Specific symptoms that indicate worsening — be precise and observable",
+    "when_to_worry": "Timeline and triggers — e.g., if fever persists beyond 48 hours"
+  }},
+  "positive_signs": {{
+    "safe_indicators": "Signs that the situation is currently under control",
+    "recovery_signals": "Observable improvements that mean the animal is getting better",
+    "when_situation_is_controlled": "How to know things are going well and heading toward recovery"
+  }},
+  "recommended_provider_type": "vet|pharmacy|groomer|trainer",
+  "suggest_livestock_officer": true|false,
+  "resource_keywords": ["keyword1", "keyword2", "keyword3"]
 }}
 """
 

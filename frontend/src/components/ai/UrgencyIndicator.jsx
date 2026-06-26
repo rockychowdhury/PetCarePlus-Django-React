@@ -3,7 +3,7 @@ import { getUrgencyStyles } from '../../utils/urgency'
 import { useLanguage } from '../../hooks/useLanguage'
 import { AlertTriangle, Info, BellRing, Flame } from 'lucide-react'
 
-export const UrgencyIndicator = ({ level }) => {
+export const UrgencyIndicator = ({ level, explanation }) => {
   const { language } = useLanguage()
   const styles = getUrgencyStyles(level)
 
@@ -55,7 +55,7 @@ export const UrgencyIndicator = ({ level }) => {
   return (
     <div className={`p-4 rounded-xl border flex gap-3.5 items-start shadow-sm transition-all duration-300 ${styles.colorClass}`}>
       <div className="flex-shrink-0 mt-0.5">{getIcon()}</div>
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         <h4 className="font-bold text-sm md:text-base leading-tight">
           {language === 'bn' ? 'নির্ধারিত অবস্থা:' : 'Assessed Level:'}{' '}
           <span className="underline decoration-wavy decoration-2 pl-1">
@@ -65,6 +65,11 @@ export const UrgencyIndicator = ({ level }) => {
         <p className="text-xs md:text-sm opacity-90 leading-relaxed">
           {getGuidanceText()}
         </p>
+        {explanation && (
+          <p className="text-xs opacity-75 leading-relaxed italic border-t border-current/10 pt-1.5 mt-1">
+            {explanation}
+          </p>
+        )}
       </div>
     </div>
   )
