@@ -32,13 +32,31 @@ const DashboardProviderServices = lazy(() => import('./pages/dashboard/Dashboard
 
 // Route Guard: restricts access to logged-in users only
 const ProtectedRoute = ({ children }) => {
-  const user = useAuthStore((state) => state.user)
+  const { user, isInitializing } = useAuthStore()
+  
+  if (isInitializing) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <Spinner size="lg" />
+      </div>
+    )
+  }
+  
   return user ? children : <Navigate to="/login" replace />
 }
 
 // Route Guard: restricts logged-in users from hitting login/register
 const AnonymousRoute = ({ children }) => {
-  const user = useAuthStore((state) => state.user)
+  const { user, isInitializing } = useAuthStore()
+
+  if (isInitializing) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <Spinner size="lg" />
+      </div>
+    )
+  }
+
   return !user ? children : <Navigate to="/dashboard" replace />
 }
 

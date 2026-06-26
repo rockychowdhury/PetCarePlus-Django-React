@@ -16,7 +16,7 @@ export const UrgencyIndicator = ({ level, explanation }) => {
       case 'call_vet_now':
         return <AlertTriangle className="w-5 h-5" />
       case 'emergency':
-        return <Flame className="w-5 h-5 animate-bounce" />
+        return <Flame className="w-5 h-5" />
       default:
         return <Info className="w-5 h-5" />
     }
@@ -53,22 +53,29 @@ export const UrgencyIndicator = ({ level, explanation }) => {
   }
 
   return (
-    <div className={`p-4 rounded-xl border flex gap-3.5 items-start shadow-sm transition-all duration-300 ${styles.colorClass}`}>
-      <div className="flex-shrink-0 mt-0.5">{getIcon()}</div>
-      <div className="space-y-1.5">
-        <h4 className="font-bold text-sm md:text-base leading-tight">
-          {language === 'bn' ? 'নির্ধারিত অবস্থা:' : 'Assessed Level:'}{' '}
-          <span className="underline decoration-wavy decoration-2 pl-1">
+    <div className={`p-4 md:p-5 rounded-2xl border flex flex-col md:flex-row gap-4 items-start shadow-sm transition-all duration-300 ${styles.colorClass}`}>
+      <div className="flex-shrink-0 bg-background/50 p-2.5 rounded-xl border border-current/10 shadow-inner">
+        {getIcon()}
+      </div>
+      <div className="space-y-2.5 flex-1 w-full">
+        <div className="flex flex-wrap items-center gap-2">
+          <h4 className="font-bold text-sm md:text-base leading-tight opacity-90">
+            {language === 'bn' ? 'নির্ধারিত অবস্থা:' : 'Assessed Level:'}
+          </h4>
+          <span className={`px-2.5 py-0.5 rounded-md text-xs md:text-sm font-extrabold tracking-wide uppercase border border-current/20 bg-current/10`}>
             {language === 'bn' ? styles.labelBn : styles.labelEn}
           </span>
-        </h4>
-        <p className="text-xs md:text-sm opacity-90 leading-relaxed">
+        </div>
+        <p className="text-sm md:text-base opacity-95 leading-relaxed font-medium">
           {getGuidanceText()}
         </p>
         {explanation && (
-          <p className="text-xs opacity-75 leading-relaxed italic border-t border-current/10 pt-1.5 mt-1">
-            {explanation}
-          </p>
+          <div className="pt-2 border-t border-current/15 mt-2">
+            <p className="text-xs md:text-sm opacity-80 leading-relaxed italic flex gap-1.5 items-start">
+              <span className="mt-0.5 text-current/60">ℹ</span>
+              <span>{explanation}</span>
+            </p>
+          </div>
         )}
       </div>
     </div>
