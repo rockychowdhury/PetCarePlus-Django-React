@@ -19,36 +19,19 @@ import GovtVetCard from '../components/ai/GovtVetCard'
 import UrgencyIndicator from '../components/ai/UrgencyIndicator'
 import Spinner from '../components/ui/Spinner'
 import {
-  Send,
-  Sparkles,
-  RefreshCw,
-  Stethoscope,
-  HandHeart,
-  ShieldAlert,
-  BookOpenCheck,
-  MapPin,
-  Info,
-  ArrowRight,
-  Brain,
-  Lightbulb,
-  Lock,
-  MessageSquare,
-  ClipboardList,
+  Send, Sparkles, RefreshCw, Stethoscope, HandHeart, ShieldAlert, BookOpenCheck, MapPin, Info, ArrowRight, Brain, Lightbulb, Lock, MessageSquare, ClipboardList, X, ChevronDown
 } from 'lucide-react'
 
-// Example prompts for inspiration
 const EXAMPLE_PROMPTS = {
   bn: [
-    'আমার গরু ৩ দিন ধরে কিছু খাচ্ছে না, জ্বর আছে এবং নাক দিয়ে পানি পড়ছে',
-    'আমার বিড়াল বমি করছে এবং অলস হয়ে গেছে, খাবার খেতে চাইছে না',
-    'কুকুরের পায়ে ক্ষত হয়েছে, ফুলে গেছে এবং পুঁজ বের হচ্ছে',
-    'ছাগলের পেট ফুলে গেছে, হাঁটতে পারছে না, কী করা উচিত?',
+    'আমার গরু ৩ দিন ধরে কিছু খাচ্ছে না, জ্বর আছে',
+    'বিড়াল বমি করছে এবং অলস হয়ে গেছে',
+    'কুকুরের পায়ে ক্ষত, ফুলে গেছে',
   ],
   en: [
-    'My cow has not eaten for 3 days, has fever and nasal discharge',
-    'My cat is vomiting and lethargic, refuses to eat',
-    'Dog has a swollen wound on its paw with pus coming out',
-    'Goat has a bloated stomach and cannot walk, what should I do?',
+    'My cow has not eaten for 3 days, has fever',
+    'Cat is vomiting and lethargic',
+    'Dog has a swollen wound on paw',
   ],
 }
 
@@ -58,21 +41,15 @@ export const AIAssistant = () => {
   const navigate = useNavigate()
   
   const chatEndRef = useRef(null)
-  const [activeTab, setActiveTab] = useState('report') // 'chat' | 'report' (for mobile split view)
+  const inputRef = useRef(null)
+  
+  const [showReportMobile, setShowReportMobile] = useState(false)
+  const [showLocationSettings, setShowLocationSettings] = useState(false)
 
-  // AI Conversational Hook
   const {
-    messages,
-    session,
-    isLoading,
-    error,
-    startChat,
-    sendMessage,
-    resetChat,
-    setSession,
+    messages, session, isLoading, error, startChat, sendMessage, resetChat, setSession,
   } = useAIChat()
 
-  // Form states
   const [selectedAnimal, setSelectedAnimal] = useState(null)
   const [problemText, setProblemText] = useState('')
   const [division, setDivision] = useState('')
@@ -80,44 +57,37 @@ export const AIAssistant = () => {
   const [geoStatus, setGeoStatus] = useState('idle')
   const [geoCoords, setGeoCoords] = useState(null)
 
-  // URL Params for loading previous sessions
   const [searchParams, setSearchParams] = useSearchParams()
   const sessionIdParam = searchParams.get('session')
 
-  // Fetch session if session ID is in URL
   const { data: sessionData, isLoading: isLoadingSession } = useQuery({
     queryKey: ['session', sessionIdParam],
     queryFn: () => aiApi.getSessionDetail(sessionIdParam),
     enabled: !!sessionIdParam && !!user,
   })
 
-  // Sync loaded session
   useEffect(() => {
     if (sessionData) {
       setSession(sessionData)
     }
   }, [sessionData, setSession])
 
-  // Scroll chat to bottom on new messages
   useEffect(() => {
-    if (chatEndRef.current) {
+    if (chatEndRef.current && session) {
       setTimeout(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
       }, 100)
     }
-  }, [messages, isLoading])
+  }, [messages, isLoading, session])
 
-  // Fetch animal types
   const { data: animalTypes, isLoading: isLoadingAnimals } = useQuery({
     queryKey: ['animalTypes'],
     queryFn: guidelinesApi.getAnimalTypes,
     enabled: !!user,
   })
 
-  // Try browser geolocation on mount
   useEffect(() => {
     if (!user) return
-
     if (user?.latitude && user?.longitude) {
       setGeoCoords({ lat: user.latitude, lng: user.longitude })
       setGeoStatus('success')
@@ -125,20 +95,14 @@ export const AIAssistant = () => {
       setDistrict(user.district || '')
       return
     }
-
     if (navigator.geolocation) {
       setGeoStatus('loading')
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setGeoCoords({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          })
+          setGeoCoords({ lat: position.coords.latitude, lng: position.coords.longitude })
           setGeoStatus('success')
         },
-        () => {
-          setGeoStatus('denied')
-        },
+        () => { setGeoStatus('denied') },
         { timeout: 8000, enableHighAccuracy: false }
       )
     } else {
@@ -149,16 +113,15 @@ export const AIAssistant = () => {
   const availableDistricts = division ? BANGLADESH_GEOGRAPHY.districts[division] || [] : []
 
   const handleStartConversation = async (e) => {
-    e.preventDefault()
-    if (!selectedAnimal || isLoading) return
+    if (e) e.preventDefault()
+    if (!selectedAnimal || isLoading || !problemText.trim()) return
 
     const payload = {
       animal_type_id: selectedAnimal.id,
-      message: problemText.trim() || (language === 'bn' ? 'হ্যালো, আমার পশুর স্বাস্থ্য সমস্যা নিয়ে সাহায্য চাই।' : 'Hello, I need help with my animal\'s health.'),
+      message: problemText.trim(),
       preferred_language: language,
     }
 
-    // Attach location coordinates or admin hierarchy
     if (geoCoords) {
       payload.user_latitude = geoCoords.lat
       payload.user_longitude = geoCoords.lng
@@ -169,13 +132,11 @@ export const AIAssistant = () => {
     try {
       await startChat(payload)
       setProblemText('')
-    } catch (err) {
-      // Handled by hook
-    }
+    } catch (err) {}
   }
 
   const handleSendMessage = async (e) => {
-    e.preventDefault()
+    if (e) e.preventDefault()
     if (!problemText.trim() || isLoading || !session) return
 
     const text = problemText.trim()
@@ -191,8 +152,17 @@ export const AIAssistant = () => {
 
     try {
       await sendMessage(text, locationPayload)
-    } catch (err) {
-      // Handled by hook
+    } catch (err) {}
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      if (!session) {
+        handleStartConversation()
+      } else {
+        handleSendMessage()
+      }
     }
   }
 
@@ -210,15 +180,14 @@ export const AIAssistant = () => {
 
     try {
       await sendMessage(text, locationPayload)
-    } catch (err) {
-      // Handled by hook
-    }
+    } catch (err) {}
   }
 
   const handleReset = () => {
     resetChat()
     setSelectedAnimal(null)
     setProblemText('')
+    setShowReportMobile(false)
     if (sessionIdParam) {
       setSearchParams({})
     }
@@ -226,24 +195,32 @@ export const AIAssistant = () => {
 
   const handleExampleClick = (prompt) => {
     setProblemText(prompt)
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
   }
 
-  // Format assistant messages to hide raw JSON
   const renderMessageContent = (content) => {
     if (content.trim().startsWith('{')) {
       return language === 'bn'
         ? 'বিশ্লেষণ সম্পন্ন হয়েছে! ডানদিকের রিপোর্ট প্যানেলে রোগ নির্ণয় এবং প্রয়োজনীয় পরামর্শ দেখুন।'
-        : 'Symptom analysis is complete! Please check the diagnostic report panel on the right for results.'
+        : 'Symptom analysis is complete! Please check the diagnostic report panel for results.'
     }
     return content
   }
 
-  // ═══════════════════ RENDER 1: LOCKED STATE (UNAUTHENTICATED) ═══════════════════
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto'
+      inputRef.current.style.height = inputRef.current.scrollHeight + 'px'
+    }
+  }, [problemText])
+
   if (!user) {
     return (
-      <PageLayout>
-        <div className="bg-pcp-surface/20 min-h-[90vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-md w-full bg-card border border-border/80 rounded-3xl p-8 shadow-xl text-center space-y-6 animate-fade-in">
+      <PageLayout hideFooter={true}>
+        <div className="bg-pcp-surface/20 flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-md w-full bg-card/90 backdrop-blur-xl border border-border/80 rounded-3xl p-8 shadow-2xl shadow-primary/5 text-center space-y-6 animate-fade-in-up">
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto text-primary border border-primary/20 shadow-inner">
               <Lock className="w-8 h-8 animate-pulse text-primary" />
             </div>
@@ -258,10 +235,10 @@ export const AIAssistant = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
               <button
                 onClick={() => navigate('/login')}
-                className="w-full py-3 bg-primary hover:bg-primary/95 text-white text-sm font-extrabold rounded-xl transition-all shadow-md active:scale-[0.99]"
+                className="w-full py-3 bg-primary hover:bg-primary/95 text-white text-sm font-extrabold rounded-xl transition-all shadow-md hover:shadow-lg active:scale-[0.99]"
               >
                 {language === 'bn' ? 'লগইন করুন' : 'Log In'}
               </button>
@@ -281,16 +258,13 @@ export const AIAssistant = () => {
   const isSessionComplete = session?.is_complete
   const activeResult = session?.diagnostic_result
   const aiResponse = activeResult?.ai_response
-  const queryType = activeResult?.query_type
   
-  // Map one-shot schema
   const diagnosis = aiResponse?.diagnosis
   const urgencyObj = aiResponse?.urgency
   const warningData = aiResponse?.warning_signs
   const positiveData = aiResponse?.positive_signs
   const guidedResponse = aiResponse?.guided_response
   
-  // Map multi-turn schema or fallback
   const urgencyLevel = urgencyObj?.level || aiResponse?.urgency_level
   const diagnosisSummary = diagnosis?.possible_problems || aiResponse?.diagnosis_summary
   const careAdvice = diagnosis?.what_owner_can_do || aiResponse?.care_advice
@@ -301,329 +275,172 @@ export const AIAssistant = () => {
   const govtVets = activeResult?.govt_vets || []
   const suggestLivestockOfficer = aiResponse?.suggest_livestock_officer
 
-  // ═══════════════════ RENDER 2: AUTHENTICATED CHAT DASHBOARD ═══════════════════
+  const showReportOnDesktop = isSessionComplete
+
   return (
-    <PageLayout>
-      <div className="bg-gradient-to-br from-background via-pcp-surface/10 to-accent/5 min-h-[90vh] border-b border-border/40 relative overflow-hidden">
-        {/* Ambient background glows */}
-        <div className="absolute top-1/4 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-1/3 right-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
-        
-        {/* Header Title */}
-        <div className="bg-gradient-to-br from-primary/5 via-pcp-surface/30 to-accent/5 py-6 border-b border-border/40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shadow-sm flex-shrink-0">
-                <Sparkles className="w-5 h-5 text-accent animate-pulse" />
-              </div>
-              <div>
-                <h1 className="text-lg md:text-xl font-extrabold text-foreground leading-tight">
-                  {language === 'bn' ? 'এআই ইন্টারেক্টিভ পশু চিকিৎসা সহকারী' : 'AI Conversational Care Assistant'}
-                </h1>
-                <p className="text-[10px] md:text-xs text-muted-foreground">
-                  {language === 'bn' ? 'রিয়েল-টাইম লক্ষণ বিশ্লেষণ এবং পরামর্শ পোর্টাল' : 'Real-time symptom investigation and advice portal'}
-                </p>
-              </div>
-            </div>
-
-            {session && (
-              <button
-                onClick={handleReset}
-                className="px-3 py-1.5 bg-card border border-border hover:border-primary/30 rounded-xl text-xs font-bold text-foreground hover:text-primary flex items-center gap-1.5 transition-all shadow-sm"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>{language === 'bn' ? 'নতুন পরামর্শ' : 'New Consultation'}</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <PageLayout hideFooter={true}>
+      <div className="flex-1 flex flex-col bg-background/50 overflow-hidden">
+        <div className="flex flex-col lg:flex-row flex-1 w-full max-w-[1500px] mx-auto relative lg:px-6">
+          <div className="flex flex-col flex-1 lg:w-1/2 relative transition-all duration-300 ease-in-out lg:border-r lg:border-border/40 lg:pr-4">
           
-          {/* ── STATE A: INITIAL QUESTIONNAIRE SETUP ── */}
-          {!session && (
-            <form onSubmit={handleStartConversation} className="max-w-3xl mx-auto space-y-6 animate-fade-in-up">
-              <div className="bg-card border border-border/70 rounded-3xl p-6 md:p-8 shadow-xl shadow-muted/20 space-y-8 bg-gradient-to-b from-card via-card/95 to-card/90 backdrop-blur-md relative overflow-hidden">
-                
-                {/* Decorative top accent lines */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/30 via-primary to-accent/30" />
+          <div className="absolute top-1/4 left-10 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-1/4 right-10 w-[400px] h-[400px] bg-accent/5 rounded-full blur-3xl pointer-events-none" />
 
-                {/* Step 1: Animal Selection */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
-                      <span className="text-base">🐾</span>
-                    </div>
-                    <div>
-                      <h2 className="text-sm md:text-base font-extrabold text-foreground tracking-tight">
-                        {language === 'bn' ? '১. পশুর ধরন নির্বাচন করুন' : '1. Select Animal Type'}
-                      </h2>
-                      <p className="text-[10px] md:text-xs text-muted-foreground">
-                        {language === 'bn' ? 'কোন প্রাণীর স্বাস্থ্য লক্ষণ আলোচনা করতে চান?' : 'Choose the animal that requires diagnostic advice.'}
-                      </p>
-                    </div>
-                  </div>
 
-                  {isLoadingAnimals ? (
-                    <Spinner className="py-4" />
-                  ) : (
-                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5">
-                      {animalTypes?.map((animal) => {
-                        const Icon = getAnimalIcon(animal.slug)
-                        const theme = ANIMAL_THEMES[animal.slug] || ANIMAL_THEMES.cat
-                        const isSelected = selectedAnimal?.id === animal.id
-                        return (
-                          <button
-                            key={animal.id}
-                            type="button"
-                            onClick={() => setSelectedAnimal(animal)}
-                            className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 active:scale-[0.97] group ${
-                              isSelected
-                                ? 'ring-2 ring-primary border-primary bg-primary/10 shadow-md shadow-primary/5 scale-[1.03]'
-                                : `${theme.bg} ${theme.border} hover:shadow-md hover:scale-[1.01]`
-                            }`}
-                          >
-                            <Icon
-                              className={`w-5 sm:w-6 h-5 sm:h-6 mb-1.5 ${
-                                isSelected ? 'text-primary' : theme.text
-                              } group-hover:scale-110 transition-transform`}
-                            />
-                            <span className={`text-[9px] sm:text-[10px] font-extrabold leading-tight ${
-                              isSelected ? 'text-primary' : 'text-foreground'
-                            }`}>
-                              {language === 'bn' ? animal.name_bn : animal.name_en}
-                            </span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
 
-                <hr className="border-border/50" />
-
-                {/* Step 2: Describe Symptoms */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-accent/15 text-accent flex items-center justify-center flex-shrink-0">
-                      <Stethoscope className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h2 className="text-sm md:text-base font-extrabold text-foreground tracking-tight">
-                        {language === 'bn' ? '২. লক্ষণসমূহ বর্ণনা করুন' : '2. Describe the Symptoms'}
-                      </h2>
-                      <p className="text-[10px] md:text-xs text-muted-foreground">
-                        {language === 'bn' ? 'লক্ষণ, খাওয়ার রুচি এবং সময়কাল বিস্তারিত টাইপ করুন।' : 'Detail the animal\'s current issues, appetite status, and duration.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="relative">
-                    <textarea
-                      value={problemText}
-                      onChange={(e) => setProblemText(e.target.value)}
-                      placeholder={
-                        language === 'bn'
-                          ? 'উদাহরণ: আমার ছাগল আজ সকাল থেকে কিছু খাচ্ছে না এবং ঝিমুচ্ছে...'
-                          : 'Example: My goat is lethargic and refusing feed since this morning...'
-                      }
-                      rows={4}
-                      maxLength={1000}
-                      className="w-full px-4 py-3 rounded-xl border border-border border-l-4 border-l-primary/70 bg-pcp-surface/20 text-sm focus:outline-none focus:border-primary focus:border-l-primary focus:ring-1 focus:ring-primary/20 resize-none placeholder:text-muted-foreground/60 transition-all font-medium"
-                    />
-                  </div>
-                  
-                  {/* Example templates */}
-                  <div className="space-y-2.5 pt-1">
-                    <p className="text-[10px] md:text-xs font-extrabold text-muted-foreground flex items-center gap-1">
-                      <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
-                      {language === 'bn' ? 'উদাহরণ বিবরণী (ক্লিক করুন):' : 'Symptom templates (click to select):'}
-                    </p>
-                    <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
-                      {(EXAMPLE_PROMPTS[language] || EXAMPLE_PROMPTS.bn).map((prompt, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleExampleClick(prompt)}
-                          className="px-3 py-2 bg-muted/40 hover:bg-primary/10 text-xs text-muted-foreground hover:text-primary font-bold rounded-lg border border-border/40 hover:border-primary/20 transition-all text-left whitespace-normal break-words w-full sm:w-auto flex-1"
-                        >
-                          {prompt}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Step 3: Location Override (if denied) */}
-                {geoStatus === 'denied' && (
-                  <>
-                    <hr className="border-border/50" />
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-sky-900/30 text-sky-600 flex items-center justify-center flex-shrink-0">
-                          <MapPin className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <h2 className="text-sm md:text-base font-extrabold text-foreground tracking-tight">
-                            {language === 'bn' ? '৩. আপনার অবস্থান নিশ্চিত করুন' : '3. Confirm Your Location'}
-                          </h2>
-                          <p className="text-[10px] md:text-xs text-muted-foreground">
-                            {language === 'bn' ? 'আপনার বিভাগের ডাক্তারদের সুপারিশ করতে সাহায্য করে' : 'Used to recommend closest veterinarians in your district'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <select
-                          value={division}
-                          onChange={(e) => {
-                            setDivision(e.target.value)
-                            setDistrict('')
-                          }}
-                          className="px-3.5 py-2.5 rounded-xl border border-border bg-pcp-surface/20 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 font-bold text-foreground"
-                        >
-                          <option value="">{language === 'bn' ? 'বি বিভাগ নির্বাচন করুন' : 'Select Division'}</option>
-                          {BANGLADESH_GEOGRAPHY.divisions.map((div) => (
-                            <option key={div.id} value={div.id}>
-                              {language === 'bn' ? div.name_bn : div.name_en}
-                            </option>
-                          ))}
-                        </select>
-
-                        <select
-                          value={district}
-                          onChange={(e) => setDistrict(e.target.value)}
-                          disabled={!division}
-                          className="px-3.5 py-2.5 rounded-xl border border-border bg-pcp-surface/20 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 font-bold text-foreground disabled:opacity-50"
-                        >
-                          <option value="">{language === 'bn' ? 'জেলা নির্বাচন করুন' : 'Select District'}</option>
-                          {availableDistricts.map((dist) => (
-                            <option key={dist.id} value={dist.id}>
-                              {language === 'bn' ? dist.name_bn : dist.name_en}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-              </div>
-
-              {error && (
-                <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 text-xs md:text-sm text-destructive font-bold animate-fade-in shadow-sm">
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={!selectedAnimal || isLoading}
-                className="w-full py-4 bg-gradient-to-r from-primary via-emerald-600 to-primary/95 hover:from-primary/95 hover:to-emerald-500 hover:shadow-lg hover:shadow-primary/10 text-white text-sm md:text-base font-extrabold rounded-2xl shadow-md flex items-center justify-center gap-2.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none active:scale-[0.99] active:shadow-md"
-              >
-                {isLoading ? (
-                  <>
-                    <Brain className="w-5 h-5 animate-pulse" />
-                    <span>{language === 'bn' ? 'এআই সংযোগ স্থাপন করছে...' : 'Starting Chat with AI...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-5 h-5" />
-                    <span>{language === 'bn' ? 'সহকারীর সাথে কথা বলুন' : 'Start AI Conversation'}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </form>
-          )}
-
-          {/* ── STATE B: CHAT PORTAL ACTIVE ── */}
-          {session && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <main className="flex-1 overflow-y-auto scrollbar-thin relative z-0">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 w-full py-6 md:py-10 flex flex-col min-h-full">
               
-              {/* Mobile tab switching controls */}
-              {isSessionComplete && (
-                <div className="lg:hidden flex border-b border-border/40 pb-2 mb-2 gap-2">
-                  <button
-                    onClick={() => setActiveTab('chat')}
-                    className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
-                      activeTab === 'chat'
-                        ? 'bg-primary text-white'
-                        : 'bg-card border border-border/80 text-muted-foreground'
-                    }`}
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>{language === 'bn' ? 'চ্যাট হিস্ট্রি' : 'Chat History'}</span>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('report')}
-                    className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
-                      activeTab === 'report'
-                        ? 'bg-primary text-white'
-                        : 'bg-card border border-border/80 text-muted-foreground'
-                    }`}
-                  >
-                    <ClipboardList className="w-4 h-4" />
-                    <span>{language === 'bn' ? 'রোগ নির্ণয় রিপোর্ট' : 'Diagnostic Report'}</span>
-                  </button>
-                </div>
-              )}
-
-              {/* Chat Column (Visible always on desktop, and on mobile active tab chat) */}
-              <div className={`col-span-1 lg:col-span-6 bg-card border border-border/60 rounded-3xl p-4 md:p-6 shadow-sm flex flex-col h-[70vh] relative min-w-0 ${
-                isSessionComplete && activeTab !== 'chat' ? 'hidden lg:flex' : 'flex'
-              }`}>
-                
-                {/* Animal context label */}
-                <div className="flex items-center justify-between pb-3 border-b border-border/50 mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🐾</span>
-                    <span className="text-xs font-extrabold text-foreground">
-                      {language === 'bn' ? 'পশু:' : 'Animal:'}{' '}
-                      <span className="text-primary">
-                        {language === 'bn' ? session.animal_type_details?.name_bn : session.animal_type_details?.name_en}
-                      </span>
-                    </span>
+              {!session ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center space-y-10 animate-fade-in-up py-10">
+                  
+                  <div className="space-y-3 max-w-xl">
+                    <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">
+                      {language === 'bn' ? 'আমি কিভাবে সাহায্য করতে পারি?' : 'How can I help your pet today?'}
+                    </h2>
+                    <p className="text-sm md:text-base text-muted-foreground/80 leading-relaxed font-medium">
+                      {language === 'bn' 
+                        ? 'লক্ষণ, সমস্যা বা সাধারণ স্বাস্থ্য সম্পর্কিত যে কোনো প্রশ্ন করতে পশুর ধরন নির্বাচন করুন।' 
+                        : 'Select an animal type below and describe the symptoms to begin an interactive diagnostic session.'}
+                    </p>
                   </div>
-                  {isSessionComplete ? (
-                    <span className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold rounded-lg border border-emerald-100 dark:border-emerald-900/30">
-                      {language === 'bn' ? 'বিশ্লেষণ সম্পন্ন' : 'Session Complete'}
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 text-[10px] font-extrabold rounded-lg border border-blue-100 dark:border-blue-900/30 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                      <span>{language === 'bn' ? 'লক্ষণ অনুসন্ধান' : 'Investigating symptoms'}</span>
-                    </span>
-                  )}
-                </div>
 
-                {/* Messages scroll box */}
-                <div className="flex-1 overflow-y-auto space-y-4 pr-1 mb-4 flex flex-col min-w-0 scrollbar-thin">
+                  <div className="w-full max-w-2xl space-y-3">
+                    <div className="flex items-center justify-center gap-2 text-xs font-extrabold text-muted-foreground mb-4">
+                      <span className="w-8 h-[1px] bg-border"></span>
+                      <span>{language === 'bn' ? '১. পশুর ধরন নির্বাচন করুন' : '1. Select Animal Type'}</span>
+                      <span className="w-8 h-[1px] bg-border"></span>
+                    </div>
+
+                    {isLoadingAnimals ? (
+                      <Spinner />
+                    ) : (
+                      <div className="flex flex-wrap justify-center gap-3">
+                        {animalTypes?.map(animal => {
+                          const Icon = getAnimalIcon(animal.slug)
+                          const isSelected = selectedAnimal?.id === animal.id
+                          return (
+                            <button
+                              key={animal.id}
+                              onClick={() => setSelectedAnimal(animal)}
+                              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-bold transition-all duration-200 active:scale-95 ${
+                                isSelected 
+                                  ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105' 
+                                  : 'bg-card/60 backdrop-blur-sm border-border/80 hover:bg-primary/5 hover:border-primary/40 text-foreground'
+                              }`}
+                            >
+                              <Icon className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-primary'}`} />
+                              {language === 'bn' ? animal.name_bn : animal.name_en}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Step 2: Symptoms Form */}
+                  <div className="w-full max-w-2xl text-left space-y-4 mt-8 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                        <Stethoscope className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h2 className="text-sm md:text-base font-extrabold text-foreground tracking-tight">
+                          {language === 'bn' ? '২. লক্ষণসমূহ বর্ণনা করুন' : '2. Describe the Symptoms'}
+                        </h2>
+                        <p className="text-[10px] md:text-xs text-muted-foreground">
+                          {language === 'bn' ? 'লক্ষণ, খাওয়ার রুচি এবং সময়কাল বিস্তারিত টাইপ করুন।' : "Detail the animal's current issues, appetite status, and duration."}
+                        </p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleStartConversation} className="space-y-4">
+                      <div className="relative">
+                        <textarea
+                          ref={inputRef}
+                          value={problemText}
+                          onChange={(e) => setProblemText(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          placeholder={
+                            language === 'bn'
+                              ? 'উদাহরণ: আমার ছাগল আজ সকাল থেকে কিছু খাচ্ছে না এবং ঝিমুচ্ছে...'
+                              : 'Example: My goat is lethargic and refusing feed since this morning...'
+                          }
+                          rows={4}
+                          disabled={isLoading}
+                          className="w-full px-4 py-3 rounded-xl border border-border border-l-4 border-l-primary/70 bg-card text-sm focus:outline-none focus:border-primary focus:border-l-primary focus:ring-1 focus:ring-primary/20 resize-none placeholder:text-muted-foreground/60 transition-all font-medium shadow-sm"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2 pt-1">
+                        <p className="text-[10px] md:text-xs font-extrabold text-muted-foreground flex items-center gap-1">
+                          <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+                          {language === 'bn' ? 'উদাহরণ বিবরণী (ক্লিক করুন):' : 'Symptom templates (click to select):'}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {(EXAMPLE_PROMPTS[language] || EXAMPLE_PROMPTS.bn).map((prompt, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => handleExampleClick(prompt)}
+                              className="px-3 py-2 bg-muted/40 hover:bg-primary/10 text-xs text-muted-foreground hover:text-primary font-bold rounded-lg border border-border/40 hover:border-primary/20 transition-all text-left"
+                            >
+                              {prompt}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="pt-4">
+                        <button 
+                          type="submit" 
+                          disabled={!selectedAnimal || !problemText.trim() || isLoading}
+                          className="w-full py-4 bg-primary hover:bg-primary/95 text-white text-sm font-extrabold rounded-xl shadow-md flex items-center justify-center gap-2.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99]"
+                        >
+                          <Brain className="w-5 h-5" />
+                          <span>{language === 'bn' ? 'সহকারীর সাথে কথা বলুন' : 'Start AI Conversation'}</span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6 pb-4">
+                  <div className="flex justify-center mb-8">
+                    <div className="px-4 py-1.5 bg-muted/40 backdrop-blur-sm border border-border/50 rounded-full text-xs font-bold text-muted-foreground flex items-center gap-2">
+                      <span className="text-sm">🐾</span>
+                      <span>
+                        {language === 'bn' ? 'আলোচিত পশু:' : 'Discussing:'}{' '}
+                        <span className="text-foreground">{language === 'bn' ? session.animal_type_details?.name_bn : session.animal_type_details?.name_en}</span>
+                      </span>
+                    </div>
+                  </div>
+
                   {messages?.map((msg, idx) => {
                     const isUser = msg.role === 'user'
                     return (
                       <div
                         key={idx}
-                        className={`flex items-start gap-2.5 max-w-[85%] animate-fade-in ${
-                          isUser ? 'self-end flex-row-reverse' : 'self-start'
+                        className={`flex items-end gap-3 max-w-[90%] md:max-w-[80%] animate-fade-in-up ${
+                          isUser ? 'self-end flex-row-reverse ml-auto' : 'self-start mr-auto'
                         }`}
+                        style={{ animationDelay: `${Math.min(idx * 50, 300)}ms` }}
                       >
-                        {/* Avatar */}
                         {!isUser && (
-                          <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 border border-primary/20">
-                            <Sparkles className="w-4 h-4 text-accent" />
+                          <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-primary flex items-center justify-center flex-shrink-0 border border-primary/20 mb-1 shadow-sm">
+                            <Brain className="w-4 h-4 md:w-5 md:h-5" />
                           </div>
                         )}
                         {isUser && (
-                          <div className="w-8 h-8 rounded-xl bg-muted text-muted-foreground flex items-center justify-center flex-shrink-0 border border-border/80">
-                            <span className="text-[10px] font-bold">You</span>
+                          <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-muted text-muted-foreground flex items-center justify-center flex-shrink-0 border border-border/50 mb-1 shadow-sm">
+                            <span className="text-[10px] md:text-xs font-bold uppercase">{user?.first_name?.[0] || 'U'}</span>
                           </div>
                         )}
 
-                        <div className={`p-3.5 rounded-2xl text-sm shadow-sm select-text whitespace-pre-wrap leading-relaxed ${
+                        <div className={`px-5 py-4 rounded-[1.5rem] text-sm md:text-base shadow-sm select-text whitespace-pre-wrap leading-relaxed ${
                           isUser
-                            ? 'bg-primary text-white rounded-tr-none'
-                            : 'bg-pcp-surface/40 border border-border/60 text-foreground rounded-tl-none'
+                            ? 'bg-gradient-to-br from-primary to-emerald-600 text-white rounded-br-sm shadow-primary/20'
+                            : 'bg-card/90 backdrop-blur-sm border border-border/60 text-foreground rounded-bl-sm shadow-sm'
                         }`}>
                           {renderMessageContent(msg.content)}
                         </div>
@@ -631,17 +448,16 @@ export const AIAssistant = () => {
                     )
                   })}
 
-                  {/* Typing Indicator */}
                   {isLoading && (
-                    <div className="flex items-start gap-2.5 max-w-[85%] self-start animate-fade-in">
-                      <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 border border-primary/20">
-                        <Brain className="w-4 h-4 text-primary animate-pulse" />
+                    <div className="flex items-end gap-3 max-w-[85%] self-start animate-fade-in-up mr-auto">
+                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-primary flex items-center justify-center flex-shrink-0 border border-primary/20 mb-1 shadow-sm">
+                        <Brain className="w-4 h-4 md:w-5 md:h-5 animate-pulse" />
                       </div>
-                      <div className="bg-pcp-surface/40 border border-border/60 text-foreground p-3.5 rounded-2xl shadow-sm">
-                        <div className="flex gap-1 py-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '300ms' }} />
+                      <div className="bg-card/90 backdrop-blur-sm border border-border/60 text-foreground px-6 py-5 rounded-[1.5rem] rounded-bl-sm shadow-sm flex items-center h-full">
+                        <div className="flex gap-1.5 items-center justify-center h-2">
+                          <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '300ms' }} />
                         </div>
                       </div>
                     </div>
@@ -649,208 +465,278 @@ export const AIAssistant = () => {
 
                   <div ref={chatEndRef} />
                 </div>
+              )}
+            </div>
+          </main>
 
-                {/* Chat actions & Input form */}
-                <div className="border-t border-border/50 pt-4">
-                  {error && (
-                    <div className="mb-3 bg-destructive/10 border border-destructive/30 rounded-xl p-3 text-xs text-destructive font-medium animate-fade-in">
-                      {error}
+          {session && (
+            <div className="flex-shrink-0 bg-transparent p-4 pb-6 md:pb-8 relative z-20">
+              <div className="max-w-4xl mx-auto w-full relative">
+              {geoStatus === 'denied' && !session && (
+                <div className="absolute bottom-full mb-3 left-0 right-0 animate-fade-in">
+                  <button 
+                    onClick={() => setShowLocationSettings(!showLocationSettings)}
+                    className="mx-auto flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground hover:text-foreground bg-muted/50 px-3 py-1 rounded-full border border-border/50 transition-colors"
+                  >
+                    <MapPin className="w-3 h-3" />
+                    {language === 'bn' ? 'অবস্থান নির্ধারণ করুন' : 'Set Location Preferences'}
+                    <ChevronDown className={`w-3 h-3 transition-transform ${showLocationSettings ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {showLocationSettings && (
+                    <div className="mt-2 p-3 bg-card/90 backdrop-blur-md border border-border rounded-xl shadow-lg flex gap-2 max-w-sm mx-auto">
+                      <select
+                        value={division}
+                        onChange={(e) => {
+                          setDivision(e.target.value)
+                          setDistrict('')
+                        }}
+                        className="flex-1 px-2.5 py-1.5 rounded-lg border border-border bg-pcp-surface/20 text-xs focus:outline-none focus:border-primary font-bold text-foreground"
+                      >
+                        <option value="">{language === 'bn' ? 'বিভাগ' : 'Division'}</option>
+                        {BANGLADESH_GEOGRAPHY.divisions.map((div) => (
+                          <option key={div.id} value={div.id}>{language === 'bn' ? div.name_bn : div.name_en}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={district}
+                        onChange={(e) => setDistrict(e.target.value)}
+                        disabled={!division}
+                        className="flex-1 px-2.5 py-1.5 rounded-lg border border-border bg-pcp-surface/20 text-xs focus:outline-none focus:border-primary font-bold text-foreground disabled:opacity-50"
+                      >
+                        <option value="">{language === 'bn' ? 'জেলা' : 'District'}</option>
+                        {availableDistricts.map((dist) => (
+                          <option key={dist.id} value={dist.id}>{language === 'bn' ? dist.name_bn : dist.name_en}</option>
+                        ))}
+                      </select>
                     </div>
                   )}
+                </div>
+              )}
 
-                  {!isSessionComplete ? (
-                    <form onSubmit={handleSendMessage} className="space-y-3">
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={problemText}
-                          onChange={(e) => setProblemText(e.target.value)}
-                          placeholder={
-                            language === 'bn'
-                              ? 'পরবর্তী লক্ষণ লিখুন (যেমন: ওর তাপমাত্রা কত?)'
-                              : 'Describe additional symptoms or answer the AI...'
-                          }
-                          disabled={isLoading}
-                          className="flex-1 px-4 py-3 rounded-xl border border-border bg-pcp-surface/30 text-sm focus:outline-none focus:border-primary disabled:opacity-50"
-                        />
+              {error && (
+                <div className="mb-3 absolute bottom-full w-full bg-destructive/10 border border-destructive/30 rounded-xl p-3 text-xs text-destructive font-bold animate-fade-in shadow-sm">
+                  {error}
+                </div>
+              )}
+
+              {!isSessionComplete ? (
+                <div className="flex flex-col gap-3">
+                  <form 
+                    onSubmit={handleSendMessage} 
+                    className="relative flex items-end gap-3"
+                  >
+                    <textarea 
+                      ref={inputRef}
+                      value={problemText}
+                      onChange={(e) => setProblemText(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder={
+                        language === 'bn' 
+                          ? 'আরো কিছু লক্ষণ যোগ করুন বা উত্তর দিন...' 
+                          : 'Reply to the assistant...'
+                      }
+                      disabled={isLoading}
+                      className="flex-1 max-h-40 min-h-[52px] bg-card border border-border border-l-4 border-l-primary/70 focus:border-primary focus:ring-1 focus:ring-primary/20 resize-none outline-none text-sm md:text-base py-3.5 px-4 rounded-xl placeholder:text-muted-foreground/50 font-medium scrollbar-thin shadow-sm transition-all"
+                      rows={1}
+                    />
+                    <button 
+                      type="submit" 
+                      disabled={!problemText.trim() || isLoading}
+                      className="w-[52px] h-[52px] flex-shrink-0 bg-primary hover:bg-primary/95 text-white rounded-xl flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md active:scale-[0.99]"
+                    >
+                      <Send className="w-5 h-5" />
+                    </button>
+                  </form>
+                  
+                  <div className="flex justify-between items-center px-1">
+                    <div className="flex items-center gap-2">
+                      {isSessionComplete && (
                         <button
-                          type="submit"
-                          disabled={!problemText.trim() || isLoading}
-                          className="px-4 bg-primary hover:bg-primary/95 text-white rounded-xl transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                          onClick={() => setShowReportMobile(true)}
+                          className="lg:hidden px-4 py-2 text-xs font-extrabold bg-primary text-white rounded-xl shadow-sm hover:bg-primary/90 transition-all flex items-center gap-1.5"
                         >
-                          <Send className="w-4 h-4" />
+                          <ClipboardList className="w-4 h-4" />
+                          <span className="hidden sm:inline">{language === 'bn' ? 'রিপোর্ট দেখুন' : 'View Report'}</span>
                         </button>
-                      </div>
-
-                      {/* Complete early CTA */}
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-muted-foreground/70">
-                          {language === 'bn' ? '*লক্ষণগুলো ভালোভাবে বর্ণনা করার পর রিপোর্ট বাটনে চাপুন।' : '*Click Complete once all symptoms are described.'}
-                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleReset}
+                        className="px-4 py-2 bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/50 hover:border-border rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                        title="Start New Consultation"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">{language === 'bn' ? 'নতুন চ্যাট' : 'New Chat'}</span>
+                      </button>
+                    </div>
+                    <div className="flex justify-end">
                         <button
                           type="button"
                           onClick={handleCompleteDiagnosis}
                           disabled={isLoading || messages.length < 2}
-                          className="px-3 py-1.5 text-accent hover:text-accent/90 hover:bg-accent/5 font-extrabold border border-accent/20 rounded-lg flex items-center gap-1 transition-all disabled:opacity-50"
+                          className="px-4 py-2 bg-accent/10 text-accent hover:bg-accent hover:text-white font-extrabold border border-accent/20 hover:border-accent rounded-xl flex items-center gap-1.5 transition-all disabled:opacity-50 text-xs shadow-sm"
                         >
-                          <Brain className="w-3.5 h-3.5" />
+                          <Sparkles className="w-3.5 h-3.5" />
                           <span>{language === 'bn' ? 'রোগ নির্ণয় সম্পন্ন করুন' : 'Complete Diagnosis'}</span>
                         </button>
                       </div>
-                    </form>
-                  ) : (
-                    <div className="flex items-center justify-center p-3 bg-muted/30 border border-border/50 rounded-xl text-center">
-                      <p className="text-xs text-muted-foreground font-bold flex items-center gap-1.5">
-                        <Info className="w-4 h-4" />
-                        {language === 'bn'
-                          ? 'এই পরামর্শটি সম্পন্ন হয়েছে। নতুন সমস্যার জন্য উপরে "নতুন পরামর্শ" বাটনে ক্লিক করুন।'
-                          : 'This AI session has been completed. Start a new session for a different symptom.'}
-                      </p>
-                    </div>
-                  )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center p-6 bg-muted/40 border border-border/60 rounded-2xl text-center backdrop-blur-sm gap-4">
+                  <p className="text-sm text-foreground font-bold flex items-center gap-2">
+                    <Info className="w-5 h-5 text-primary" />
+                    {language === 'bn'
+                      ? 'এই পরামর্শটি সম্পন্ন হয়েছে। নতুন সমস্যার জন্য নিচের বাটনে ক্লিক করুন।'
+                      : 'This session has been completed. Click below to start a new diagnosis.'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="px-6 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl text-sm font-extrabold transition-all flex items-center gap-2 shadow-md hover:shadow-lg active:scale-95"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>{language === 'bn' ? 'নতুন চ্যাট শুরু করুন' : 'Start New Chat'}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          )}
+        </div>
 
-              {/* Diagnostic Report Dashboard Column (Visible always on desktop, and on mobile active tab report) */}
-              <div className={`col-span-1 lg:col-span-6 space-y-6 h-[70vh] overflow-y-auto pr-1 select-text scrollbar-thin ${
-                isSessionComplete && activeTab !== 'report' ? 'hidden lg:block' : 'block'
-              }`}>
-                {isSessionComplete && activeResult ? (
-                  <>
-                    {/* Urgency indicator */}
-                    {urgencyLevel && <UrgencyIndicator level={urgencyLevel} />}
+        <div className={`fixed inset-y-0 right-0 w-full lg:static lg:w-1/2 bg-card border-l border-border lg:border-l-0 lg:shadow-none shadow-2xl z-50 transform transition-transform duration-500 cubic-bezier(0.16, 1, 0.3, 1) flex flex-col lg:pl-4 ${
+          showReportMobile ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
+        }`}>
+          
+          <div className="h-16 flex items-center justify-between px-6 border-b border-border/60 flex-shrink-0 bg-card/80 backdrop-blur-xl">
+            <h2 className="font-extrabold text-foreground flex items-center gap-2 text-lg">
+              <ClipboardList className="w-5 h-5 text-primary" />
+              {language === 'bn' ? 'রোগ নির্ণয় রিপোর্ট' : 'Diagnostic Report'}
+            </h2>
+            <button 
+              onClick={() => setShowReportMobile(false)} 
+              className="lg:hidden p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-                    {/* Possible problems / Diagnosis Summary */}
-                    {diagnosisSummary && (
-                      <DiagnosisCard
-                        icon={<Stethoscope className="w-5 h-5 text-primary" />}
-                        iconBg="bg-primary/10"
-                        title={language === 'bn' ? 'সম্ভাব্য সমস্যা ও রোগ নির্ণয়' : 'Possible Problems & Diagnosis'}
-                        content={diagnosisSummary}
-                      />
-                    )}
+          <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 scrollbar-thin bg-background/30">
+            {activeResult ? (
+              <>
+                {urgencyLevel && <UrgencyIndicator level={urgencyLevel} />}
+                {diagnosisSummary && (
+                  <DiagnosisCard
+                    icon={<Stethoscope className="w-5 h-5 text-primary" />}
+                    iconBg="bg-primary/10"
+                    title={language === 'bn' ? 'সম্ভাব্য সমস্যা' : 'Possible Diagnosis'}
+                    content={diagnosisSummary}
+                  />
+                )}
+                {guidedResponse && (
+                  <DiagnosisCard
+                    icon={<Lightbulb className="w-5 h-5 text-amber-500 dark:text-amber-400" />}
+                    iconBg="bg-amber-100 dark:bg-amber-900/30"
+                    title={language === 'bn' ? 'পরামর্শ ও নির্দেশিকা' : 'Advice & Guidelines'}
+                    content={guidedResponse}
+                    borderColor="border-amber-200 dark:border-amber-900/50"
+                  />
+                )}
+                {careAdvice && (
+                  <DiagnosisCard
+                    icon={<HandHeart className="w-5 h-5 text-accent" />}
+                    iconBg="bg-accent/15"
+                    title={language === 'bn' ? 'প্রাথমিক চিকিৎসা' : 'First Aid & Care'}
+                    content={careAdvice}
+                    borderColor="border-accent/30"
+                  />
+                )}
+                {thingsToCareAbout && (
+                  <DiagnosisCard
+                    icon={<ShieldAlert className="w-5 h-5 text-rose-500 dark:text-rose-400" />}
+                    iconBg="bg-rose-100 dark:bg-rose-900/30"
+                    title={language === 'bn' ? 'সতর্কতা' : 'Precautions'}
+                    content={thingsToCareAbout}
+                    borderColor="border-rose-200 dark:border-rose-900/50"
+                  />
+                )}
+                {warningData && <WarningSignsCard warningData={warningData} />}
+                {positiveData && <PositiveSignsCard positiveData={positiveData} />}
 
-                    {/* General Advice Response */}
-                    {guidedResponse && (
-                      <DiagnosisCard
-                        icon={<Lightbulb className="w-5 h-5 text-amber-500 dark:text-amber-400" />}
-                        iconBg="bg-amber-100 dark:bg-amber-900/30"
-                        title={language === 'bn' ? 'পরামর্শ ও নির্দেশিকা' : 'Advice & Guidelines'}
-                        content={guidedResponse}
-                        borderColor="border-amber-200 dark:border-amber-900/50"
-                      />
-                    )}
-
-                    {/* What owner can do / Care Advice */}
-                    {careAdvice && (
-                      <DiagnosisCard
-                        icon={<HandHeart className="w-5 h-5 text-accent" />}
-                        iconBg="bg-accent/15"
-                        title={language === 'bn' ? 'এখন কী করবেন — যত্ন ও প্রাথমিক চিকিৎসা' : 'What You Can Do Now — Care & First Aid'}
-                        content={careAdvice}
-                        borderColor="border-accent/30"
-                      />
-                    )}
-
-                    {/* Things to care about */}
-                    {thingsToCareAbout && (
-                      <DiagnosisCard
-                        icon={<ShieldAlert className="w-5 h-5 text-rose-500 dark:text-rose-400" />}
-                        iconBg="bg-rose-100 dark:bg-rose-900/30"
-                        title={language === 'bn' ? 'যা যা খেয়াল রাখতে হবে' : 'Things to Care About'}
-                        content={thingsToCareAbout}
-                        borderColor="border-rose-200 dark:border-rose-900/50"
-                      />
-                    )}
-
-                    {/* Warning signs */}
-                    <WarningSignsCard warningData={warningData} />
-
-                    {/* Positive recovery signs */}
-                    <PositiveSignsCard positiveData={positiveData} />
-
-                    {/* Suggested Providers matching details */}
-                    {providers.length > 0 && (
-                      <div className="space-y-4 pt-2">
-                        <div className="flex items-center gap-2 pl-1">
-                          <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
-                            <MapPin className="w-4 h-4" />
-                          </div>
-                          <h3 className="text-sm md:text-base font-extrabold text-foreground">
-                            {language === 'bn' ? 'আপনার নিকটবর্তী রেকমেন্ডেড সেবাদাতা' : 'Nearest Recommended Providers'}
-                          </h3>
-                        </div>
-                        <div className="space-y-3">
-                          {providers.map((suggestion, idx) => (
-                            <ProviderSuggestionCard
-                              key={suggestion.provider_details?.id || idx}
-                              rank={suggestion.rank}
-                              score={suggestion.score}
-                              reason={language === 'bn' ? suggestion.reason_bn : suggestion.reason_en}
-                              provider_details={suggestion.provider_details}
-                            />
-                          ))}
-                        </div>
+                {providers.length > 0 && (
+                  <div className="space-y-4 pt-4 border-t border-border/50">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
+                        <MapPin className="w-4 h-4" />
                       </div>
-                    )}
-
-                    {/* Government Upazila Vet Cards */}
-                    {suggestLivestockOfficer && (
-                      <GovtVetCard vets={govtVets} showFallbackMessage={true} />
-                    )}
-
-                    {/* Related guideline resources matching keywords */}
-                    {resources.length > 0 && (
-                      <div className="space-y-4 pt-2">
-                        <div className="flex items-center gap-2 pl-1">
-                          <div className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/30 text-violet-600 flex items-center justify-center border border-violet-200 dark:border-violet-900/50">
-                            <BookOpenCheck className="w-4 h-4" />
-                          </div>
-                          <h3 className="text-sm md:text-base font-extrabold text-foreground">
-                            {language === 'bn' ? 'প্রাসঙ্গিক নির্দেশিকা ও রিসোর্স' : 'Related Resources & Guidelines'}
-                          </h3>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {resources.map((resource) => (
-                            <ResourceCard key={resource.id} resource={resource} />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Medical Disclaimer */}
-                    <div className="bg-muted/30 border border-border/50 rounded-xl p-4 flex gap-2.5 items-start">
-                      <Info className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                      <p className="text-[10px] md:text-xs text-muted-foreground leading-relaxed">
-                        {language === 'bn'
-                          ? 'সতর্কতা: এই এআই রোগ নির্ণয় সহকারী শুধুমাত্র সাধারণ তথ্যের জন্য পরামর্শ দিয়ে থাকে। গুরুতর পশুর উপসর্গ বা জরুরি প্রয়োজনে সর্বদা একজন ভেরিফাইড চিকিৎসকের সাথে সরাসরি যোগাযোগ করুন।'
-                          : 'Disclaimer: This AI analysis provides basic guidance and is not a replacement for live veterinary services. In case of serious symptoms or outbreaks, contact a professional immediately.'}
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <div className="h-full bg-muted/20 border border-dashed border-border rounded-3xl flex flex-col items-center justify-center p-8 text-center text-muted-foreground space-y-3">
-                    <div className="w-12 h-12 bg-muted rounded-2xl flex items-center justify-center">
-                      <ClipboardList className="w-6 h-6 text-muted-foreground/60" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-foreground">
-                        {language === 'bn' ? 'রিপোর্ট এখনো জেনারেট হয়নি' : 'Report is Not Generated'}
+                      <h3 className="text-base font-extrabold text-foreground">
+                        {language === 'bn' ? 'রেকমেন্ডেড ডাক্তার' : 'Recommended Vets'}
                       </h3>
-                      <p className="text-xs leading-relaxed max-w-xs mx-auto">
-                        {language === 'bn'
-                          ? 'সহকারীর সাথে আলাপ সম্পন্ন করুন অথবা লক্ষণগুলো টাইপ করে নিচে "রোগ নির্ণয় সম্পন্ন করুন" বাটনে চাপুন।'
-                          : 'Continue chatting with the AI, or click "Complete Diagnosis" to compile the results.'}
-                      </p>
+                    </div>
+                    <div className="space-y-3">
+                      {providers.map((suggestion, idx) => (
+                        <ProviderSuggestionCard
+                          key={suggestion.provider_details?.id || idx}
+                          rank={suggestion.rank}
+                          score={suggestion.score}
+                          reason={language === 'bn' ? suggestion.reason_bn : suggestion.reason_en}
+                          provider_details={suggestion.provider_details}
+                        />
+                      ))}
                     </div>
                   </div>
                 )}
+                {suggestLivestockOfficer && (
+                  <GovtVetCard vets={govtVets} showFallbackMessage={true} />
+                )}
+                {resources.length > 0 && (
+                  <div className="space-y-4 pt-4 border-t border-border/50">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-violet-100 dark:bg-violet-900/30 text-violet-600 flex items-center justify-center border border-violet-200 dark:border-violet-900/50">
+                        <BookOpenCheck className="w-4 h-4" />
+                      </div>
+                      <h3 className="text-base font-extrabold text-foreground">
+                        {language === 'bn' ? 'নির্দেশিকা' : 'Guidelines'}
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      {resources.map((resource) => (
+                        <ResourceCard key={resource.id} resource={resource} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="bg-muted/30 border border-border/50 rounded-xl p-4 flex gap-3 items-start mt-6">
+                  <Info className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground leading-relaxed font-medium">
+                    {language === 'bn'
+                      ? 'সতর্কতা: এই এআই রোগ নির্ণয় সহকারী শুধুমাত্র সাধারণ তথ্যের জন্য পরামর্শ দিয়ে থাকে। গুরুতর পশুর উপসর্গ বা জরুরি প্রয়োজনে সর্বদা একজন ভেরিফাইড চিকিৎসকের সাথে সরাসরি যোগাযোগ করুন।'
+                      : 'Disclaimer: This AI analysis provides basic guidance and is not a replacement for live veterinary services. In case of serious symptoms, contact a professional immediately.'}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground space-y-4 opacity-60 px-4 min-h-[400px]">
+                <div className="w-20 h-20 bg-muted/60 rounded-full flex items-center justify-center mb-2 shadow-inner">
+                  <ClipboardList className="w-10 h-10 text-muted-foreground/50" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">
+                    {language === 'bn' ? 'রিপোর্ট জেনারেট হয়নি' : 'Report Not Generated'}
+                  </h3>
+                  <p className="text-sm max-w-[280px] mx-auto mt-2 leading-relaxed">
+                    {language === 'bn'
+                      ? 'সহকারীর সাথে লক্ষণ বিশ্লেষণ সম্পন্ন করুন অথবা "রোগ নির্ণয় সম্পন্ন করুন" বাটনে চাপুন।'
+                      : 'Complete the symptom analysis or click "Complete Diagnosis" to compile your results here.'}
+                  </p>
+                </div>
               </div>
-
-            </div>
-          )}
-
+            )}
+          </div>
         </div>
+      </div>
       </div>
     </PageLayout>
   )
