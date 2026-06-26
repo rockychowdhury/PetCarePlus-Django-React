@@ -94,65 +94,31 @@ export const LocationModal = ({ isOpen, onClose }) => {
         setGpsStatus(language === 'bn' ? 'প্রসেসিং...' : 'Processing...')
 
         try {
+          // Fetch readable name for UI display
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
           )
           const data = await res.json()
-          let resolvedUpazilaId = ''
           let resolvedDivisionName = 'all'
           let resolvedDistrictName = ''
           let resolvedUpazilaName = ''
-          let resolvedDivisionId = ''
-          let resolvedDistrictId = ''
           
           if (data && data.address) {
             const addr = data.address
-            const divName = addr.state?.replace(' Division', '') || ''
-            const distName = (addr.state_district || addr.county || addr.city)?.replace(' District', '') || ''
-            const upzName = addr.city || addr.town || addr.county || ''
-            const rawAddress = `${data.display_name} ${Object.values(addr).join(' ')}`.toLowerCase()
-            
-            // Background resolution for Upazila ID
-            const divs = await locationsApi.getDivisions()
-            const divMatch = divs.find(d => rawAddress.includes(d.name_en.toLowerCase()) || divName.toLowerCase().includes(d.name_en.toLowerCase()))
-            
-            if (divMatch) {
-                resolvedDivisionName = divMatch.name_en
-                resolvedDivisionId = divMatch.id
-                
-                const dists = await locationsApi.getDistricts(divMatch.id)
-                const distMatch = dists.find(d => rawAddress.includes(d.name_en.toLowerCase()) || distName.toLowerCase().includes(d.name_en.toLowerCase()))
-                
-                if (distMatch) {
-                    resolvedDistrictName = distMatch.name_en
-                    resolvedDistrictId = distMatch.id
-                    
-                    const upzs = await locationsApi.getUpazilas(distMatch.id)
-                    let upzMatch = upzs.find(u => {
-                        const cleanName = u.name_en.toLowerCase().replace(' sadar', '').replace(' city corporation', '').trim()
-                        return rawAddress.includes(cleanName) || upzName.toLowerCase().includes(cleanName)
-                    })
-                    
-                    if (!upzMatch && distMatch.name_en.toLowerCase() === 'dhaka') {
-                        upzMatch = upzs.find(u => u.name_en.toLowerCase().includes('dhaka north'))
-                    }
-                    
-                    if (upzMatch) {
-                        resolvedUpazilaId = upzMatch.id
-                        resolvedUpazilaName = upzMatch.name_en
-                    }
-                }
-            }
+            resolvedDivisionName = addr.state?.replace(' Division', '') || ''
+            resolvedDistrictName = (addr.state_district || addr.county || addr.city)?.replace(' District', '') || ''
+            resolvedUpazilaName = addr.city || addr.town || addr.county || ''
           }
           
+          // Set location directly with coordinates. The backend will perform a fast radius search.
           setLocation({
             division: resolvedDivisionName,
             district: resolvedDistrictName,
             upazila: resolvedUpazilaName,
             union: '',
-            division_id: resolvedDivisionId,
-            district_id: resolvedDistrictId,
-            upazila_id: resolvedUpazilaId,
+            division_id: '',
+            district_id: '',
+            upazila_id: '',
             latitude: latitude,
             longitude: longitude,
           })
@@ -162,7 +128,8 @@ export const LocationModal = ({ isOpen, onClose }) => {
           setGpsStatus('Failed')
         }
       },
-      () => setGpsStatus('Failed')
+      () => setGpsStatus('Failed'),
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
     )
   }
 
