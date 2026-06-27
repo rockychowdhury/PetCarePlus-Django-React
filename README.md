@@ -1,7 +1,7 @@
 # PetCarePlus — Comprehensive Digital Animal Care Platform
 
 <div align="center">
-  <img src="https://via.placeholder.com/1200x600/0a0a0a/ffffff.png?text=PetCarePlus+Banner" alt="PetCarePlus Banner" width="100%" />
+  <img src="https://i.ibb.co.com/rKLZFKLp/pcppewview.png" alt="PetCarePlus Banner" width="100%" />
 </div>
 
 <br />
@@ -166,8 +166,6 @@ For deep dives into the project's architecture, API, and deployment, please refe
 - **[API Documentation](https://github.com/rockychowdhury/PetCarePlus-Django-React/blob/main/docs/api_docs.md)**: Detailed endpoints, request/response formats, and authentication.
 - **[Database Schema](https://github.com/rockychowdhury/PetCarePlus-Django-React/blob/main/docs/database_schema.md)**: ERD explanation, models, and relations for the Django backend.
 - **[V2 Architecture & Changes](https://github.com/rockychowdhury/PetCarePlus-Django-React/blob/main/docs/V2.md)**: In-depth breakdown of the migration from V1 to V2.
-- **[Deployment Guide](https://github.com/rockychowdhury/PetCarePlus-Django-React/blob/main/deployment_guide.md)**: Instructions on how to run this project in production using Docker and Nginx.
-- **[Promotional Video Script](https://github.com/rockychowdhury/PetCarePlus-Django-React/blob/main/promotional_video_guide.md)**: The script and guide used for the project's demo video.
 
 <br />
 
@@ -189,10 +187,9 @@ Feel free to check the issues page if you want to contribute.
 **[Rocky Chowdhury / Full Stack Developer]**  
 Full-Stack Developer passionate about building impactful digital solutions.
 
-- 🌐 **Portfolio:** [https://rockychowdhury.vercel.app/](https://rockychowdhury.vercel.app/)
-- 💼 **LinkedIn:** [https://www.linkedin.com/in/rockychowdhury1/](https://www.linkedin.com/in/rockychowdhury1/)
-- 🐙 **GitHub:** [https://github.com/rockychowdhury](https://github.com/rockychowdhury)
-- ✉️ **Email:** [rockychowdhury055@gmail.com]
+- 🌐 **Portfolio:** [Rocky Chowdhury Portfolio](https://rockychowdhury.vercel.app/)
+- 💼 **LinkedIn:** [Rocky Chowdhury](https://www.linkedin.com/in/rockychowdhury1/)
+- ✉️ **Email:** [rockychowdhury055@gmail.com](mailto:[EMAIL_ADDRESS])
 
 ---
 *If you find this project useful, please consider giving it a ⭐ on GitHub!*
