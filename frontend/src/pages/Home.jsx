@@ -22,7 +22,7 @@ const FadeInUp = ({ children, delay = 0 }) => (
 export const Home = () => {
   return (
     <PageLayout>
-      <div className="flex flex-col w-full min-h-screen overflow-x-hidden">
+      <div className="flex flex-col w-full min-h-screen">
         {/* Section 1: Hero — Immediate fade in without scroll */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
