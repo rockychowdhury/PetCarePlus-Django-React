@@ -7,7 +7,7 @@ export const HeroSection = () => {
   const { language } = useLanguage()
 
   return (
-    <section className="relative flex items-center justify-center border-b border-border/40 overflow-hidden bg-gradient-to-br from-blue-50/40 via-emerald-50/40 to-violet-50/40 dark:from-blue-950/20 dark:via-emerald-950/20 dark:to-violet-950/20 animate-gradient-x bg-[length:200%_auto]">
+    <section className="relative flex items-center justify-center min-h-[calc(100vh-4rem)] border-b border-border/40 overflow-hidden bg-gradient-to-br from-blue-50/40 via-emerald-50/40 to-violet-50/40 dark:from-blue-950/20 dark:via-emerald-950/20 dark:to-violet-950/20 animate-gradient-x bg-[length:200%_auto]">
       {/* Background container with strict overflow clipping to prevent horizontal scrollbars on mobile/safari */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Clean, minimalist dot pattern background overlay */}
