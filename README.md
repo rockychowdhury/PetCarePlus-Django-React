@@ -159,6 +159,18 @@ PetCarePlus/
 
 <br />
 
+## 📚 Documentation
+
+For deep dives into the project's architecture, API, and deployment, please refer to the following documentation files:
+
+- **[API Documentation](https://github.com/rockychowdhury/PetCarePlus-Django-React/blob/main/docs/api_docs.md)**: Detailed endpoints, request/response formats, and authentication.
+- **[Database Schema](https://github.com/rockychowdhury/PetCarePlus-Django-React/blob/main/docs/database_schema.md)**: ERD explanation, models, and relations for the Django backend.
+- **[V2 Architecture & Changes](https://github.com/rockychowdhury/PetCarePlus-Django-React/blob/main/docs/V2.md)**: In-depth breakdown of the migration from V1 to V2.
+- **[Deployment Guide](https://github.com/rockychowdhury/PetCarePlus-Django-React/blob/main/deployment_guide.md)**: Instructions on how to run this project in production using Docker and Nginx.
+- **[Promotional Video Script](https://github.com/rockychowdhury/PetCarePlus-Django-React/blob/main/promotional_video_guide.md)**: The script and guide used for the project's demo video.
+
+<br />
+
 ## 🤝 Contribution
 
 Contributions, issues, and feature requests are welcome! 
@@ -174,13 +186,13 @@ Feel free to check the issues page if you want to contribute.
 
 ## 📬 Contact & Links
 
-**[Your Name / Your Title]**  
+**[Rocky Chowdhury / Full Stack Developer]**  
 Full-Stack Developer passionate about building impactful digital solutions.
 
-- 🌐 **Portfolio:** [yourportfolio.com](https://yourportfolio.com)
-- 💼 **LinkedIn:** [linkedin.com/in/yourprofile](https://linkedin.com/in/yourprofile)
-- 🐙 **GitHub:** [github.com/yourusername](https://github.com/yourusername)
-- ✉️ **Email:** your.email@example.com
+- 🌐 **Portfolio:** [https://rockychowdhury.vercel.app/](https://rockychowdhury.vercel.app/)
+- 💼 **LinkedIn:** [https://www.linkedin.com/in/rockychowdhury1/](https://www.linkedin.com/in/rockychowdhury1/)
+- 🐙 **GitHub:** [https://github.com/rockychowdhury](https://github.com/rockychowdhury)
+- ✉️ **Email:** [rockychowdhury055@gmail.com]
 
 ---
 *If you find this project useful, please consider giving it a ⭐ on GitHub!*

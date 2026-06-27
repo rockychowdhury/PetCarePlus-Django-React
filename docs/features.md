@@ -1,39 +1,32 @@
-# Features Overview
+[⬅️ Back to Main README](https://github.com/rockychowdhury/PetCarePlus-Django-React)
 
-## 👤 User Management & Authentication
-- **Secure Registration**: Email-based signup with robust validation.
-- **Email Verification**: Mandatory email verification flow using OTP/Link (Async via Celery).
-- **Profile Management**: Customizable user profiles with biography, location, and avatar.
-- **Role-Based Access**: Distinct roles for Pet Owners, Service Providers, and Admins.
+# PetCarePlus V2 Features & Flow
+
+## 👤 Unified User Ecosystem
+- **Seamless Roles**: A single user account can act as both a pet owner and a service provider without needing to manage multiple logins.
+- **Bilingual Interface**: Full i18n support allows users to toggle between English and Bengali instantly without page reloads, increasing accessibility for rural users.
+- **Secure Authentication**: JWT-based authentication ensuring secure, stateless sessions across the React frontend and Django API.
+
+## 🤖 AI Veterinary Assistant
+- **24/7 Triage**: Integrated with Google GenAI (Gemini) to provide instant preliminary advice for pet health issues.
+- **Context-Aware**: The AI assistant knows which pet the user is asking about, utilizing the pet's age, species, and breed to give tailored advice.
+- **Emergency Escalation**: The AI is programmed to identify critical symptoms and immediately suggest booking nearby verified vets.
+
+## 🏥 Provider Discovery & Booking
+- **Geo-Location Search**: Uses spatial calculations (Haversine/PostGIS) to find and sort veterinarians, groomers, and shelters by distance.
+- **Detailed Profiles**: Providers have rich profiles detailing their services, business hours, verification badges, and user reviews.
+- **Integrated Booking**: Direct appointment booking system with real-time status tracking (Pending, Confirmed, Completed, Cancelled).
 
 ## 🐾 Pet Rehoming & Adoption
-- **Listing Creation**: Detailed pet profiles including breed, age, temperament, and photos.
-- **Advanced Search**: Filter pets by species, size, age, and location.
-- **Adoption Applications**: Built-in application form for potential adopters.
-- **Matchmaking AI**: **Google Gemini Pro** integrated to analyze adoption applications and provide compatibility scores.
+- **Centralized Hub**: A dedicated, secure platform to list pets for adoption or browse available animals.
+- **Detailed Listings**: Ads include comprehensive behavioral and medical history linked directly to the animal's core profile.
+- **Application System**: Potential adopters submit detailed applications directly through the platform, allowing current owners to screen candidates safely.
 
-## 🏥 Service Provider Platform
-- **Provider Profiles**: Verified profiles for Vets, Sitters, Groomers, and Trainers with professional badges.
-- **Service Listings**: Customizable service menus with pricing and duration.
-- **Availability Management**: Advanced calendar-based availability setting for providers.
-- **Booking System**: Full-lifecycle appointment booking with real-time status tracking (Pending, Confirmed, Completed, Cancelled).
-- **Geo-Location**: Proximity matching ("Near Me") using Haversine distance for local discovery.
+## 📚 Knowledge & Resource Center
+- **Government Guidelines**: Direct access to local agricultural and veterinary laws and guidelines.
+- **Vaccination Trackers**: Species-specific vaccination schedules and requirements to help owners stay on track.
 
-## 💳 Payment & Transactions
-- **SSLCommerz Integration**: Secure, industry-standard payment gateway for booking transactions.
-- **Automated Pricing**: Smart price calculation based on service type and duration.
-- **Transaction History**: Detailed receipt-style view for all completed and pending payments.
-- **Zero-Price Handling**: Seamless handling for free consultations or promotional services.
-
-## 🛡️ Admin Dashboard
-- **User Management**: Centralized hub to inspect, ban, or promote users.
-- **Verification Queue**: Review and approve Service Provider applications and credentials.
-- **Content Moderation**: Tools to manage reported listings, reviews, and community content.
-- **Platform Analytics**: Visual dashboard showing growth metrics, revenue trends, and booking density.
-
-## ⚙️ Technical Features
-- **Asynchronous Tasks**: Heavy operations (Emails, AI Analysis, Reports) offloaded to Celery + Redis.
-- **Real-Time Notifications**: Instant updates for booking statuses and system alerts.
-- **Containerized Deployment**: Fully Dockerized application (Docker Compose) for high scalability.
-- **Robust API**: RESTful architecture with 100% endpoint coverage and JWT security.
-- **Responsive UI**: "Sage & Stone" premium design system, fully optimized for all device sizes.
+## ⚙️ Technical Architecture (V2)
+- **State Management**: Zustand handles global UI state while React Query manages complex server-state caching, automatic refetching, and background synchronization.
+- **UI/UX Overhaul**: Built using a modern glassmorphic design system with Tailwind CSS, Framer Motion animations, and Radix UI primitives for full accessibility.
+- **Modular Django Backend**: The API is split into highly cohesive, decoupled apps (`accounts`, `animals`, `providers`, `bookings`, `reviews`, `ai_assistant`, `rehoming`, `notifications`, `locations`, `resources`), making the codebase highly maintainable.

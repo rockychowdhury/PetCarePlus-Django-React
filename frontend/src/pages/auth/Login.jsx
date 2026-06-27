@@ -19,7 +19,7 @@ export const Login = () => {
 
   // Mutation to handle logging in
   const loginMutation = useMutation({
-    mutationFn: () => authApi.login(email, password),
+    mutationFn: ({ email, password }) => authApi.login(email, password),
     onSuccess: (data) => {
       setSuccessText('লগইন সফল হয়েছে! ড্যাশবোর্ডে প্রবেশ করা হচ্ছে...')
       
@@ -40,7 +40,16 @@ export const Login = () => {
     setErrorText('')
     setSuccessText('')
     if (!email || !password) return
-    loginMutation.mutate()
+    loginMutation.mutate({ email, password })
+  }
+
+  const quickLogin = (qEmail) => {
+    const qPassword = 'PetCarePlus'
+    setEmail(qEmail)
+    setPassword(qPassword)
+    setErrorText('')
+    setSuccessText('')
+    loginMutation.mutate({ email: qEmail, password: qPassword })
   }
 
   return (
@@ -56,6 +65,34 @@ export const Login = () => {
           <h2 className="text-lg sm:text-xl font-extrabold text-foreground">
             {t('auth.login_title')}
           </h2>
+        </div>
+
+        {/* Quick Login for Recruiters */}
+        <div className="space-y-3 bg-muted/30 p-4 rounded-xl border border-border/50">
+          <p className="text-xs font-semibold text-center text-muted-foreground uppercase tracking-wider">Quick Login (Recruiter Access)</p>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => quickLogin('owner@pcp.com')}
+              className="py-2 px-1 bg-pcp-surface hover:bg-pcp-green/10 border border-border hover:border-pcp-green rounded-lg text-xs font-bold text-foreground transition-colors"
+            >
+              Pet Owner
+            </button>
+            <button
+              type="button"
+              onClick={() => quickLogin('farmer@pcp.com')}
+              className="py-2 px-1 bg-pcp-surface hover:bg-amber-500/10 border border-border hover:border-amber-500 rounded-lg text-xs font-bold text-foreground transition-colors"
+            >
+              Farmer
+            </button>
+            <button
+              type="button"
+              onClick={() => quickLogin('provider@pcp.com')}
+              className="py-2 px-1 bg-pcp-surface hover:bg-blue-500/10 border border-border hover:border-blue-500 rounded-lg text-xs font-bold text-foreground transition-colors"
+            >
+              Provider
+            </button>
+          </div>
         </div>
 
         {/* Form */}

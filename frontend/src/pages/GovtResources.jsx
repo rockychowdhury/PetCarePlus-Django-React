@@ -7,7 +7,8 @@ import { useLanguage } from '../hooks/useLanguage'
 import { BANGLADESH_GEOGRAPHY } from '../utils/geo'
 import PageLayout from '../components/layout/PageLayout'
 import Spinner from '../components/ui/Spinner'
-import { Phone, MapPin, Globe, Building2, HeartHandshake, Siren, Info } from 'lucide-react'
+import { Phone, MapPin, Globe, Building2, HeartHandshake, Siren, Info, Map } from 'lucide-react'
+import { CustomSelect } from '../components/common/CustomSelect'
 
 export const GovtResources = () => {
   const { language, t, tField } = useLanguage()
@@ -31,15 +32,15 @@ export const GovtResources = () => {
     }
   }, [user, anonDivision, anonDistrict])
 
-  const handleDivisionChange = (e) => {
-    const div = e.target.value
+  const handleDivisionChange = (val) => {
+    const div = val === 'all' ? '' : val
     setSelectedDivision(div)
     setSelectedDistrict('')
     if (!user) setLocation({ division_id: div, district_id: '', upazila_id: '' })
   }
 
-  const handleDistrictChange = (e) => {
-    const dist = e.target.value
+  const handleDistrictChange = (val) => {
+    const dist = val === 'all' ? '' : val
     setSelectedDistrict(dist)
     if (!user) setLocation({ division_id: selectedDivision, district_id: dist, upazila_id: '' })
   }
@@ -109,18 +110,16 @@ export const GovtResources = () => {
               <label className="text-xs font-bold text-muted-foreground">
                 {t('hero.select_division')}
               </label>
-              <select
+              <CustomSelect
                 value={selectedDivision}
                 onChange={handleDivisionChange}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold"
-              >
-                <option value="">-- {t('hero.select_division')} --</option>
-                {BANGLADESH_GEOGRAPHY.divisions.map((div) => (
-                  <option key={div.id} value={div.id}>
-                    {language === 'bn' ? div.name_bn : div.name_en}
-                  </option>
-                ))}
-              </select>
+                icon={<Map className="w-4 h-4 text-primary shrink-0" />}
+                options={BANGLADESH_GEOGRAPHY.divisions.map((div) => ({
+                  id: div.id,
+                  label: language === 'bn' ? div.name_bn : div.name_en
+                }))}
+                placeholder={`-- ${t('hero.select_division')} --`}
+              />
             </div>
 
             {/* District */}
@@ -128,19 +127,17 @@ export const GovtResources = () => {
               <label className="text-xs font-bold text-muted-foreground">
                 {t('hero.select_district')}
               </label>
-              <select
+              <CustomSelect
                 value={selectedDistrict}
                 onChange={handleDistrictChange}
+                icon={<MapPin className="w-4 h-4 text-primary shrink-0" />}
                 disabled={!selectedDivision}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-pcp-surface focus:outline-none focus:border-primary font-semibold disabled:opacity-50"
-              >
-                <option value="">-- {t('hero.select_district')} --</option>
-                {activeDistricts.map((dist) => (
-                  <option key={dist.id} value={dist.id}>
-                    {language === 'bn' ? dist.name_bn : dist.name_en}
-                  </option>
-                ))}
-              </select>
+                options={activeDistricts.map((dist) => ({
+                  id: dist.id,
+                  label: language === 'bn' ? dist.name_bn : dist.name_en
+                }))}
+                placeholder={`-- ${t('hero.select_district')} --`}
+              />
             </div>
           </div>
 
