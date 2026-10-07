@@ -227,7 +227,10 @@ REDIS_URL = get_env('REDIS_URL') or get_env('REDIS_CACHE_URL')
 if REDIS_URL:
     CACHES = {
         'default': {
-            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            # Failsafe wrapper: if Redis is unreachable the cache degrades to
+            # misses instead of turning cached endpoints (animals, divisions,
+            # resources, ...) into 500 responses.
+            'BACKEND': 'common.cache.FailsafeRedisCache',
             'LOCATION': REDIS_URL,
         }
     }

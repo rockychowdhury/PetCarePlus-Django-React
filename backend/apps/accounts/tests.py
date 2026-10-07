@@ -30,6 +30,7 @@ class AuthAPITests(APITestCase):
             'email': 'testnewuser@petcareplus.com',
             'name': 'Rocky Chowdhury',
             'phone': '01712345678',
+            'password': 'testpassword123',
             'role': 'pet_owner',
         }
 
@@ -37,8 +38,7 @@ class AuthAPITests(APITestCase):
         self.user_data = {
             'email': 'testowner@petcareplus.com',
             'password': 'strongpassword123',
-            'first_name': 'Rocky',
-            'last_name': 'Chowdhury',
+            'full_name': 'Rocky Chowdhury',
             'phone_number': '01712345678',
             'division': 'dhaka',
             'district': 'Dhaka',
@@ -58,8 +58,7 @@ class AuthAPITests(APITestCase):
         # Check in database
         self.assertTrue(User.objects.filter(email=self.register_data['email']).exists())
         user = User.objects.get(email=self.register_data['email'])
-        self.assertEqual(user.first_name, 'Rocky')
-        self.assertEqual(user.last_name, 'Chowdhury')
+        self.assertEqual(user.full_name, 'Rocky Chowdhury')
         self.assertEqual(user.phone_number, '01712345678')
 
     def test_user_registration_duplicate_email(self):
@@ -68,8 +67,7 @@ class AuthAPITests(APITestCase):
         User.objects.create_user(
             email=self.register_data['email'],
             password='testpassword123',
-            first_name='Rocky',
-            last_name='Chowdhury'
+            full_name='Rocky Chowdhury'
         )
         # Attempt duplicate
         response = self.client.post(self.register_url, self.register_data)
@@ -82,8 +80,7 @@ class AuthAPITests(APITestCase):
         user = User.objects.create_user(
             email=self.user_data['email'],
             password=self.user_data['password'],
-            first_name=self.user_data['first_name'],
-            last_name=self.user_data['last_name'],
+            full_name=self.user_data['full_name'],
             role='pet_owner'
         )
 
@@ -95,18 +92,19 @@ class AuthAPITests(APITestCase):
         response = self.client.post(self.login_url, login_payload)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
-        # Access token and user payload must be in body
-        self.assertIn('access', response.data)
+        # User payload must be in body
         self.assertIn('user', response.data)
         self.assertEqual(response.data['user']['email'], user.email)
         
-        # Refresh token must NOT be in body
+        # Tokens are delivered via httpOnly cookies only, never in the body
+        self.assertNotIn('access', response.data)
         self.assertNotIn('refresh', response.data)
 
-        # Refresh token must be in cookies
+        # Both cookies must be set and httpOnly
+        self.assertIn('access_token', self.client.cookies)
         self.assertIn('refresh_token', self.client.cookies)
-        cookie = self.client.cookies['refresh_token']
-        self.assertTrue(cookie['httponly'])
+        self.assertTrue(self.client.cookies['access_token']['httponly'])
+        self.assertTrue(self.client.cookies['refresh_token']['httponly'])
 
     def test_token_refresh_via_cookie(self):
         """Test refreshing access token using the refresh token stored in cookies."""
@@ -114,8 +112,7 @@ class AuthAPITests(APITestCase):
         User.objects.create_user(
             email=self.user_data['email'],
             password=self.user_data['password'],
-            first_name=self.user_data['first_name'],
-            last_name=self.user_data['last_name']
+            full_name=self.user_data['full_name']
         )
 
         login_payload = {
@@ -130,8 +127,17 @@ class AuthAPITests(APITestCase):
         # Trigger refresh endpoint (no payload needed because it reads from cookies)
         response = self.client.post(self.refresh_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('access', response.data)
+
+        # Rotated access token is delivered via httpOnly cookie, not the body
+        self.assertNotIn('access', response.data)
         self.assertNotIn('refresh', response.data)
+        self.assertIn('access_token', self.client.cookies)
+        self.assertTrue(self.client.cookies['access_token']['httponly'])
+
+    def test_token_refresh_without_session_returns_401(self):
+        """No cookie and no body token must yield 401 (not a serializer 400)."""
+        response = self.client.post(self.refresh_url, {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_profile_retrieval_and_update(self):
         """Test retrieving and updating user profile (preferred language, division, etc.)."""
@@ -139,8 +145,7 @@ class AuthAPITests(APITestCase):
         user = User.objects.create_user(
             email=self.user_data['email'],
             password=self.user_data['password'],
-            first_name=self.user_data['first_name'],
-            last_name=self.user_data['last_name'],
+            full_name=self.user_data['full_name'],
             division='barishal',
             district='Bhola',
             upazila='Bhola Sadar',
@@ -186,8 +191,7 @@ class AuthAPITests(APITestCase):
         User.objects.create_user(
             email=self.user_data['email'],
             password=self.user_data['password'],
-            first_name=self.user_data['first_name'],
-            last_name=self.user_data['last_name']
+            full_name=self.user_data['full_name']
         )
         login_payload = {
             'email': self.user_data['email'],

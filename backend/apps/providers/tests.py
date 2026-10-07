@@ -38,8 +38,7 @@ class ProvidersAPITests(APITestCase):
         self.provider_user = User.objects.create_user(
             email='vet1@petcareplus.com',
             password='password123',
-            first_name='Dr. Rocky',
-            last_name='Chowdhury',
+            full_name='Dr. Rocky Chowdhury',
             role='provider',
             division='dhaka',
             district='Dhaka'
@@ -47,8 +46,7 @@ class ProvidersAPITests(APITestCase):
         self.pet_owner_user = User.objects.create_user(
             email='owner@test.com',
             password='password123',
-            first_name='Rocky',
-            last_name='Owner',
+            full_name='Rocky Owner',
             role='pet_owner',
             division='dhaka',
             district='Dhaka'
@@ -118,12 +116,17 @@ class ProvidersAPITests(APITestCase):
     def test_nested_service_crud_and_soft_delete(self):
         """Test nesting /providers/:id/services/ endpoints for CRUD operations and soft-delete."""
         # Create provider profile
+        from apps.locations.models import Division, District
+        dhaka_division = Division.objects.create(name_en='Dhaka', name_bn='Dhaka')
+        dhaka_district = District.objects.create(
+            division=dhaka_division, name_en='Dhaka', name_bn='Dhaka'
+        )
         provider = ServiceProvider.objects.create(
             user=self.provider_user,
             business_name='Rocky Vet Clinic',
             provider_type='vet',
-            division='dhaka',
-            district='Dhaka',
+            division=dhaka_division,
+            district=dhaka_district,
             phone='01712345678',
             is_verified=True
         )

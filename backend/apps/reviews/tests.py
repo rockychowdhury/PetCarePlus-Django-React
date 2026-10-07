@@ -27,24 +27,29 @@ class ReviewsAPITests(APITestCase):
         # Create users
         self.customer = User.objects.create_user(
             email='customer@test.com', password='password123',
-            first_name='Rocky', last_name='Customer', role='pet_owner'
+            full_name='Rocky Customer', role='pet_owner'
         )
         self.other_customer = User.objects.create_user(
             email='other@test.com', password='password123',
-            first_name='Other', last_name='Customer', role='pet_owner'
+            full_name='Other Customer', role='pet_owner'
         )
         self.provider_user = User.objects.create_user(
             email='provider@test.com', password='password123',
-            first_name='Dr. Rocky', last_name='Provider', role='provider'
+            full_name='Dr. Rocky Provider', role='provider'
         )
 
         # Create provider profile
+        from apps.locations.models import Division, District
+        dhaka_division = Division.objects.create(name_en='Dhaka', name_bn='Dhaka')
+        dhaka_district = District.objects.create(
+            division=dhaka_division, name_en='Dhaka', name_bn='Dhaka'
+        )
         self.provider = ServiceProvider.objects.create(
             user=self.provider_user,
             business_name='Rocky Vet Services',
             provider_type='vet',
-            division='dhaka',
-            district='Dhaka',
+            division=dhaka_division,
+            district=dhaka_district,
             phone='01712345678',
             is_verified=True
         )

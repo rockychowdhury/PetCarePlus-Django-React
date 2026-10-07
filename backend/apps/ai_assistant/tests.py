@@ -40,11 +40,16 @@ class AIAssistantAPITests(APITestCase):
         )
 
         # Create service providers in the area (verified + unverified to test weighting)
+        from apps.locations.models import Division, District
+        dhaka_division = Division.objects.create(name_en='Dhaka', name_bn='Dhaka')
+        dhaka_district = District.objects.create(
+            division=dhaka_division, name_en='Dhaka', name_bn='Dhaka'
+        )
         self.verified_vet = ServiceProvider.objects.create(
             user=self.provider_user,
             business_name='Top Vet Services',
             provider_type='vet',
-            division='dhaka', district='Dhaka', phone='01712345678',
+            division=dhaka_division, district=dhaka_district, phone='01712345678',
             is_verified=True, avg_rating=4.8, total_reviews=25
         )
         # Link to cat type

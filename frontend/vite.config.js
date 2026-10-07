@@ -14,7 +14,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api/v1': {
-        target: 'https://petcareplus-django-backned.onrender.com',
+        target: process.env.VITE_PROXY_TARGET || 'https://petcareplus-django-backned.onrender.com',
         changeOrigin: true,
       },
     },

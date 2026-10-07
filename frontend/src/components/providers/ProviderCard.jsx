@@ -61,13 +61,17 @@ export const ProviderCard = ({ provider }) => {
   })
 
   // Calculate distance cascade labelling
-  const currentDistrict = user?.district || anonDistrict
-  const currentDivision = user?.division || anonDivision
+  // district/division are optional in the API payload, so normalise them
+  // before comparing - an undefined value used to crash the entire page.
+  const currentDistrict = (user?.district || anonDistrict || '').toLowerCase()
+  const currentDivision = (user?.division || anonDivision || '').toLowerCase()
+  const providerDistrict = (district || '').toLowerCase()
+  const providerDivision = (division || '').toLowerCase()
 
   let distanceLabel = ''
-  if (currentDistrict && district.toLowerCase() === currentDistrict.toLowerCase()) {
+  if (currentDistrict && providerDistrict === currentDistrict) {
     distanceLabel = t('providers.distance_local')
-  } else if (currentDivision && division.toLowerCase() === currentDivision.toLowerCase()) {
+  } else if (currentDivision && providerDivision === currentDivision) {
     distanceLabel = t('providers.distance_regional')
   } else if (currentDistrict || currentDivision) {
     distanceLabel = t('providers.distance_national')
@@ -96,7 +100,7 @@ export const ProviderCard = ({ provider }) => {
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <span className="text-5xl font-black text-pcp-text-primary/10 dark:text-white/10 uppercase tracking-tighter">
-              {business_name.charAt(0)}
+              {(business_name || '').charAt(0)}
             </span>
           </div>
         )}

@@ -89,7 +89,17 @@ class CustomTokenRefreshView(TokenRefreshView):
         
         # Retrieve the refresh token from httpOnly cookie if not in POST request data
         refresh_token = request.COOKIES.get(refresh_cookie)
-        
+
+        if not refresh_token and 'refresh' not in request.data:
+            # No cookie and no body token: the caller has no session at all
+            # (e.g. an anonymous page load that triggered the auth interceptor).
+            # This is "not authenticated", not a malformed request, so answer
+            # 401 instead of the serializer's 400 "This field is required".
+            return Response(
+                {'detail': 'Refresh token not provided.', 'code': 'invalid-refresh-token'},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
         if refresh_token and 'refresh' not in request.data:
             # Mutate request data to include the token for standard serializer validation
             data = request.data.copy()

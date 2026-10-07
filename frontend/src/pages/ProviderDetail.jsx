@@ -282,7 +282,7 @@ export const ProviderDetail = () => {
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <span className="text-6xl font-black text-pcp-text-primary/10 dark:text-white/10 uppercase tracking-tighter">
-                    {provider.business_name.charAt(0)}
+                    {(provider.business_name || '').charAt(0)}
                   </span>
                 </div>
               )}

@@ -76,6 +76,7 @@
     "schedule": "Schedule/Timing",
     "dosage": "Dosage/Method",
     "age_range": "Target Age",
+    "details": "Details",
     "no_records": "No vaccine records found."
   },
   "providers": {

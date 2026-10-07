@@ -5,6 +5,7 @@ Tests covering resource list, retrieve, filter by type,
 search capabilities, and bilingual mappings.
 """
 
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -30,9 +31,9 @@ class ResourcesAPITests(APITestCase):
             description_en='Provides information on dog care.',
             description_bn='কুকুরের যত্ন সম্পর্কে তথ্য প্রদান করে।',
             resource_type='information',
-            animal_type=self.animal,
             is_active=True
         )
+        self.info.animal_types.set([self.animal])
 
         self.medicine = Resource.objects.create(
             title_en='Rabies Vaccine info',
@@ -40,9 +41,9 @@ class ResourcesAPITests(APITestCase):
             description_en='Details about Rabies vaccine.',
             description_bn='রেবিস ভ্যাকসিনের বিস্তারিত।',
             resource_type='vaccination',
-            animal_type=self.animal,
             is_active=True
         )
+        self.medicine.animal_types.set([self.animal])
 
         self.inactive_resource = Resource.objects.create(
             title_en='Old Emergency Line',
@@ -54,6 +55,9 @@ class ResourcesAPITests(APITestCase):
         )
 
         self.list_url = reverse('resource-list')
+
+        # Guard against cross-test pollution through the page-1 response cache
+        cache.clear()
 
     def test_list_resources_public_access(self):
         """Test that anyone can view active resources."""

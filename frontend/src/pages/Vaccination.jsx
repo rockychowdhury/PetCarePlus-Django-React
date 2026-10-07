@@ -1,24 +1,27 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { guidelinesApi } from '../api/guidelines'
+import { resourcesApi } from '../api/resources'
 import { useLanguage } from '../hooks/useLanguage'
+import { useDebounce } from '../hooks/useDebounce'
 import PageLayout from '../components/layout/PageLayout'
 import AnimalFilter from '../components/guidelines/AnimalFilter'
 import Spinner from '../components/ui/Spinner'
 import { Search, Syringe, Info } from 'lucide-react'
 
 export const Vaccination = () => {
-  const { language, t, tField } = useLanguage()
+  const { language, t } = useLanguage()
   const [selectedAnimalId, setSelectedAnimalId] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const debouncedSearchQuery = useDebounce(searchQuery, 500)
 
-  // Query vaccines based on search query and selected animal
+  // Vaccination reference lives in the shared resources API
   const { data: response, isLoading } = useQuery({
-    queryKey: ['vaccinationsList', selectedAnimalId, searchQuery],
+    queryKey: ['vaccinationResources', selectedAnimalId, debouncedSearchQuery],
     queryFn: () =>
-      guidelinesApi.getVaccinations({
-        search: searchQuery || undefined,
-        animal_type: selectedAnimalId || undefined,
+      resourcesApi.getResources({
+        resource_type: 'vaccination',
+        search: debouncedSearchQuery || undefined,
+        animal_types: selectedAnimalId || undefined,
       }),
     keepPreviousData: true,
   })
@@ -29,7 +32,7 @@ export const Vaccination = () => {
     <PageLayout>
       <div className="bg-pcp-surface/20 py-8 min-h-screen border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 animate-fade-in">
-          
+
           {/* Section Header */}
           <div className="text-center sm:text-left space-y-1.5">
             <h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
@@ -77,74 +80,49 @@ export const Vaccination = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {vaccines.map((record) => {
-                const name = tField(record, 'vaccine_name')
-                const disease = tField(record, 'disease')
-                const schedule = tField(record, 'schedule')
-                const dosage = record.dosage || ''
-                const ageRange = record.age_range || ''
-
-                return (
-                  <div
-                    key={record.id}
-                    className="bg-card border border-border/85 rounded-2xl p-5 hover:shadow-md transition-all duration-300 relative overflow-hidden group hover:border-primary/20 animate-fade-in-up"
-                  >
-                    <div className="absolute top-0 right-0 bg-primary/10 text-primary p-2.5 rounded-bl-2xl group-hover:bg-primary group-hover:text-white transition-colors">
-                      <Syringe className="w-4.5 h-4.5" />
-                    </div>
-
-                    <div className="space-y-4 pr-6 text-left">
-                      {/* Name & Type */}
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                          {language === 'bn'
-                            ? record.animal_type_details?.name_bn
-                            : record.animal_type_details?.name_en}
-                        </span>
-                        <h4 className="text-sm sm:text-base font-extrabold text-foreground leading-snug">
-                          {name}
-                        </h4>
-                      </div>
-
-                      {/* Prevents Disease */}
-                      <div className="space-y-0.5 text-xs text-muted-foreground">
-                        <span className="font-bold text-foreground text-[10px] uppercase tracking-wider block">
-                          {t('vaccination.disease')}:
-                        </span>
-                        <p className="leading-relaxed font-semibold text-foreground/85">{disease}</p>
-                      </div>
-
-                      {/* Schedule */}
-                      <div className="space-y-0.5 text-xs text-muted-foreground">
-                        <span className="font-bold text-foreground text-[10px] uppercase tracking-wider block">
-                          {t('vaccination.schedule')}:
-                        </span>
-                        <p className="leading-relaxed font-semibold text-foreground/85">{schedule}</p>
-                      </div>
-
-                      {/* Dosage */}
-                      {dosage && (
-                        <div className="space-y-0.5 text-xs text-muted-foreground">
-                          <span className="font-bold text-foreground text-[10px] uppercase tracking-wider block">
-                            {t('vaccination.dosage')}:
-                          </span>
-                          <p className="leading-relaxed font-semibold text-foreground/85">{dosage}</p>
-                        </div>
-                      )}
-
-                      {/* Age Range */}
-                      {ageRange && (
-                        <div className="space-y-0.5 text-xs text-muted-foreground">
-                          <span className="font-bold text-foreground text-[10px] uppercase tracking-wider block">
-                            {t('vaccination.age_range')}:
-                          </span>
-                          <p className="leading-relaxed font-semibold text-foreground/85">{ageRange}</p>
-                        </div>
-                      )}
-                    </div>
+              {vaccines.map((record) => (
+                <div
+                  key={record.id}
+                  className="bg-card border border-border/85 rounded-2xl p-5 hover:shadow-md transition-all duration-300 relative overflow-hidden group hover:border-primary/20 animate-fade-in-up"
+                >
+                  <div className="absolute top-0 right-0 bg-primary/10 text-primary p-2.5 rounded-bl-2xl group-hover:bg-primary group-hover:text-white transition-colors">
+                    <Syringe className="w-4.5 h-4.5" />
                   </div>
-                )
-              })}
+
+                  <div className="space-y-4 pr-6 text-left">
+                    {/* Animal Types */}
+                    {record.animal_types?.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {record.animal_types.map((animal) => (
+                          <span
+                            key={animal.id}
+                            className="text-[10px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider"
+                          >
+                            {language === 'bn' ? animal.name_bn : animal.name_en}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Name */}
+                    <h4 className="text-sm sm:text-base font-extrabold text-foreground leading-snug">
+                      {record.title}
+                    </h4>
+
+                    {/* Details */}
+                    {record.description && (
+                      <div className="space-y-0.5 text-xs text-muted-foreground">
+                        <span className="font-bold text-foreground text-[10px] uppercase tracking-wider block">
+                          {t('vaccination.details')}:
+                        </span>
+                        <p className="leading-relaxed font-semibold text-foreground/85 whitespace-pre-wrap">
+                          {record.description}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
